@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafaf9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0a09" media="(prefers-color-scheme: dark)">
+<title>Desviación típica frente a MAD</title>
+<meta name="description" content="Consola interactiva que compara la desviación típica y la MAD ante valores extremos.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/contrib/auto-render.min.js"></script>
+
+<style>
+/* ───────── Tokens ───────── */
+:root{
+  --font:'IBM Plex Sans','Hanken Grotesk','Barlow','Host Grotesk','DM Sans',system-ui,sans-serif;
+  --mono:'IBM Plex Mono','Fira Code',ui-monospace,monospace;
+  --bg:#fafaf9; --surface:#f5f5f4; --surface-2:#e7e5e4; --border:#e7e5e4;
+  --text:#1c1917;
+  --t2:rgba(28,25,23,.70); --t3:rgba(28,25,23,.40); --t4:rgba(28,25,23,.20);
+  --accent:#C8102E; --a60:rgba(200,16,46,.60); --a20:rgba(200,16,46,.20); --a10:rgba(200,16,46,.10);
+  --u:8px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0c0a09; --surface:#1c1917; --surface-2:#292524; --border:#292524;
+    --text:#fafaf9;
+    --t2:rgba(250,250,249,.70); --t3:rgba(250,250,249,.40); --t4:rgba(250,250,249,.20);
+  }
+}
+html{color-scheme:light dark;-webkit-text-size-adjust:100%}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.625;font-weight:400;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,figure,dl,dd,ul{margin:0}
+.tab{font-variant-numeric:tabular-nums}
+
+/* ───────── Layout ───────── */
+.wrap{max-width:72rem;margin:0 auto;padding:0 16px}
+@media(min-width:768px){.wrap{padding:0 32px}}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+@media(min-width:768px){.grid{gap:32px}}
+.c12{grid-column:span 12}
+@media(min-width:768px){.m3{grid-column:span 3}.m4{grid-column:span 4}.m5{grid-column:span 5}.m6{grid-column:span 6}.m7{grid-column:span 7}.m8{grid-column:span 8}.m9{grid-column:span 9}}
+@media(min-width:1024px){.l4{grid-column:span 4}.l8{grid-column:span 8}.l3{grid-column:span 3}.l9{grid-column:span 9}}
+.min0{min-width:0}
+
+.sec{padding:64px 0;border-top:1px solid var(--text)}
+@media(min-width:768px){.sec{padding:96px 0}}
+.sec-head{margin-bottom:48px}
+.num{font-size:clamp(3rem,10vw,6rem);font-weight:300;line-height:1;letter-spacing:-.02em;color:var(--accent);font-variant-numeric:tabular-nums}
+h2{font-size:clamp(1.75rem,4vw,2.25rem);font-weight:300;line-height:1.25;letter-spacing:-.02em;text-wrap:balance}
+h3{font-size:1.125rem;font-weight:500;line-height:1.375}
+.body{max-width:60ch;text-wrap:pretty;color:var(--t2)}
+.body+.body{margin-top:16px}
+.body b,.body strong{font-weight:500;color:var(--text)}
+.cap{font-size:12px;line-height:1.5;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);font-weight:400}
+.cap b{font-weight:500;color:var(--text)}
+.lbl{font-size:12px;line-height:1.3;letter-spacing:.04em;font-weight:500;color:var(--t2)}
+
+/* ───────── Header ───────── */
+.top{padding:24px 0 64px}
+@media(min-width:768px){.top{padding:32px 0 96px}}
+.bar{display:flex;justify-content:space-between;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--text);margin-bottom:64px}
+.rule{width:96px;height:8px;background:var(--accent);margin-bottom:32px}
+.display{font-size:clamp(2.5rem,9vw,6rem);font-weight:300;line-height:1;letter-spacing:-.02em;text-wrap:balance}
+.display .acc{color:var(--accent)}
+.lead{font-size:clamp(1.125rem,2.2vw,1.375rem);font-weight:300;line-height:1.5;max-width:44ch;color:var(--t2)}
+.key{display:grid;gap:16px;margin-top:48px}
+@media(min-width:640px){.key{grid-template-columns:1fr 1fr}}
+.key div{border-top:1px solid var(--text);padding-top:16px;display:flex;gap:16px;align-items:flex-start}
+.key p{font-size:14px;color:var(--t2);line-height:1.5}
+.key b{display:block;font-weight:500;color:var(--text);font-size:16px}
+.sq{flex:none;width:16px;height:16px;margin-top:4px}
+.sq.ink{background:var(--text)}
+.sq.red{background:var(--accent)}
+
+/* ───────── Controls ───────── */
+.ctl{border-top:1px solid var(--text);padding-top:16px}
+@media(min-width:1024px){.ctl{position:sticky;top:16px;align-self:start}}
+.ctl h3{margin-bottom:8px}
+.field{padding:8px 0 0}
+.field .row{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+.field output{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;margin:0;background:transparent;cursor:pointer;border-radius:0}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--t3)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-7px;border:0;border-radius:0;background:var(--accent)}
+input[type=range]::-moz-range-track{height:2px;background:var(--t3)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:0;border-radius:0;background:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+fieldset{border:0;margin:0;padding:24px 0 0;min-width:0}
+legend{padding:0}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);margin-top:8px;border:1px solid var(--text)}
+.seg label{position:relative;min-height:44px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;border-left:1px solid var(--text)}
+.seg label:first-child{border-left:0}
+.seg input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0}
+.seg label:has(input:checked){background:var(--text);color:var(--bg)}
+.seg label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.btn{min-height:44px;min-width:44px;padding:8px 16px;background:transparent;color:var(--text);border:1px solid var(--text);border-radius:0;font:inherit;font-size:14px;cursor:pointer}
+.btn:hover{background:var(--text);color:var(--bg)}
+.btn.main{background:var(--accent);border-color:var(--accent);color:#fafaf9}
+.btn.main:hover{background:var(--a60);border-color:var(--a60);color:var(--text)}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.presets .btn{padding:8px 12px;font-size:13px}
+.hint{font-size:13px;line-height:1.5;color:var(--t3);margin-top:16px}
+
+/* ───────── Readouts ───────── */
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border-top:1px solid var(--text)}
+@media(min-width:640px){.cards{grid-template-columns:repeat(5,1fr)}}
+.card{padding:16px 16px 16px 0;border-bottom:1px solid var(--border)}
+@media(min-width:640px){.card{border-bottom:0;padding-right:8px}}
+.card .v{font-size:clamp(1.5rem,3.4vw,2rem);font-weight:300;letter-spacing:-.02em;line-height:1.2;margin-top:8px;font-variant-numeric:tabular-nums}
+.card .s{font-size:12px;line-height:1.4;color:var(--t3);margin-top:8px;font-variant-numeric:tabular-nums}
+.card.ink .v{color:var(--text)}
+.card.red .v{color:var(--accent)}
+.card .mark{display:inline-block;width:8px;height:8px;margin-right:8px}
+.card.ink .mark{background:var(--text)}
+.card.red .mark{background:var(--accent)}
+.card.neutral .mark{background:transparent;border:1px solid var(--text)}
+
+/* ───────── Figures ───────── */
+figure{margin-top:32px}
+figcaption{margin-top:16px;font-size:13px;line-height:1.5;color:var(--t3);max-width:70ch}
+.legend{display:flex;flex-wrap:wrap;gap:8px 24px;margin-bottom:8px;font-size:13px;color:var(--t2)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.sw{display:inline-block;width:24px;height:0;border-top:2px solid var(--text)}
+.sw.red{border-color:var(--accent)}
+.sw.dash{border-top-style:dashed}
+.sw.dot{border-top-style:dotted;border-color:var(--t3)}
+.sw.band{height:8px;border:0;background:var(--text);opacity:.85}
+.sw.band.red{background:var(--accent)}
+.sw.grey{height:0;border-top:3px solid var(--t3)}
+.sw.ring{width:10px;height:10px;border:1.5px solid var(--text);border-radius:50%;background:transparent}
+.sw.pt{width:8px;height:8px;border:0;border-radius:50%;background:var(--t2)}
+.chart{width:100%;position:relative;line-height:0}
+.chart svg{display:block;overflow:visible}
+.chart svg text{font-family:var(--font)}
+.gl{stroke:var(--border);stroke-width:1}
+.axis{stroke:var(--text);stroke-width:1}
+.tk{font-size:11px;fill:var(--t3);font-variant-numeric:tabular-nums}
+.ax-lab{font-size:11px;fill:var(--t3);letter-spacing:.04em}
+.ln{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.ln.ink{stroke:var(--text)}
+.ln.red{stroke:var(--accent)}
+.ln.dash{stroke-dasharray:6 4}
+.ref{stroke:var(--t3);stroke-width:1;stroke-dasharray:2 3}
+.mk{stroke:var(--text);stroke-width:1;stroke-dasharray:2 3}
+.mk-t{font-size:11px;fill:var(--t2)}
+.hv{stroke:var(--text);stroke-width:1;opacity:.5}
+.pt{cursor:grab}
+.pt:active{cursor:grabbing}
+.dot-p{fill:var(--t2)}
+.dot-x{fill:var(--bg);stroke:var(--text);stroke-width:1.6}
+.hit{fill:transparent}
+.txt{font-size:11px;fill:var(--text);paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+.txt.red{fill:var(--accent)}
+.txt.muted{fill:var(--t2)}
+.read{min-height:3em;font-size:13px;line-height:1.5;color:var(--text);margin-top:8px;font-variant-numeric:tabular-nums}
+.pair{display:grid;gap:32px}
+@media(min-width:768px){.pair{grid-template-columns:1fr 1fr}}
+
+/* ───────── Reading & table ───────── */
+.reading{border-top:1px solid var(--text);padding-top:16px;margin-top:32px}
+.reading p{max-width:60ch;color:var(--t2)}
+.reading p+p{margin-top:8px}
+.reading b{font-weight:500;color:var(--text)}
+.reading .note{font-size:14px;color:var(--t3)}
+.tbl-wrap{overflow-x:auto;margin-top:32px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:560px}
+th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:500;color:var(--t2);text-align:left;padding:8px 16px 8px 0;border-bottom:1px solid var(--text)}
+td{padding:16px 16px 16px 0;border-bottom:1px solid var(--border);font-size:15px;vertical-align:middle}
+td.r,th.r{text-align:right}
+.barcell{width:30%}
+.bar-track{height:8px;background:var(--surface-2);position:relative}
+.bar-fill{position:absolute;left:0;top:0;bottom:0}
+.bar-fill.ink{background:var(--text)}
+.bar-fill.red{background:var(--accent)}
+
+/* ───────── Math ───────── */
+.formulas{display:grid;gap:0}
+.f{border-top:1px solid var(--text);padding:24px 0}
+@media(min-width:768px){.f{display:grid;grid-template-columns:repeat(12,1fr);gap:32px}.f .n{grid-column:span 3}.f .e{grid-column:span 9}}
+.f .n .cap{display:block;margin-bottom:8px}
+.f p{max-width:60ch;color:var(--t2);font-size:15px}
+.f .eq{overflow-x:auto;overflow-y:hidden;padding:8px 0;font-size:1.05em;margin-bottom:8px}
+.live{background:var(--surface);padding:16px;margin-top:32px;overflow-x:auto}
+.katex-display{margin:8px 0;text-align:left}.katex-display>.katex{text-align:left}
+.mathwarn{display:none;margin-top:16px;font-size:13px;color:var(--accent)}
+dl.gloss{display:grid;gap:0;margin-top:0}
+dl.gloss div{display:grid;gap:4px;padding:16px 0;border-top:1px solid var(--border)}
+@media(min-width:768px){dl.gloss div{grid-template-columns:200px 1fr;gap:32px}}
+dl.gloss dt{font-weight:500}
+dl.gloss dd{color:var(--t2);max-width:60ch}
+ul.lim{list-style:none;padding:0;display:grid;gap:0}
+ul.lim li{padding:16px 0;border-top:1px solid var(--border);max-width:60ch;color:var(--t2)}
+footer{border-top:1px solid var(--text);padding:32px 0 64px;font-size:13px;color:var(--t3)}
+footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="bar">
+      <span class="cap"><b>Consola</b> · Estadística robusta</span>
+      <span class="cap">Dispersión · σ&nbsp;/&nbsp;MAD</span>
+    </div>
+    <div class="grid">
+      <div class="c12 l9">
+        <div class="rule" aria-hidden="true"></div>
+        <h1 class="display">Desviación típica frente a <span class="acc">MAD</span></h1>
+      </div>
+      <div class="c12 m8" style="margin-top:32px">
+        <p class="lead">La desviación típica y la MAD miden la dispersión de una muestra. Los valores extremos afectan mucho a la desviación típica. Afectan poco a la MAD. Use esta consola para ver la diferencia.</p>
+      </div>
+    </div>
+    <div class="key" role="group" aria-label="Clave de colores">
+      <div><span class="sq ink" aria-hidden="true"></span><p><b>Tinta · método clásico</b>Media y desviación típica&nbsp;<i>s</i>.</p></div>
+      <div><span class="sq red" aria-hidden="true"></span><p><b>Rojo · método robusto</b>Mediana y MAD escalada.</p></div>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════ 01 SIMULADOR ═══════════════ -->
+<section class="sec" id="simulador" aria-labelledby="h-sim">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">01</div></div>
+      <div class="c12 m9">
+        <h2 id="h-sim">Simulador</h2>
+        <p class="body" style="margin-top:16px">Cree una muestra normal. Añada valores extremos. Vea cómo cambian las cuatro medidas. Arrastre cualquier punto del gráfico para moverlo a mano.</p>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Controles -->
+      <div class="c12 l4">
+        <form class="ctl" id="ctl" onsubmit="return false" aria-label="Controles del simulador">
+          <h3>Muestra limpia</h3>
+          <div class="field">
+            <div class="row"><label class="lbl" for="n">Tamaño, n</label><output id="o-n" for="n"></output></div>
+            <input type="range" id="n" min="10" max="200" step="1" value="40">
+          </div>
+          <div class="field">
+            <div class="row"><label class="lbl" for="mu">Media verdadera, μ</label><output id="o-mu" for="mu"></output></div>
+            <input type="range" id="mu" min="0" max="100" step="1" value="50">
+          </div>
+          <div class="field">
+            <div class="row"><label class="lbl" for="sg">Desviación típica verdadera, σ</label><output id="o-sg" for="sg"></output></div>
+            <input type="range" id="sg" min="1" max="20" step="1" value="10">
+          </div>
+
+          <h3 style="margin-top:32px">Valores extremos</h3>
+          <div class="field">
+            <div class="row"><label class="lbl" for="k">Cantidad, k</label><output id="o-k" for="k"></output></div>
+            <input type="range" id="k" min="0" max="24" step="1" value="4">
+          </div>
+          <div class="field">
+            <div class="row"><label class="lbl" for="d">Distancia a μ, d (en σ)</label><output id="o-d" for="d"></output></div>
+            <input type="range" id="d" min="0" max="30" step="0.5" value="10">
+          </div>
+          <fieldset>
+            <legend class="lbl">Lado</legend>
+            <div class="seg" role="radiogroup">
+              <label><input type="radio" name="side" value="right" checked>Derecha</label>
+              <label><input type="radio" name="side" value="left">Izquierda</label>
+              <label><input type="radio" name="side" value="both">Ambos</label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend class="lbl">Atajos</legend>
+            <div class="presets">
+              <button type="button" class="btn" data-p="0">Sin extremos</button>
+              <button type="button" class="btn" data-p="one">Un extremo</button>
+              <button type="button" class="btn" data-p="0.1">10&nbsp;%</button>
+              <button type="button" class="btn" data-p="0.45">45&nbsp;%</button>
+              <button type="button" class="btn" data-p="0.55">55&nbsp;%</button>
+            </div>
+          </fieldset>
+
+          <div class="btns">
+            <button type="button" class="btn main" id="b-new">Nueva muestra</button>
+            <button type="button" class="btn" id="b-reset">Restablecer</button>
+          </div>
+          <p class="hint" id="seedinfo"></p>
+        </form>
+      </div>
+
+      <!-- Salidas -->
+      <div class="c12 l8 min0">
+        <div class="cards" role="group" aria-label="Medidas de la muestra actual">
+          <div class="card ink"><div class="lbl"><span class="mark"></span>Media</div><div class="v" id="v-mean"></div><div class="s" id="s-mean"></div></div>
+          <div class="card red"><div class="lbl"><span class="mark"></span>Mediana</div><div class="v" id="v-med"></div><div class="s" id="s-med"></div></div>
+          <div class="card ink"><div class="lbl"><span class="mark"></span>Desv. típica <i>s</i></div><div class="v" id="v-sd"></div><div class="s" id="s-sd"></div></div>
+          <div class="card red"><div class="lbl"><span class="mark"></span>MAD escalada</div><div class="v" id="v-mad"></div><div class="s" id="s-mad"></div></div>
+          <div class="card neutral"><div class="lbl"><span class="mark"></span><i>s</i> / MAD esc.</div><div class="v" id="v-ratio"></div><div class="s">Cerca de 1 en datos normales</div></div>
+        </div>
+
+        <figure>
+          <div class="legend" aria-hidden="true">
+            <span><i class="sw"></i>Media</span>
+            <span><i class="sw red dash"></i>Mediana</span>
+            <span><i class="sw band"></i>Media ± <i>s</i></span>
+            <span><i class="sw band red"></i>Mediana ± MAD escalada</span>
+            <span><i class="sw grey"></i>Verdadero: μ ± σ</span>
+            <span><i class="sw pt"></i>Dato</span>
+            <span><i class="sw ring"></i>Valor extremo</span>
+          </div>
+          <div class="chart" id="chartA" role="img" aria-label="Diagrama de puntos de la muestra"></div>
+          <figcaption>Figura 1. Cada punto es un dato. La altura de un punto no tiene significado. Un anillo marca un valor extremo. Las barras horizontales muestran un intervalo de una unidad de dispersión alrededor del centro.</figcaption>
+        </figure>
+
+        <div class="reading" aria-live="polite" id="reading"></div>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 1. Efecto de los valores extremos</caption>
+        <thead>
+          <tr><th scope="col">Medida</th><th scope="col" class="r">Muestra limpia</th><th scope="col" class="r">Muestra actual</th><th scope="col" class="r">Cambio</th><th scope="col" class="barcell">Tamaño del cambio</th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="hint" style="max-width:60ch">El cambio de la media y de la mediana se expresa en unidades de σ verdadera. El cambio de <i>s</i> y de la MAD escalada se expresa como porcentaje de su valor limpio. Una barra completa equivale a 1&nbsp;σ o a +100&nbsp;%.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ 02 ALEJAMIENTO ═══════════════ -->
+<section class="sec" id="alejamiento" aria-labelledby="h-alej">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">02</div></div>
+      <div class="c12 m9">
+        <h2 id="h-alej">Cómo se alejan: un solo dato</h2>
+        <p class="body" style="margin-top:16px">Este experimento añade un dato a la muestra limpia. Después lo mueve de −20&nbsp;σ a +20&nbsp;σ. La media sigue al dato en línea recta. La desviación típica crece sin límite. La mediana y la MAD escalada llegan a un tope.</p>
+        <p class="body">Mueva el puntero sobre los gráficos para leer los valores exactos.</p>
+      </div>
+    </div>
+    <div class="legend" aria-hidden="true">
+      <span><i class="sw"></i>Media</span>
+      <span><i class="sw red"></i>Mediana</span>
+      <span><i class="sw"></i><i class="sw dot" style="margin-left:-16px"></i>Desviación típica <i>s</i></span>
+      <span><i class="sw red"></i>MAD escalada</span>
+      <span><i class="sw dot"></i>Valor verdadero</span>
+    </div>
+    <div class="pair">
+      <figure style="margin-top:0">
+        <div class="lbl" style="margin-bottom:8px">Localización</div>
+        <div class="chart" id="chartB1" role="img" aria-label="Media y mediana según la posición de un dato añadido"></div>
+        <div class="read" id="capB1"></div>
+        <figcaption>Figura 2a. Valor de la media y de la mediana. Eje horizontal: posición del dato añadido, medida desde μ.</figcaption>
+      </figure>
+      <figure style="margin-top:0">
+        <div class="lbl" style="margin-bottom:8px">Dispersión</div>
+        <div class="chart" id="chartB2" role="img" aria-label="Desviación típica y MAD escalada según la posición de un dato añadido"></div>
+        <div class="read" id="capB2"></div>
+        <figcaption>Figura 2b. Valor de <i>s</i> y de la MAD escalada. La línea punteada marca σ verdadera.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 03 RUPTURA ═══════════════ -->
+<section class="sec" id="ruptura" aria-labelledby="h-rupt">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">03</div></div>
+      <div class="c12 m9">
+        <h2 id="h-rupt">Cuántos extremos tolera cada medida</h2>
+        <p class="body" style="margin-top:16px">Este experimento aumenta la proporción de valores extremos de 0&nbsp;% a 60&nbsp;%. Usa la distancia <i>d</i> y el lado del simulador. Con 0&nbsp;%, las medidas clásicas y las robustas coinciden. Después se separan.</p>
+        <p class="body">Cerca de 50&nbsp;% de extremos, la mediana y la MAD escalada saltan hacia los extremos. Ese límite se llama <b>punto de ruptura</b>.</p>
+      </div>
+    </div>
+    <div class="legend" aria-hidden="true">
+      <span><i class="sw"></i>Media / <i>s</i></span>
+      <span><i class="sw red"></i>Mediana / MAD escalada</span>
+      <span><i class="sw dot"></i>Valor verdadero</span>
+      <span><i class="sw dot" style="border-color:var(--text)"></i>Marcas: 50&nbsp;% y <i>k</i> actual</span>
+    </div>
+    <div class="pair">
+      <figure style="margin-top:0">
+        <div class="lbl" style="margin-bottom:8px">Localización</div>
+        <div class="chart" id="chartC1" role="img" aria-label="Media y mediana según la proporción de valores extremos"></div>
+        <div class="read" id="capC1"></div>
+        <figcaption>Figura 3a. Media y mediana. Eje horizontal: proporción de valores extremos.</figcaption>
+      </figure>
+      <figure style="margin-top:0">
+        <div class="lbl" style="margin-bottom:8px">Dispersión</div>
+        <div class="chart" id="chartC2" role="img" aria-label="Desviación típica y MAD escalada según la proporción de valores extremos"></div>
+        <div class="read" id="capC2"></div>
+        <figcaption>Figura 3b. <i>s</i> y MAD escalada. Las líneas que salen del gráfico continúan fuera de la escala.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 04 CONVERGENCIA ═══════════════ -->
+<section class="sec" id="convergencia" aria-labelledby="h-conv">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">04</div></div>
+      <div class="c12 m9">
+        <h2 id="h-conv">Cómo convergen: más datos</h2>
+        <p class="body" style="margin-top:16px">Con datos limpios, las dos medidas se acercan a σ cuando <i>n</i> crece. La MAD escalada fluctúa más que <i>s</i>. Esa diferencia se llama <b>eficiencia</b>.</p>
+        <p class="body">Con valores extremos, las dos líneas discontinuas convergen, pero hacia un valor distinto de σ. La línea de <i>s</i> se desvía mucho más. La proporción de extremos viene del simulador.</p>
+      </div>
+    </div>
+    <div class="legend" aria-hidden="true">
+      <span><i class="sw"></i><i>s</i>, muestra limpia</span>
+      <span><i class="sw red"></i>MAD escalada, muestra limpia</span>
+      <span><i class="sw dash"></i><i>s</i>, con extremos</span>
+      <span><i class="sw red dash"></i>MAD escalada, con extremos</span>
+      <span><i class="sw dot"></i>σ verdadera</span>
+    </div>
+    <figure style="margin-top:0">
+      <div class="chart" id="chartD" role="img" aria-label="Estimación de σ según el tamaño de la muestra"></div>
+      <div class="read" id="capD"></div>
+      <figcaption>Figura 4. Cada línea muestra el cociente entre la estimación y σ verdadera. Eje horizontal en escala logarítmica. La marca vertical indica el <i>n</i> del simulador. El resultado cambia con cada muestra nueva.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ═══════════════ 05 FORMULAS ═══════════════ -->
+<section class="sec" id="formulas" aria-labelledby="h-form">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">05</div></div>
+      <div class="c12 m9">
+        <h2 id="h-form">Fórmulas</h2>
+        <p class="body" style="margin-top:16px">Cada fórmula tiene una frase de apoyo. El bloque final calcula las medidas con la muestra actual del simulador.</p>
+        <p class="mathwarn" id="mathwarn" role="status">KaTeX no se cargó. La página muestra el código LaTeX en lugar de las fórmulas. Conecte el equipo a internet y recargue la página.</p>
+      </div>
+    </div>
+
+    <div class="formulas">
+      <div class="f">
+        <div class="n"><span class="cap">Media</span></div>
+        <div class="e"><div class="eq">$$\bar{x}=\frac{1}{n}\sum_{i=1}^{n}x_i$$</div>
+          <p>La media suma todos los datos y divide por <i>n</i>. Un dato muy grande mueve la media sin límite.</p></div>
+      </div>
+      <div class="f">
+        <div class="n"><span class="cap">Mediana</span></div>
+        <div class="e"><div class="eq">$$\tilde{x}=\operatorname{med}\left(x_1,\dots,x_n\right)$$</div>
+          <p>La mediana es el dato central de la muestra ordenada. Un dato extremo solo la mueve hasta el dato vecino.</p></div>
+      </div>
+      <div class="f">
+        <div class="n"><span class="cap">Desviación típica</span></div>
+        <div class="e"><div class="eq">$$s=\sqrt{\frac{1}{n-1}\sum_{i=1}^{n}\left(x_i-\bar{x}\right)^{2}}$$</div>
+          <p>La desviación típica eleva al cuadrado cada distancia a la media. Por eso un dato lejano pesa mucho.</p></div>
+      </div>
+      <div class="f">
+        <div class="n"><span class="cap">MAD</span></div>
+        <div class="e"><div class="eq">$$\mathrm{MAD}=\operatorname{med}_{i}\left|\,x_i-\tilde{x}\,\right|$$</div>
+          <p>La MAD es la mediana de las distancias absolutas a la mediana. Usa solo valores centrales. Por eso resiste los extremos.</p></div>
+      </div>
+      <div class="f">
+        <div class="n"><span class="cap">MAD escalada</span></div>
+        <div class="e"><div class="eq">$$\hat{\sigma}_{\mathrm{MAD}}=k\cdot\mathrm{MAD},\qquad k=\frac{1}{\Phi^{-1}(3/4)}\approx 1{,}4826$$</div>
+          <p>Para datos normales, la MAD vale cerca de \(0{,}6745\,\sigma\). El factor \(k\) la lleva a la misma escala que σ. El factor vale solo para datos normales.</p></div>
+      </div>
+      <div class="f">
+        <div class="n"><span class="cap">Punto de ruptura</span></div>
+        <div class="e"><div class="eq">$$\varepsilon^{*}(\bar{x})=\varepsilon^{*}(s)=\frac{1}{n},\qquad \varepsilon^{*}(\tilde{x})=\varepsilon^{*}(\mathrm{MAD})\approx\frac{1}{2}$$</div>
+          <p>El punto de ruptura es la mayor proporción de datos que se puede cambiar sin que la medida se vaya al infinito. Un solo dato rompe la media y <i>s</i>.</p></div>
+      </div>
+      <div class="f">
+        <div class="n"><span class="cap">Función de influencia</span></div>
+        <div class="e"><div class="eq">$$\mathrm{IF}(x;s)=\frac{x^{2}-1}{2},\qquad \mathrm{IF}\!\left(x;\hat{\sigma}_{\mathrm{MAD}}\right)=\frac{\operatorname{sgn}\left(|x|-q\right)}{4\,q\,\varphi(q)},\quad q=\Phi^{-1}(3/4)$$</div>
+          <p>Las fórmulas suponen una distribución normal con σ&nbsp;=&nbsp;1. La influencia de <i>s</i> crece como \(x^{2}\). La influencia de la MAD escalada tiene tope.</p></div>
+      </div>
+      <div class="f">
+        <div class="n"><span class="cap">Eficiencia</span></div>
+        <div class="e"><div class="eq">$$\mathrm{ARE}\!\left(\hat{\sigma}_{\mathrm{MAD}},\,s\right)\approx 0{,}37$$</div>
+          <p>Para datos normales y muestras grandes, la MAD escalada necesita unas 2,7 veces más datos que <i>s</i> para la misma precisión. Con colas pesadas, la ventaja cambia.</p></div>
+      </div>
+    </div>
+
+    <div class="live" aria-live="polite">
+      <div class="cap" style="margin-bottom:8px">Cálculo con la muestra actual</div>
+      <div id="texLive"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 06 LECTURA ═══════════════ -->
+<section class="sec" id="lectura" aria-labelledby="h-lec">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">06</div></div>
+      <div class="c12 m9">
+        <h2 id="h-lec">Términos y límites</h2>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="c12 m6">
+        <div class="cap" style="margin-bottom:16px">Términos</div>
+        <dl class="gloss">
+          <div><dt>Dato</dt><dd>Un número de la muestra.</dd></div>
+          <div><dt>Muestra</dt><dd>El conjunto de todos los datos.</dd></div>
+          <div><dt>Valor extremo</dt><dd>Un dato muy lejos del resto de la muestra.</dd></div>
+          <div><dt>Media</dt><dd>La suma de los datos dividida por <i>n</i>.</dd></div>
+          <div><dt>Mediana</dt><dd>El dato central de la muestra ordenada.</dd></div>
+          <div><dt>Desviación típica</dt><dd>Una medida de dispersión basada en distancias a la media, elevadas al cuadrado.</dd></div>
+          <div><dt>MAD escalada</dt><dd>Una medida de dispersión basada en la mediana, multiplicada por 1,4826.</dd></div>
+          <div><dt>Punto de ruptura</dt><dd>La proporción de datos malos que una medida soporta.</dd></div>
+        </dl>
+      </div>
+      <div class="c12 m6">
+        <div class="cap" style="margin-bottom:16px">Límites de esta consola</div>
+        <ul class="lim">
+          <li>La consola usa una sola muestra por vez. Otra muestra da otros números. La tendencia general se mantiene, pero los valores exactos cambian.</li>
+          <li>Los datos reales rara vez son exactamente normales. El factor 1,4826 y la eficiencia 0,37 valen solo para datos normales.</li>
+          <li>Un valor extremo no es siempre un error. Puede ser un dato real e importante. Examine la causa antes de borrarlo.</li>
+          <li>La MAD es 0 si más de la mitad de los datos son iguales. En ese caso la MAD escalada no sirve.</li>
+          <li>Un cociente <i>s</i> / MAD escalada alto sugiere valores extremos o colas pesadas. No lo prueba.</li>
+          <li>Ninguna medida es mejor en todos los casos. Con datos limpios y normales, <i>s</i> da más precisión.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Consola de estadística robusta · Simulación con semilla fija</span>
+    <span>Fórmulas: KaTeX · Tipografía: IBM Plex Sans</span>
+  </div>
+</footer>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+'use strict';
+const $ = s => document.querySelector(s);
+const K = 1.4826;
+const SIG = ' σ';
+const nf = (v, d = 2) => Number.isFinite(v) ? v.toLocaleString('es-ES', {minimumFractionDigits: d, maximumFractionDigits: d}) : '—';
+const sgn = (v, d = 2) => (v > 0 ? '+' : v < 0 ? '−' : '') + nf(Math.abs(v), d);
+
+/* ───────── Generador pseudoaleatorio con semilla ───────── */
+function rng(seed){
+  let a = seed >>> 0;
+  return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+function makePool(seed, N){
+  const r = rng(seed), z = [], e = [], j = [];
+  const g = () => { let u = 0; while (!u) u = r(); const v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  for (let i = 0; i < N; i++){ z.push(g()); e.push(g()); j.push(r()); }
+  return {z, e, j};
+}
+
+/* ───────── Estadísticos ───────── */
+const med = a => { const s = Float64Array.from(a).sort(), n = s.length, h = n >> 1; return n % 2 ? s[h] : (s[h - 1] + s[h]) / 2; };
+const mean = a => { let t = 0; for (const v of a) t += v; return t / a.length; };
+function stats(a){
+  const n = a.length, m = mean(a), md = med(a);
+  let ss = 0; for (const v of a) ss += (v - m) ** 2;
+  const sd = n > 1 ? Math.sqrt(ss / (n - 1)) : 0;
+  const mad = med(a.map(v => Math.abs(v - md)));
+  return {n, mean: m, med: md, sd, mad, madS: K * mad};
+}
+
+/* ───────── Estado ───────── */
+const DEF = {n: 40, mu: 50, sigma: 10, k: 4, d: 10, side: 'right', seed: 7};
+const S = {...DEF, over: new Map()};
+let pool = makePool(S.seed, 400);
+const signOf = (j, side) => side === 'right' ? 1 : side === 'left' ? -1 : (j % 2 ? -1 : 1);
+
+function buildSample(n, k){
+  const clean = new Array(n);
+  for (let i = 0; i < n; i++) clean[i] = S.mu + S.sigma * pool.z[i];
+  const data = clean.slice();
+  for (let j = 0; j < k; j++){
+    const i = n - 1 - j;
+    data[i] = S.mu + signOf(j, S.side) * S.d * S.sigma * (1 + 0.06 * pool.e[i]);
+  }
+  return {clean, data};
+}
+const kMax = () => Math.floor(0.6 * S.n);
+
+let cur = null;
+function compute(){
+  const {clean, data} = buildSample(S.n, S.k);
+  for (const [i, v] of S.over) if (i < S.n) data[i] = v;
+  cur = {clean, data, cl: stats(clean), st: stats(data)};
+}
+
+/* ───────── Utilidades de gráfico ───────── */
+function niceTicks(a, b, n = 5){
+  const span = b - a; if (!(span > 0)) return [a];
+  const s0 = span / n, p = Math.pow(10, Math.floor(Math.log10(s0))), e = s0 / p;
+  const step = (e < 1.5 ? 1 : e < 3 ? 2 : e < 7 ? 5 : 10) * p;
+  const out = []; for (let v = Math.ceil(a / step - 1e-9) * step; v <= b + 1e-9; v += step) out.push(+v.toPrecision(12));
+  out.step = step; return out;
+}
+const decs = t => { const s = t.step || 1; return Math.max(0, -Math.floor(Math.log10(s) + 1e-9)); };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+let uid = 0;
+
+/* ───────── Gráfico A: diagrama de puntos ───────── */
+let drag = null;
+function drawA(){
+  const host = $('#chartA'), W = host.clientWidth || 320, H = W < 520 ? 300 : 320;
+  const {data, st} = cur;
+  const lo = Math.min(...data, st.mean - st.sd, st.med - st.madS, S.mu - S.sigma);
+  const hi = Math.max(...data, st.mean + st.sd, st.med + st.madS, S.mu + S.sigma);
+  const pad = (hi - lo) * 0.05 || 1;
+  const dom = drag ? drag.dom : [lo - pad, hi + pad];
+  const ml = 12, mr = 12, axY = H - 28;
+  const sx = v => ml + (v - dom[0]) / (dom[1] - dom[0]) * (W - ml - mr);
+  const ticks = niceTicks(dom[0], dom[1], W < 480 ? 4 : 8), dd = decs(ticks);
+  let g = '';
+  ticks.forEach(v => { g += `<line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="0" y2="${axY}"/><text class="tk" x="${sx(v)}" y="${axY + 18}" text-anchor="middle">${nf(v, dd)}</text>`; });
+  g += `<line class="axis" x1="${ml}" x2="${W - mr}" y1="${axY}" y2="${axY}"/>`;
+  // Valor verdadero: corchete μ ± σ
+  const a1 = sx(S.mu - S.sigma), a2 = sx(S.mu + S.sigma), by = axY - 8;
+  g += `<path d="M${a1} ${by - 5}V${by + 5}M${a1} ${by}H${a2}M${a2} ${by - 5}V${by + 5}" fill="none" stroke="var(--t3)" stroke-width="3"/>`;
+  g += `<path d="M${sx(S.mu)} ${by - 2}l-5 -9h10z" fill="var(--t3)"/>`;
+  // Barras de dispersión
+  const bar = (c, w, y, cls, label) => {
+    const x1 = sx(c - w), x2 = sx(c + w), col = cls === 'red' ? 'var(--accent)' : 'var(--text)';
+    const tx = clamp((x1 + x2) / 2, 90, W - 90);
+    return `<path d="M${x1} ${y - 6}V${y + 6}M${x1} ${y}H${x2}M${x2} ${y - 6}V${y + 6}" fill="none" stroke="${col}" stroke-width="3"/><text class="txt ${cls}" x="${tx}" y="${y - 12}" text-anchor="middle">${label}</text>`;
+  };
+  g += bar(st.mean, st.sd, 54, 'ink', `Media ± s · ${nf(st.mean - st.sd)} a ${nf(st.mean + st.sd)}`);
+  g += bar(st.med, st.madS, 90, 'red', `Mediana ± MAD esc. · ${nf(st.med - st.madS)} a ${nf(st.med + st.madS)}`);
+  // Líneas verticales de media y mediana
+  const xm = sx(st.mean), xd = sx(st.med), right = st.med >= st.mean;
+  g += `<line x1="${xm}" x2="${xm}" y1="22" y2="${axY}" stroke="var(--text)" stroke-width="1.5"/>`;
+  g += `<line x1="${xd}" x2="${xd}" y1="22" y2="${axY}" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+  const lab = (x, anchor, cls, t) => `<text class="txt ${cls}" x="${x + (anchor === 'start' ? 5 : -5)}" y="16" text-anchor="${anchor}">${t}</text>`;
+  g += lab(xm, right ? 'end' : 'start', '', `Media ${nf(st.mean)}`);
+  g += lab(xd, right ? 'start' : 'end', 'red', `Mediana ${nf(st.med)}`);
+  // Puntos
+  const y0 = 118, y1 = axY - 22, n = S.n, k = S.k;
+  let pts = '', ext = '', hits = '';
+  data.forEach((v, i) => {
+    const x = sx(clamp(v, dom[0], dom[1])), y = y0 + (y1 - y0) * pool.j[i], isE = i >= n - k;
+    if (isE) ext += `<circle class="dot-x" cx="${x}" cy="${y}" r="5.5" pointer-events="none"/>`;
+    else pts += `<circle class="dot-p" cx="${x}" cy="${y}" r="3.8" pointer-events="none"/>`;
+    hits += `<circle class="hit pt" data-i="${i}" cx="${x}" cy="${y}" r="11"/>`;
+  });
+  host.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="touch-action:pan-y">${g}${pts}${ext}${hits}</svg>`;
+  host.setAttribute('aria-label', `Diagrama de puntos de ${n} datos con ${k} valores extremos. Media ${nf(st.mean)}. Mediana ${nf(st.med)}. Desviación típica ${nf(st.sd)}. MAD escalada ${nf(st.madS)}.`);
+  host._A = {dom, ml, mr, W};
+}
+(() => {
+  const host = $('#chartA');
+  host.addEventListener('pointerdown', e => {
+    const t = e.target.closest('[data-i]'); if (!t || !host._A) return;
+    drag = {i: +t.dataset.i, dom: host._A.dom.slice()};
+    host.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  host.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const A = host._A, r = host.getBoundingClientRect();
+    const px = clamp(e.clientX - r.left, A.ml, A.W - A.mr);
+    const v = drag.dom[0] + (px - A.ml) / (A.W - A.ml - A.mr) * (drag.dom[1] - drag.dom[0]);
+    S.over.set(drag.i, v); schedule(true);
+  });
+  const end = () => { if (drag){ drag = null; schedule(); } };
+  host.addEventListener('pointerup', end);
+  host.addEventListener('pointercancel', end);
+})();
+
+/* ───────── Gráfico de líneas genérico ───────── */
+function lineChart(host, o){
+  const W = host.clientWidth || 320, H = o.h || 250, m = {l: 48, r: 14, t: 24, b: 40};
+  const pw = W - m.l - m.r, ph = H - m.t - m.b, id = 'cp' + (++uid);
+  const [x0, x1] = o.xDom, [y0, y1] = o.yDom;
+  const tx = o.xlog ? Math.log : v => v;
+  const sx = v => m.l + (tx(v) - tx(x0)) / (tx(x1) - tx(x0)) * pw;
+  const sy = v => m.t + ph - (v - y0) / (y1 - y0) * ph;
+  const xt = o.xTicks || niceTicks(x0, x1, W < 480 ? 4 : 7), yt = o.yTicks || niceTicks(y0, y1, 4);
+  const xd = decs(xt), yd = decs(yt);
+  let g = '';
+  yt.forEach(v => { g += `<line class="gl" x1="${m.l}" x2="${W - m.r}" y1="${sy(v)}" y2="${sy(v)}"/><text class="tk" x="${m.l - 8}" y="${sy(v) + 4}" text-anchor="end">${o.yFmt ? o.yFmt(v) : nf(v, yd)}</text>`; });
+  xt.forEach(v => { g += `<text class="tk" x="${sx(v)}" y="${H - m.b + 18}" text-anchor="middle">${o.xFmt ? o.xFmt(v) : nf(v, xd)}</text><line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="${m.t}" y2="${m.t + ph}" opacity=".5"/>`; });
+  g += `<line class="axis" x1="${m.l}" x2="${W - m.r}" y1="${m.t + ph}" y2="${m.t + ph}"/>`;
+  g += `<text class="ax-lab" x="${m.l}" y="12">${o.yLab || ''}</text><text class="ax-lab" x="${W - m.r}" y="${H - 4}" text-anchor="end">${o.xLab || ''}</text>`;
+  let body = '';
+  (o.refs || []).forEach(r => { if (r.y >= y0 && r.y <= y1) body += `<line class="ref" x1="${m.l}" x2="${W - m.r}" y1="${sy(r.y)}" y2="${sy(r.y)}"/><text class="tk" x="${W - m.r - 4}" y="${sy(r.y) - 5}" text-anchor="end">${r.label}</text>`; });
+  (o.markers || []).forEach(k => { if (k.x >= x0 && k.x <= x1) body += `<line class="mk" x1="${sx(k.x)}" x2="${sx(k.x)}" y1="${m.t}" y2="${m.t + ph}"/><text class="mk-t" x="${sx(k.x) + 4}" y="${m.t + 12}">${k.label}</text>`; });
+  o.series.forEach(s => {
+    const d = s.pts.map((p, i) => (i ? 'L' : 'M') + sx(p[0]).toFixed(1) + ' ' + sy(p[1]).toFixed(1)).join('');
+    body += `<path class="ln ${s.cls}${s.dash ? ' dash' : ''}" d="${d}" clip-path="url(#${id})"/>`;
+  });
+  let hv = `<line class="hv" id="${id}l" y1="${m.t}" y2="${m.t + ph}" visibility="hidden"/>`;
+  o.series.forEach((s, i) => { hv += `<circle id="${id}c${i}" r="4" fill="var(--bg)" stroke="${s.cls === 'red' ? 'var(--accent)' : 'var(--text)'}" stroke-width="2" visibility="hidden"/>`; });
+  host.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="touch-action:pan-y"><defs><clipPath id="${id}"><rect x="${m.l}" y="${m.t}" width="${pw}" height="${ph}"/></clipPath></defs>${g}${body}${hv}</svg>`;
+  host._L = {o, sx, sy, id, m, W};
+  const cap = o.cap ? $(o.cap) : null;
+  if (cap && !host._init) cap.textContent = o.capDefault || '';
+  if (cap) cap.dataset.def = o.capDefault || '';
+  if (!host._hook){
+    host._hook = true;
+    host.addEventListener('pointermove', e => {
+      const L = host._L; if (!L) return;
+      const r = host.getBoundingClientRect(), px = e.clientX - r.left;
+      const pts = L.o.series[0].pts; let bi = 0, bd = 1e9;
+      for (let i = 0; i < pts.length; i++){ const dd = Math.abs(L.sx(pts[i][0]) - px); if (dd < bd){ bd = dd; bi = i; } }
+      const lx = L.sx(pts[bi][0]), ln = host.querySelector('#' + L.id + 'l');
+      ln.setAttribute('x1', lx); ln.setAttribute('x2', lx); ln.setAttribute('visibility', 'visible');
+      L.o.series.forEach((s, i) => { const c = host.querySelector('#' + L.id + 'c' + i); c.setAttribute('cx', lx); c.setAttribute('cy', clamp(L.sy(s.pts[bi][1]), L.m.t, L.m.t + (L.o.h || 250) - L.m.t - L.m.b)); c.setAttribute('visibility', 'visible'); });
+      const c = L.o.cap ? $(L.o.cap) : null; if (c) c.textContent = L.o.hover(bi);
+    });
+    host.addEventListener('pointerleave', () => {
+      const L = host._L; if (!L) return;
+      host.querySelectorAll('[visibility=visible]').forEach(n => n.setAttribute('visibility', 'hidden'));
+      const c = L.o.cap ? $(L.o.cap) : null; if (c) c.textContent = c.dataset.def || '';
+    });
+  }
+  host._init = true;
+}
+
+const pad = (a, b, f = 0.08) => { const p = (b - a) * f || 1; return [a - p, b + p]; };
+
+/* ───────── Figura 2: efecto de un solo dato ───────── */
+function drawB(){
+  const {clean} = cur, T = [], rows = [];
+  for (let i = 0; i <= 120; i++) T.push(-20 + i / 3);
+  T.forEach(t => rows.push(stats(clean.concat(S.mu + t * S.sigma))));
+  const ser = f => T.map((t, i) => [t, f(rows[i])]);
+  const xt = [-20, -10, 0, 10, 20], xFmt = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + 'σ';
+  const mk = []; if (S.side !== 'left') mk.push({x: S.d, label: 'd'}); if (S.side !== 'right') mk.push({x: -S.d, label: 'd'});
+  const all1 = rows.flatMap(r => [r.mean, r.med]).concat(S.mu);
+  const dom1 = pad(Math.min(...all1), Math.max(...all1));
+  const maxSd = Math.max(...rows.map(r => r.sd), S.sigma);
+  const hdr = i => `Dato añadido a ${sgn(T[i], 1)}${SIG} de μ.`;
+  lineChart($('#chartB1'), {
+    h: 250, xDom: [-20, 20], yDom: dom1, xTicks: xt, xFmt, xLab: 'Posición del dato añadido', yLab: 'Valor',
+    series: [{cls: 'ink', pts: ser(r => r.mean)}, {cls: 'red', pts: ser(r => r.med)}],
+    refs: [{y: S.mu, label: 'μ'}], markers: mk, cap: '#capB1',
+    capDefault: 'Mueva el puntero sobre el gráfico.',
+    hover: i => `${hdr(i)} Media: ${nf(rows[i].mean)}. Mediana: ${nf(rows[i].med)}.`
+  });
+  lineChart($('#chartB2'), {
+    h: 250, xDom: [-20, 20], yDom: [0, maxSd * 1.08], xTicks: xt, xFmt, xLab: 'Posición del dato añadido', yLab: 'Valor',
+    series: [{cls: 'ink', pts: ser(r => r.sd)}, {cls: 'red', pts: ser(r => r.madS)}],
+    refs: [{y: S.sigma, label: 'σ'}], markers: mk, cap: '#capB2',
+    capDefault: 'Mueva el puntero sobre el gráfico.',
+    hover: i => `${hdr(i)} s: ${nf(rows[i].sd)}. MAD escalada: ${nf(rows[i].madS)}.`
+  });
+}
+
+/* ───────── Figura 3: contaminación progresiva ───────── */
+function drawC(){
+  const n = S.n, km = Math.ceil(0.6 * n), X = [], rows = [];
+  for (let k = 0; k <= km; k++){ X.push(100 * k / n); rows.push(stats(buildSample(n, k).data)); }
+  const ser = f => X.map((x, i) => [x, f(rows[i])]);
+  const lim = 12 * S.sigma;
+  const all1 = rows.flatMap(r => [r.mean, r.med]).concat(S.mu);
+  const lo1 = Math.max(Math.min(...all1), S.mu - lim), hi1 = Math.min(Math.max(...all1), S.mu + lim);
+  const dom1 = pad(lo1, hi1);
+  const hi2 = Math.min(Math.max(...rows.flatMap(r => [r.sd, r.madS]), S.sigma), 8 * S.sigma) * 1.08;
+  const mk = [{x: 50, label: '50 %'}]; if (S.k > 0) mk.push({x: 100 * S.k / n, label: 'k'});
+  const xFmt = v => v + ' %', xt = [0, 10, 20, 30, 40, 50, 60];
+  const hdr = i => `Extremos: ${nf(X[i], 0)} % (${Math.round(X[i] * n / 100)} de ${n}).`;
+  lineChart($('#chartC1'), {
+    h: 250, xDom: [0, 60], yDom: dom1, xTicks: xt, xFmt, xLab: 'Proporción de valores extremos', yLab: 'Valor',
+    series: [{cls: 'ink', pts: ser(r => r.mean)}, {cls: 'red', pts: ser(r => r.med)}],
+    refs: [{y: S.mu, label: 'μ'}], markers: mk, cap: '#capC1', capDefault: 'Mueva el puntero sobre el gráfico.',
+    hover: i => `${hdr(i)} Media: ${nf(rows[i].mean)}. Mediana: ${nf(rows[i].med)}.`
+  });
+  lineChart($('#chartC2'), {
+    h: 250, xDom: [0, 60], yDom: [0, hi2], xTicks: xt, xFmt, xLab: 'Proporción de valores extremos', yLab: 'Valor',
+    series: [{cls: 'ink', pts: ser(r => r.sd)}, {cls: 'red', pts: ser(r => r.madS)}],
+    refs: [{y: S.sigma, label: 'σ'}], markers: mk, cap: '#capC2', capDefault: 'Mueva el puntero sobre el gráfico.',
+    hover: i => `${hdr(i)} s: ${nf(rows[i].sd)}. MAD escalada: ${nf(rows[i].madS)}.`
+  });
+}
+
+/* ───────── Figura 4: convergencia con n ───────── */
+function drawD(){
+  const N = pool.z.length, eps = S.k / S.n, M = [];
+  for (let m = 5; m <= N; m = Math.max(m + 1, Math.round(m * 1.035))) M.push(m);
+  if (M[M.length - 1] !== N) M.push(N);
+  const isOut = i => ((i * 0.6180339887498949 + 0.31) % 1) < eps;
+  const cz = [], xz = [], rows = [];
+  for (let i = 0; i < N; i++){
+    cz.push(pool.z[i]);
+    xz.push(isOut(i) ? signOf(i, S.side) * S.d * (1 + 0.06 * pool.e[i]) : pool.z[i]);
+  }
+  M.forEach(m => { const a = stats(cz.slice(0, m)), b = stats(xz.slice(0, m)); rows.push({a, b}); });
+  const ser = f => M.map((m, i) => [m, f(rows[i])]);
+  const maxClean = Math.max(...rows.flatMap(r => [r.a.sd, r.a.madS]));
+  const maxAll = Math.max(...rows.flatMap(r => [r.b.sd, r.b.madS]), maxClean);
+  const ymax = clamp(maxAll * 1.08, Math.max(1.6, maxClean * 1.08), 6);
+  lineChart($('#chartD'), {
+    h: 300, xDom: [5, N], yDom: [0, ymax], xlog: true, xTicks: [5, 10, 20, 50, 100, 200, 400], xLab: 'Tamaño de la muestra, n (escala logarítmica)', yLab: 'Estimación / σ verdadera',
+    series: [
+      {cls: 'ink', pts: ser(r => r.a.sd)}, {cls: 'red', pts: ser(r => r.a.madS)},
+      {cls: 'ink', dash: true, pts: ser(r => r.b.sd)}, {cls: 'red', dash: true, pts: ser(r => r.b.madS)}
+    ],
+    refs: [{y: 1, label: 'σ'}], markers: [{x: Math.max(5, S.n), label: 'n actual'}], cap: '#capD',
+    capDefault: 'Mueva el puntero sobre el gráfico.',
+    hover: i => `n = ${M[i]}. Limpia: s/σ ${nf(rows[i].a.sd)}, MAD esc./σ ${nf(rows[i].a.madS)}. Con ${nf(eps * 100, 0)} % de extremos: s/σ ${nf(rows[i].b.sd)}, MAD esc./σ ${nf(rows[i].b.madS)}.`
+  });
+}
+
+/* ───────── Salidas numéricas ───────── */
+function drawReadouts(){
+  const a = cur.st, c = cur.cl;
+  $('#v-mean').textContent = nf(a.mean); $('#s-mean').textContent = `Limpia ${nf(c.mean)} · μ ${nf(S.mu, 0)}`;
+  $('#v-med').textContent = nf(a.med);   $('#s-med').textContent = `Limpia ${nf(c.med)} · μ ${nf(S.mu, 0)}`;
+  $('#v-sd').textContent = nf(a.sd);     $('#s-sd').textContent = `Limpia ${nf(c.sd)} · σ ${nf(S.sigma, 0)}`;
+  $('#v-mad').textContent = nf(a.madS);  $('#s-mad').textContent = `Limpia ${nf(c.madS)} · σ ${nf(S.sigma, 0)}`;
+  $('#v-ratio').textContent = a.madS > 0 ? nf(a.sd / a.madS) : '—';
+  $('#o-n').textContent = S.n; $('#o-mu').textContent = S.mu; $('#o-sg').textContent = S.sigma;
+  $('#o-k').textContent = `${S.k} (${nf(100 * S.k / S.n, 0)} %)`;
+  $('#o-d').textContent = nf(S.d, 1) + SIG;
+  $('#seedinfo').textContent = `Semilla ${S.seed}.` + (S.over.size ? ` Movió ${[...S.over.keys()].filter(i => i < S.n).length} dato(s) a mano.` : '');
+}
+
+function drawReading(){
+  const a = cur.st, c = cur.cl, n = S.n, k = S.k, eps = k / n, ov = [...S.over.keys()].filter(i => i < n).length;
+  const el = $('#reading'); let h = '';
+  if (k === 0 && ov === 0){
+    h += `<p><b>La muestra no tiene valores extremos.</b> La media y la mediana casi coinciden. La desviación típica y la MAD escalada también casi coinciden.</p>`;
+    h += `<p class="note">La coincidencia no es exacta. La muestra tiene error de muestreo, y ese error baja cuando n crece.</p>`;
+  } else {
+    const dm = (a.mean - c.mean) / S.sigma, dd = (a.med - c.med) / S.sigma, rs = c.sd > 0 ? a.sd / c.sd : NaN, rm = c.madS > 0 ? a.madS / c.madS : NaN;
+    h += `<p><b>Comparación con la muestra limpia.</b> La media se mueve ${sgn(dm)}${SIG}. La mediana se mueve ${sgn(dd)}${SIG}. La desviación típica se multiplica por ${nf(rs)}. La MAD escalada se multiplica por ${nf(rm)}.</p>`;
+    const r = a.madS > 0 ? a.sd / a.madS : NaN;
+    if (r > 1.5) h += `<p>El cociente <i>s</i> / MAD escalada vale ${nf(r)}. Un valor alto sugiere valores extremos o colas pesadas. No lo prueba.</p>`;
+    if (eps >= 0.5) h += `<p class="note"><b>Nota.</b> Los extremos forman la mitad o más de la muestra. La mediana y la MAD escalada ya no protegen. Siguen a los extremos.</p>`;
+    else if (eps >= 0.4) h += `<p class="note"><b>Nota.</b> Cerca de 50 % de extremos, la MAD escalada puede fallar de repente. Suba <i>k</i> poco a poco para ver el salto.</p>`;
+  }
+  el.innerHTML = h;
+}
+
+function drawTable(){
+  const a = cur.st, c = cur.cl, rows = [
+    ['Media', 'ink', c.mean, a.mean, (a.mean - c.mean) / S.sigma, 'loc'],
+    ['Mediana', 'red', c.med, a.med, (a.med - c.med) / S.sigma, 'loc'],
+    ['Desviación típica <i>s</i>', 'ink', c.sd, a.sd, c.sd ? a.sd / c.sd - 1 : NaN, 'disp'],
+    ['MAD escalada', 'red', c.madS, a.madS, c.madS ? a.madS / c.madS - 1 : NaN, 'disp']
+  ];
+  $('#tbody').innerHTML = rows.map(([nm, cls, x, y, ch, t]) => {
+    const txt = t === 'loc' ? `${sgn(ch)}${SIG}` : `${ch > 0 ? '+' : ch < 0 ? '−' : ''}${nf(Math.abs(ch) * 100, 0)} %`;
+    const w = clamp(Math.abs(ch), 0, 1) * 100;
+    return `<tr><th scope="row" style="font-size:15px;text-transform:none;letter-spacing:0;color:var(--text);font-weight:500;border-bottom:1px solid var(--border);padding:16px 16px 16px 0">${nm}</th><td class="r">${nf(x)}</td><td class="r">${nf(y)}</td><td class="r">${txt}</td><td class="barcell"><div class="bar-track"><div class="bar-fill ${cls}" style="width:${w}%"></div></div></td></tr>`;
+  }).join('');
+}
+
+function drawTex(){
+  if (!window.katex) return;
+  const t = v => nf(v).replace(',', '{,}'), a = cur.st;
+  const tex = String.raw`\begin{aligned}
+\bar{x}&=${t(a.mean)} \\[4pt]
+\tilde{x}&=${t(a.med)} \\[4pt]
+s&=\sqrt{\tfrac{1}{${a.n - 1}}\textstyle\sum_{i=1}^{${a.n}}\left(x_i-\bar{x}\right)^{2}}=${t(a.sd)} \\[4pt]
+\mathrm{MAD}&=\operatorname{med}_i\left|x_i-\tilde{x}\right|=${t(a.mad)} \\[4pt]
+\hat{\sigma}_{\mathrm{MAD}}&=1{,}4826\times ${t(a.mad)}=${t(a.madS)}
+\end{aligned}`;
+  try { katex.render(tex, $('#texLive'), {displayMode: true, throwOnError: false}); } catch (e) {}
+}
+
+/* ───────── Ciclo de dibujo ───────── */
+let raf = 0, light = false, lastW = 0;
+function schedule(isDrag){ light = !!isDrag; if (!raf) raf = requestAnimationFrame(render); }
+function syncControls(){
+  const kmax = kMax(); S.k = Math.min(S.k, kmax);
+  const kEl = $('#k'); kEl.max = kmax; kEl.value = S.k;
+  $('#n').value = S.n; $('#mu').value = S.mu; $('#sg').value = S.sigma; $('#d').value = S.d;
+  document.querySelectorAll('input[name=side]').forEach(r => r.checked = r.value === S.side);
+}
+function render(){
+  raf = 0; compute(); drawReadouts(); drawA();
+  if (!light){ drawReading(); drawTable(); drawTex(); drawB(); drawC(); drawD(); }
+  else { drawReading(); drawTable(); drawTex(); }
+}
+
+/* ───────── Eventos ───────── */
+const bind = (id, key, fn) => $(id).addEventListener('input', e => { S[key] = +e.target.value; if (fn) fn(); syncControls(); light = false; schedule(); });
+bind('#n', 'n'); bind('#mu', 'mu'); bind('#sg', 'sigma'); bind('#k', 'k'); bind('#d', 'd');
+document.querySelectorAll('input[name=side]').forEach(r => r.addEventListener('change', e => { S.side = e.target.value; light = false; schedule(); }));
+document.querySelectorAll('[data-p]').forEach(b => b.addEventListener('click', () => {
+  const p = b.dataset.p; S.k = p === 'one' ? 1 : Math.round(+p * S.n); S.over.clear(); syncControls(); light = false; schedule();
+}));
+$('#b-new').addEventListener('click', () => { S.seed = 1 + Math.floor(Math.random() * 99999); pool = makePool(S.seed, 400); S.over.clear(); light = false; schedule(); });
+$('#b-reset').addEventListener('click', () => { Object.assign(S, DEF); S.over.clear(); pool = makePool(S.seed, 400); syncControls(); light = false; schedule(); });
+
+new ResizeObserver(es => { const w = es[0].contentRect.width; if (Math.abs(w - lastW) > 1){ lastW = w; light = false; schedule(); } }).observe($('#chartA'));
+
+/* ───────── Fórmulas (KaTeX) ───────── */
+function typeset(){
+  if (window.renderMathInElement){
+    renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});
+  }
+  if (!window.katex) $('#mathwarn').style.display = 'block';
+  drawTex();
+}
+syncControls(); render(); typeset();
+window.addEventListener('load', () => { if (!window.katex) $('#mathwarn').style.display = 'block'; });
+});
+</script>
+</body>
+</html>
