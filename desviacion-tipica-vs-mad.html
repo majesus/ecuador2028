@@ -202,6 +202,54 @@ ul.lim li{padding:16px 0;border-top:1px solid var(--border);max-width:60ch;color
 footer{border-top:1px solid var(--text);padding:32px 0 64px;font-size:13px;color:var(--t3)}
 footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
 
+
+.how,.take{max-width:72ch;margin-top:24px;margin-bottom:24px;padding:16px 16px 16px 16px;border-left:2px solid var(--text)}
+.how .lbl,.take .lbl{display:block;margin-bottom:8px}
+.how p,.take p{color:var(--t2)}
+.how p+p,.take p+p{margin-top:8px}
+.take{border-left:6px solid var(--accent);background:var(--surface)}
+.take p{color:var(--text)}
+.primer{display:grid;gap:0 32px;margin-top:64px;border-top:1px solid var(--text);padding-top:16px}
+@media(min-width:640px){.primer{grid-template-columns:1fr 1fr}}
+@media(min-width:1024px){.primer{grid-template-columns:repeat(4,1fr)}}
+.primer div{padding:16px 0;border-bottom:1px solid var(--border)}
+.primer dt{font-weight:500}
+.primer dd{font-size:14px;line-height:1.5;color:var(--t2);margin-top:4px}
+.toc{display:flex;flex-wrap:wrap;gap:0 24px;margin-top:32px}
+.toc a{min-height:44px;display:inline-flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;font-size:14px;border-bottom:1px solid transparent}
+.toc a:hover{border-bottom-color:var(--accent)}
+.toc a span{color:var(--accent);font-variant-numeric:tabular-nums}
+.def{font-size:12px;line-height:1.4;color:var(--t2);margin-top:4px}
+.help{font-size:12px;line-height:1.4;color:var(--t3);margin-top:-4px;margin-bottom:4px}
+.exgrid{display:grid;gap:32px;margin-top:32px}
+@media(min-width:768px){.exgrid{grid-template-columns:1fr 1fr}}
+.steps{list-style:none;padding:0;margin:0;counter-reset:st}
+.steps li{counter-increment:st;display:grid;grid-template-columns:32px 1fr;gap:8px;padding:12px 0;border-top:1px solid var(--border);color:var(--t2);font-size:15px;line-height:1.5}
+.steps li::before{content:counter(st);font-weight:300;font-size:1.5rem;line-height:1;color:var(--text)}
+.steps.red li::before{color:var(--accent)}
+.steps b{font-weight:500;color:var(--text)}
+.steps .res{color:var(--text);font-variant-numeric:tabular-nums}
+.colhead{border-top:1px solid var(--text);padding-top:16px;margin-bottom:8px}
+.colhead h3{font-weight:500}
+table.compact{min-width:420px}
+tr.hl td,tr.hl th{background:var(--a10)}
+.exstats{display:grid;grid-template-columns:repeat(2,1fr);border-top:1px solid var(--text);margin-top:32px}
+@media(min-width:768px){.exstats{grid-template-columns:repeat(4,1fr)}}
+.exstats .card .s b{font-weight:500;color:var(--text)}
+.tog{margin-top:24px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.tog .btn{min-height:48px}
+.tog .btn[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fafaf9}
+.three{display:grid;gap:0 32px;margin-top:0}
+@media(min-width:768px){.three{grid-template-columns:repeat(3,1fr)}}
+.three div{border-top:1px solid var(--text);padding:16px 0 24px}
+.three h3{margin-bottom:8px}
+.three p{color:var(--t2);font-size:15px}
+details.opt summary{min-height:48px;display:inline-flex;align-items:center;cursor:pointer;border:1px solid var(--text);padding:8px 24px;list-style:none;font-size:15px}
+details.opt summary::-webkit-details-marker{display:none}
+details.opt summary::after{content:'  +'}
+details[open].opt summary{background:var(--text);color:var(--bg)}
+details[open].opt summary::after{content:'  −'}
+details.opt .formulas{margin-top:32px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -220,24 +268,91 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
         <h1 class="display">Desviación típica frente a <span class="acc">MAD</span></h1>
       </div>
       <div class="c12 m8" style="margin-top:32px">
-        <p class="lead">La desviación típica y la MAD miden la dispersión de una muestra. Los valores extremos afectan mucho a la desviación típica. Afectan poco a la MAD. Use esta consola para ver la diferencia.</p>
+        <p class="lead">Un promedio resume muchos números en uno solo. Pero no dice cuánto se separan esos números entre sí. Para eso existen dos medidas: la desviación típica y la MAD. Esta página explica su diferencia con un ejemplo y con simulaciones. No necesita conocimientos previos.</p>
       </div>
     </div>
     <div class="key" role="group" aria-label="Clave de colores">
       <div><span class="sq ink" aria-hidden="true"></span><p><b>Tinta · método clásico</b>Media y desviación típica&nbsp;<i>s</i>.</p></div>
       <div><span class="sq red" aria-hidden="true"></span><p><b>Rojo · método robusto</b>Mediana y MAD escalada.</p></div>
     </div>
+    <div class="take" style="margin-top:48px;max-width:60ch"><span class="lbl">La idea en una frase</span><p>Si un dato se sale mucho de lo normal, la desviación típica se dispara. La MAD casi no cambia.</p></div>
+    <nav class="toc" aria-label="Contenido">
+      <a href="#ejemplo"><span>01</span>Ejemplo</a><a href="#simulador"><span>02</span>Simulador</a><a href="#alejamiento"><span>03</span>Un dato nuevo</a><a href="#ruptura"><span>04</span>Muchos extremos</a><a href="#convergencia"><span>05</span>Más datos</a><a href="#conclusion"><span>06</span>Qué usar</a><a href="#formulas"><span>07</span>Fórmulas</a><a href="#lectura"><span>08</span>Términos</a>
+    </nav>
+    <dl class="primer">
+      <div><dt>Dato</dt><dd>Un número de la lista. Por ejemplo, un sueldo.</dd></div>
+      <div><dt>Muestra</dt><dd>La lista completa de datos.</dd></div>
+      <div><dt>Valor extremo</dt><dd>Un dato muy lejos del resto. Puede ser un error o un caso real poco habitual.</dd></div>
+      <div><dt>Media</dt><dd>El promedio. Se suman todos los datos y se divide por su cantidad.</dd></div>
+      <div><dt>Mediana</dt><dd>El dato del medio cuando se ordena la lista de menor a mayor.</dd></div>
+      <div><dt>Dispersión</dt><dd>Cuánto se separan los datos entre sí. Si todos son parecidos, la dispersión es baja.</dd></div>
+      <div><dt>Desviación típica</dt><dd>Una medida de dispersión clásica. Los datos lejanos pesan mucho en ella.</dd></div>
+      <div><dt>MAD</dt><dd>Una medida de dispersión robusta. Los datos lejanos casi no pesan en ella. «Robusta» significa que los extremos casi no la alteran.</dd></div>
+    </dl>
   </div>
 </header>
 
-<!-- ═══════════════ 01 SIMULADOR ═══════════════ -->
-<section class="sec" id="simulador" aria-labelledby="h-sim">
+<!-- ═══════════════ 01 EJEMPLO ═══════════════ -->
+<section class="sec" id="ejemplo" aria-labelledby="h-ej">
   <div class="wrap">
     <div class="sec-head grid">
       <div class="c12 m3"><div class="num" aria-hidden="true">01</div></div>
       <div class="c12 m9">
-        <h2 id="h-sim">Simulador</h2>
-        <p class="body" style="margin-top:16px">Cree una muestra normal. Añada valores extremos. Vea cómo cambian las cuatro medidas. Arrastre cualquier punto del gráfico para moverlo a mano.</p>
+        <h2 id="h-ej">La idea en un ejemplo</h2>
+        <p class="body" style="margin-top:16px">Siete vecinos dicen cuánto ganan al mes, en miles de euros. Los sueldos son parecidos. Ahora imagine que el último vecino pasa a ganar 30. Pulse el botón y mire qué cambia.</p>
+        <div class="tog">
+          <button type="button" class="btn" id="exBtn" aria-pressed="false">Cambiar el último sueldo a 30</button>
+          <span class="hint" style="margin:0" id="exState"></span>
+        </div>
+      </div>
+    </div>
+
+    <figure style="margin-top:0">
+      <div class="legend" aria-hidden="true">
+        <span><i class="sw"></i>Media</span>
+        <span><i class="sw red dash"></i>Mediana</span>
+        <span><i class="sw band"></i>Media ± desviación típica</span>
+        <span><i class="sw band red"></i>Mediana ± MAD escalada</span>
+        <span><i class="sw ring"></i>Sueldo extremo</span>
+      </div>
+      <div class="chart" id="exChart" role="img" aria-label="Siete sueldos sobre una recta numérica"></div>
+      <figcaption>Figura A. Cada punto es el sueldo de un vecino. Las barras horizontales muestran la dispersión que mide cada método. El eje cambia de escala cuando se pulsa el botón.</figcaption>
+    </figure>
+
+    <div class="exstats" id="exStats" role="group" aria-label="Resultados del ejemplo"></div>
+    <div class="take" id="exTake" aria-live="polite"></div>
+
+    <div class="exgrid">
+      <div>
+        <div class="colhead"><span class="lbl">Método clásico</span><h3>Desviación típica</h3></div>
+        <ol class="steps" id="stepsInk"></ol>
+      </div>
+      <div>
+        <div class="colhead"><span class="lbl" style="color:var(--accent)">Método robusto</span><h3>MAD escalada</h3></div>
+        <ol class="steps red" id="stepsRed"></ol>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="compact">
+        <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 1. Cálculo paso a paso con los siete sueldos</caption>
+        <thead><tr><th scope="col">Vecino</th><th scope="col" class="r">Sueldo</th><th scope="col" class="r">(sueldo − media)²</th><th scope="col" class="r">|sueldo − mediana|</th></tr></thead>
+        <tbody id="exBody"></tbody>
+      </table>
+    </div>
+    <p class="hint" style="max-width:60ch">Se resta y se eleva al cuadrado en la columna de la media. Se resta y se ignora el signo en la columna de la mediana. La barra «|…|» significa «valor sin signo». Se divide por 6 y no por 7 por una corrección técnica habitual en muestras pequeñas.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ 02 SIMULADOR ═══════════════ -->
+<section class="sec" id="simulador" aria-labelledby="h-sim">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">02</div></div>
+      <div class="c12 m9">
+        <h2 id="h-sim">Simulador: pruebe con muestras grandes</h2>
+        <p class="body" style="margin-top:16px">El simulador crea datos regulares. La mayoría cae cerca de un centro y pocos caen lejos. Los estadísticos llaman a esto «distribución normal». Después usted añade valores extremos y mira cómo cambian las medidas.</p>
+        <p class="body"><b>Experimento guiado.</b> Pulse en orden «Sin extremos», «Un extremo», «10 %», «45 %» y «55 %». Después de cada pulsación, mire las cinco tarjetas. También puede arrastrar cualquier punto del gráfico.</p>
       </div>
     </div>
 
@@ -245,31 +360,36 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
       <!-- Controles -->
       <div class="c12 l4">
         <form class="ctl" id="ctl" onsubmit="return false" aria-label="Controles del simulador">
-          <h3>Muestra limpia</h3>
+          <h3>Datos limpios</h3>
           <div class="field">
-            <div class="row"><label class="lbl" for="n">Tamaño, n</label><output id="o-n" for="n"></output></div>
+            <div class="row"><label class="lbl" for="n">Cantidad de datos, n</label><output id="o-n" for="n"></output></div>
             <input type="range" id="n" min="10" max="200" step="1" value="40">
+            <div class="help">Cuántos datos tiene la muestra.</div>
           </div>
           <div class="field">
-            <div class="row"><label class="lbl" for="mu">Media verdadera, μ</label><output id="o-mu" for="mu"></output></div>
+            <div class="row"><label class="lbl" for="mu">Centro real, μ</label><output id="o-mu" for="mu"></output></div>
             <input type="range" id="mu" min="0" max="100" step="1" value="50">
+            <div class="help">El valor alrededor del cual se crean los datos.</div>
           </div>
           <div class="field">
-            <div class="row"><label class="lbl" for="sg">Desviación típica verdadera, σ</label><output id="o-sg" for="sg"></output></div>
+            <div class="row"><label class="lbl" for="sg">Dispersión real, σ</label><output id="o-sg" for="sg"></output></div>
             <input type="range" id="sg" min="1" max="20" step="1" value="10">
+            <div class="help">Cuánto se separan los datos del centro en condiciones normales.</div>
           </div>
 
           <h3 style="margin-top:32px">Valores extremos</h3>
           <div class="field">
-            <div class="row"><label class="lbl" for="k">Cantidad, k</label><output id="o-k" for="k"></output></div>
+            <div class="row"><label class="lbl" for="k">Cantidad de extremos, k</label><output id="o-k" for="k"></output></div>
             <input type="range" id="k" min="0" max="24" step="1" value="4">
+            <div class="help">Cuántos datos se sustituyen por valores muy alejados.</div>
           </div>
           <div class="field">
-            <div class="row"><label class="lbl" for="d">Distancia a μ, d (en σ)</label><output id="o-d" for="d"></output></div>
+            <div class="row"><label class="lbl" for="d">Distancia al centro, d</label><output id="o-d" for="d"></output></div>
             <input type="range" id="d" min="0" max="30" step="0.5" value="10">
+            <div class="help">A qué distancia caen los extremos. «10 σ» significa diez veces la dispersión normal.</div>
           </div>
           <fieldset>
-            <legend class="lbl">Lado</legend>
+            <legend class="lbl">Lado del centro donde caen los extremos</legend>
             <div class="seg" role="radiogroup">
               <label><input type="radio" name="side" value="right" checked>Derecha</label>
               <label><input type="radio" name="side" value="left">Izquierda</label>
@@ -278,7 +398,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
           </fieldset>
 
           <fieldset>
-            <legend class="lbl">Atajos</legend>
+            <legend class="lbl">Escenarios rápidos</legend>
             <div class="presets">
               <button type="button" class="btn" data-p="0">Sin extremos</button>
               <button type="button" class="btn" data-p="one">Un extremo</button>
@@ -299,25 +419,28 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
       <!-- Salidas -->
       <div class="c12 l8 min0">
         <div class="cards" role="group" aria-label="Medidas de la muestra actual">
-          <div class="card ink"><div class="lbl"><span class="mark"></span>Media</div><div class="v" id="v-mean"></div><div class="s" id="s-mean"></div></div>
-          <div class="card red"><div class="lbl"><span class="mark"></span>Mediana</div><div class="v" id="v-med"></div><div class="s" id="s-med"></div></div>
-          <div class="card ink"><div class="lbl"><span class="mark"></span>Desv. típica <i>s</i></div><div class="v" id="v-sd"></div><div class="s" id="s-sd"></div></div>
-          <div class="card red"><div class="lbl"><span class="mark"></span>MAD escalada</div><div class="v" id="v-mad"></div><div class="s" id="s-mad"></div></div>
-          <div class="card neutral"><div class="lbl"><span class="mark"></span><i>s</i> / MAD esc.</div><div class="v" id="v-ratio"></div><div class="s">Cerca de 1 en datos normales</div></div>
+          <div class="card ink"><div class="lbl"><span class="mark"></span>Media</div><div class="def">El promedio</div><div class="v" id="v-mean"></div><div class="s" id="s-mean"></div></div>
+          <div class="card red"><div class="lbl"><span class="mark"></span>Mediana</div><div class="def">El dato del medio</div><div class="v" id="v-med"></div><div class="s" id="s-med"></div></div>
+          <div class="card ink"><div class="lbl"><span class="mark"></span>Desv. típica <i>s</i></div><div class="def">Dispersión clásica</div><div class="v" id="v-sd"></div><div class="s" id="s-sd"></div></div>
+          <div class="card red"><div class="lbl"><span class="mark"></span>MAD escalada</div><div class="def">Dispersión robusta</div><div class="v" id="v-mad"></div><div class="s" id="s-mad"></div></div>
+          <div class="card neutral"><div class="lbl"><span class="mark"></span><i>s</i> / MAD esc.</div><div class="def">Compara las dos dispersiones</div><div class="v" id="v-ratio"></div><div class="s">Cerca de 1 si los datos son regulares</div></div>
         </div>
 
-        <figure>
+        <div class="how" style="margin-top:32px"><span class="lbl">Cómo leer la figura 1</span>
+          <p>Cada punto es un dato. Un anillo marca un valor extremo. La línea negra marca la media. La línea roja discontinua marca la mediana.</p>
+          <p>Las dos barras de arriba muestran cuánta dispersión mide cada método. Si la barra negra es mucho más ancha que la roja, los extremos inflan la desviación típica. El corchete gris del eje marca el valor real que se usó para crear los datos. En la vida real ese valor no se conoce.</p></div>
+        <figure style="margin-top:0">
           <div class="legend" aria-hidden="true">
             <span><i class="sw"></i>Media</span>
             <span><i class="sw red dash"></i>Mediana</span>
             <span><i class="sw band"></i>Media ± <i>s</i></span>
             <span><i class="sw band red"></i>Mediana ± MAD escalada</span>
-            <span><i class="sw grey"></i>Verdadero: μ ± σ</span>
+            <span><i class="sw grey"></i>Valor real: μ ± σ</span>
             <span><i class="sw pt"></i>Dato</span>
             <span><i class="sw ring"></i>Valor extremo</span>
           </div>
           <div class="chart" id="chartA" role="img" aria-label="Diagrama de puntos de la muestra"></div>
-          <figcaption>Figura 1. Cada punto es un dato. La altura de un punto no tiene significado. Un anillo marca un valor extremo. Las barras horizontales muestran un intervalo de una unidad de dispersión alrededor del centro.</figcaption>
+          <figcaption>Figura 1. La altura de un punto no tiene significado. Solo importa su posición horizontal. Cada barra cubre una unidad de dispersión alrededor de su centro.</figcaption>
         </figure>
 
         <div class="reading" aria-live="polite" id="reading"></div>
@@ -326,14 +449,14 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
 
     <div class="tbl-wrap">
       <table>
-        <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 1. Efecto de los valores extremos</caption>
+        <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 2. Qué cambia al añadir los valores extremos</caption>
         <thead>
-          <tr><th scope="col">Medida</th><th scope="col" class="r">Muestra limpia</th><th scope="col" class="r">Muestra actual</th><th scope="col" class="r">Cambio</th><th scope="col" class="barcell">Tamaño del cambio</th></tr>
+          <tr><th scope="col">Medida</th><th scope="col" class="r">Antes (sin extremos)</th><th scope="col" class="r">Ahora</th><th scope="col" class="r">Cambio</th><th scope="col" class="barcell">Tamaño del cambio</th></tr>
         </thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
-    <p class="hint" style="max-width:60ch">El cambio de la media y de la mediana se expresa en unidades de σ verdadera. El cambio de <i>s</i> y de la MAD escalada se expresa como porcentaje de su valor limpio. Una barra completa equivale a 1&nbsp;σ o a +100&nbsp;%.</p>
+    <p class="hint" style="max-width:60ch">La letra σ designa la dispersión real de los datos limpios. El cambio de la media y de la mediana se mide en unidades de σ. El cambio de <i>s</i> y de la MAD escalada se mide como porcentaje de su valor anterior. Una barra completa equivale a 1&nbsp;σ o a +100&nbsp;%.</p>
   </div>
 </section>
 
@@ -341,19 +464,20 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
 <section class="sec" id="alejamiento" aria-labelledby="h-alej">
   <div class="wrap">
     <div class="sec-head grid">
-      <div class="c12 m3"><div class="num" aria-hidden="true">02</div></div>
+      <div class="c12 m3"><div class="num" aria-hidden="true">03</div></div>
       <div class="c12 m9">
-        <h2 id="h-alej">Cómo se alejan: un solo dato</h2>
-        <p class="body" style="margin-top:16px">Este experimento añade un dato a la muestra limpia. Después lo mueve de −20&nbsp;σ a +20&nbsp;σ. La media sigue al dato en línea recta. La desviación típica crece sin límite. La mediana y la MAD escalada llegan a un tope.</p>
-        <p class="body">Mueva el puntero sobre los gráficos para leer los valores exactos.</p>
+        <h2 id="h-alej">Qué pasa cuando llega un dato nuevo</h2>
+        <p class="body" style="margin-top:16px">Imagine una muestra limpia. Llega un solo dato más. Los gráficos muestran qué hace cada medida según dónde caiga ese dato.</p>
+        <p class="body">Una línea que sube sin parar es vulnerable: un dato lejano la arrastra. Una línea que se aplana es resistente: un dato lejano deja de importar.</p>
       </div>
     </div>
+    <div class="how" style="margin-top:0"><span class="lbl">Cómo leer estos gráficos</span><p>El eje horizontal indica dónde cae el dato nuevo. El 0 es el centro de los datos. «+10σ» es diez dispersiones normales a la derecha. «−10σ» es lo mismo a la izquierda.</p><p>El eje vertical indica el valor que toma cada medida. Mueva el puntero sobre el gráfico para leer los números exactos.</p></div>
     <div class="legend" aria-hidden="true">
       <span><i class="sw"></i>Media</span>
       <span><i class="sw red"></i>Mediana</span>
       <span><i class="sw"></i><i class="sw dot" style="margin-left:-16px"></i>Desviación típica <i>s</i></span>
       <span><i class="sw red"></i>MAD escalada</span>
-      <span><i class="sw dot"></i>Valor verdadero</span>
+      <span><i class="sw dot"></i>Valor real</span>
     </div>
     <div class="pair">
       <figure style="margin-top:0">
@@ -366,9 +490,10 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
         <div class="lbl" style="margin-bottom:8px">Dispersión</div>
         <div class="chart" id="chartB2" role="img" aria-label="Desviación típica y MAD escalada según la posición de un dato añadido"></div>
         <div class="read" id="capB2"></div>
-        <figcaption>Figura 2b. Valor de <i>s</i> y de la MAD escalada. La línea punteada marca σ verdadera.</figcaption>
+        <figcaption>Figura 2b. Valor de <i>s</i> y de la MAD escalada. La línea punteada marca σ real.</figcaption>
       </figure>
     </div>
+    <div class="take"><span class="lbl">Conclusión</span><p>La media y la desviación típica no tienen tope: un dato lo bastante lejano las mueve tanto como se quiera. La mediana y la MAD escalada sí tienen tope: un dato lejano deja de importar más allá de cierta distancia.</p></div>
   </div>
 </section>
 
@@ -376,17 +501,18 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
 <section class="sec" id="ruptura" aria-labelledby="h-rupt">
   <div class="wrap">
     <div class="sec-head grid">
-      <div class="c12 m3"><div class="num" aria-hidden="true">03</div></div>
+      <div class="c12 m3"><div class="num" aria-hidden="true">04</div></div>
       <div class="c12 m9">
-        <h2 id="h-rupt">Cuántos extremos tolera cada medida</h2>
-        <p class="body" style="margin-top:16px">Este experimento aumenta la proporción de valores extremos de 0&nbsp;% a 60&nbsp;%. Usa la distancia <i>d</i> y el lado del simulador. Con 0&nbsp;%, las medidas clásicas y las robustas coinciden. Después se separan.</p>
-        <p class="body">Cerca de 50&nbsp;% de extremos, la mediana y la MAD escalada saltan hacia los extremos. Ese límite se llama <b>punto de ruptura</b>.</p>
+        <h2 id="h-rupt">Cuántos extremos aguanta cada medida</h2>
+        <p class="body" style="margin-top:16px">Ahora no llega un dato, sino muchos. Los gráficos aumentan la proporción de valores extremos de 0&nbsp;% a 60&nbsp;%. Usan la distancia y el lado que usted eligió en el simulador.</p>
+        <p class="body">Con 0&nbsp;% de extremos, las medidas clásicas y las robustas coinciden. Después se separan. Cerca de 50&nbsp;%, las medidas robustas también fallan. Ese límite se llama <b>punto de ruptura</b>.</p>
       </div>
     </div>
+    <div class="how" style="margin-top:0"><span class="lbl">Cómo leer estos gráficos</span><p>El eje horizontal indica qué porcentaje de los datos son extremos. Las dos marcas verticales señalan el 50&nbsp;% y el valor de <i>k</i> que usted fijó en el simulador.</p><p>Lea cada línea de izquierda a derecha. Una línea que se queda baja resiste. Una línea que sube rápido se deja engañar.</p></div>
     <div class="legend" aria-hidden="true">
       <span><i class="sw"></i>Media / <i>s</i></span>
       <span><i class="sw red"></i>Mediana / MAD escalada</span>
-      <span><i class="sw dot"></i>Valor verdadero</span>
+      <span><i class="sw dot"></i>Valor real</span>
       <span><i class="sw dot" style="border-color:var(--text)"></i>Marcas: 50&nbsp;% y <i>k</i> actual</span>
     </div>
     <div class="pair">
@@ -403,6 +529,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
         <figcaption>Figura 3b. <i>s</i> y MAD escalada. Las líneas que salen del gráfico continúan fuera de la escala.</figcaption>
       </figure>
     </div>
+    <div class="take"><span class="lbl">Conclusión</span><p>La mediana y la MAD escalada resisten hasta cerca de la mitad de datos extremos. Pasada la mitad, los extremos son la mayoría y ninguna medida sirve. En ese caso, revise cómo se recogieron los datos.</p></div>
   </div>
 </section>
 
@@ -410,40 +537,64 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
 <section class="sec" id="convergencia" aria-labelledby="h-conv">
   <div class="wrap">
     <div class="sec-head grid">
-      <div class="c12 m3"><div class="num" aria-hidden="true">04</div></div>
+      <div class="c12 m3"><div class="num" aria-hidden="true">05</div></div>
       <div class="c12 m9">
-        <h2 id="h-conv">Cómo convergen: más datos</h2>
-        <p class="body" style="margin-top:16px">Con datos limpios, las dos medidas se acercan a σ cuando <i>n</i> crece. La MAD escalada fluctúa más que <i>s</i>. Esa diferencia se llama <b>eficiencia</b>.</p>
-        <p class="body">Con valores extremos, las dos líneas discontinuas convergen, pero hacia un valor distinto de σ. La línea de <i>s</i> se desvía mucho más. La proporción de extremos viene del simulador.</p>
+        <h2 id="h-conv">Qué pasa con más datos</h2>
+        <p class="body" style="margin-top:16px">Con más datos, una medida debería acercarse al valor real. Los gráficos comprueban si eso ocurre con datos limpios y con datos que tienen valores extremos.</p>
+        <p class="body">La <b>eficiencia</b> mide la precisión por dato. Con datos limpios, la desviación típica es más eficiente: necesita menos datos para dar el mismo acierto.</p>
       </div>
     </div>
+    <div class="how" style="margin-top:0"><span class="lbl">Cómo leer estos gráficos</span><p>El eje vertical muestra la estimación dividida entre el valor real. El valor 1 significa acierto perfecto. La línea punteada marca ese 1.</p><p>Las líneas continuas usan datos limpios. Las líneas discontinuas incluyen extremos. El eje horizontal usa una escala que comprime los números grandes, para ver bien los tamaños pequeños.</p></div>
     <div class="legend" aria-hidden="true">
       <span><i class="sw"></i><i>s</i>, muestra limpia</span>
       <span><i class="sw red"></i>MAD escalada, muestra limpia</span>
       <span><i class="sw dash"></i><i>s</i>, con extremos</span>
       <span><i class="sw red dash"></i>MAD escalada, con extremos</span>
-      <span><i class="sw dot"></i>σ verdadera</span>
+      <span><i class="sw dot"></i>σ real (acierto perfecto = 1)</span>
     </div>
     <figure style="margin-top:0">
       <div class="chart" id="chartD" role="img" aria-label="Estimación de σ según el tamaño de la muestra"></div>
       <div class="read" id="capD"></div>
-      <figcaption>Figura 4. Cada línea muestra el cociente entre la estimación y σ verdadera. Eje horizontal en escala logarítmica. La marca vertical indica el <i>n</i> del simulador. El resultado cambia con cada muestra nueva.</figcaption>
+      <figcaption>Figura 4. Cada línea muestra la estimación dividida entre σ real. Eje horizontal en escala logarítmica. La marca vertical indica el <i>n</i> del simulador. El resultado cambia con cada muestra nueva.</figcaption>
     </figure>
+    <div class="take"><span class="lbl">Conclusión</span><p>Con datos limpios, las dos medidas se acercan a 1 y la desviación típica fluctúa menos. Con extremos, la desviación típica se queda lejos de 1 aunque haya muchos datos. La MAD escalada queda mucho más cerca. Pulse «Nueva muestra» para ver que el detalle cambia pero la tendencia se mantiene.</p></div>
   </div>
 </section>
 
-<!-- ═══════════════ 05 FORMULAS ═══════════════ -->
+<!-- ═══════════════ 06 CONCLUSION ═══════════════ -->
+<section class="sec" id="conclusion" aria-labelledby="h-con">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">06</div></div>
+      <div class="c12 m9">
+        <h2 id="h-con">Qué medida conviene usar</h2>
+        <p class="body" style="margin-top:16px">Ninguna medida es mejor en todos los casos. La elección depende de los datos.</p>
+      </div>
+    </div>
+    <div class="three">
+      <div><h3>Datos limpios y regulares</h3><p>Use la media y la desviación típica. Son las más precisas con pocos datos. La MAD escalada da un resultado casi igual.</p></div>
+      <div><h3>Posibles errores o casos raros</h3><p>Use la mediana y la MAD escalada. Los extremos casi no las alteran. Calcule también la media y la desviación típica. Si difieren mucho, examine los datos.</p></div>
+      <div><h3>Más de la mitad de datos dudosos</h3><p>Ninguna medida resiste. Revise cómo se recogieron los datos antes de calcular nada.</p></div>
+    </div>
+    <div class="take" style="margin-top:32px"><span class="lbl">Regla práctica</span><p>Calcule las dos dispersiones. Divida la desviación típica entre la MAD escalada. Un resultado cerca de 1 indica datos regulares. Un resultado mucho mayor sugiere valores extremos. No lo prueba.</p><p>Un valor extremo no siempre es un error. Puede ser el dato más importante, por ejemplo un cliente excepcional. Examine su causa antes de borrarlo.</p></div>
+  </div>
+</section>
+
+<!-- ═══════════════ 07 FORMULAS ═══════════════ -->
 <section class="sec" id="formulas" aria-labelledby="h-form">
   <div class="wrap">
     <div class="sec-head grid">
-      <div class="c12 m3"><div class="num" aria-hidden="true">05</div></div>
+      <div class="c12 m3"><div class="num" aria-hidden="true">07</div></div>
       <div class="c12 m9">
         <h2 id="h-form">Fórmulas</h2>
-        <p class="body" style="margin-top:16px">Cada fórmula tiene una frase de apoyo. El bloque final calcula las medidas con la muestra actual del simulador.</p>
+        <p class="body" style="margin-top:16px">Esta sección es opcional. Todo lo anterior se entiende sin ella. Sirve a quien quiere ver la matemática exacta.</p>
+        <p class="body"><b>Cómo leer los símbolos.</b> <i>x<sub>i</sub></i> es el dato número <i>i</i>. <i>n</i> es la cantidad de datos. El signo Σ significa «sumar todos». Una barra encima, como en <i>x̄</i>, indica un promedio. Una tilde, como en <i>x̃</i>, indica la mediana.</p>
+        <p style="margin-top:24px"></p>
         <p class="mathwarn" id="mathwarn" role="status">KaTeX no se cargó. La página muestra el código LaTeX en lugar de las fórmulas. Conecte el equipo a internet y recargue la página.</p>
       </div>
     </div>
 
+    <details class="opt"><summary>Mostrar las fórmulas</summary>
     <div class="formulas">
       <div class="f">
         <div class="n"><span class="cap">Media</span></div>
@@ -488,9 +639,10 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
     </div>
 
     <div class="live" aria-live="polite">
-      <div class="cap" style="margin-bottom:8px">Cálculo con la muestra actual</div>
+      <div class="cap" style="margin-bottom:8px">Cálculo con la muestra actual del simulador</div>
       <div id="texLive"></div>
     </div>
+    </details>
   </div>
 </section>
 
@@ -498,9 +650,9 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
 <section class="sec" id="lectura" aria-labelledby="h-lec">
   <div class="wrap">
     <div class="sec-head grid">
-      <div class="c12 m3"><div class="num" aria-hidden="true">06</div></div>
+      <div class="c12 m3"><div class="num" aria-hidden="true">08</div></div>
       <div class="c12 m9">
-        <h2 id="h-lec">Términos y límites</h2>
+        <h2 id="h-lec">Diccionario y límites</h2>
       </div>
     </div>
     <div class="grid">
@@ -512,9 +664,14 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
           <div><dt>Valor extremo</dt><dd>Un dato muy lejos del resto de la muestra.</dd></div>
           <div><dt>Media</dt><dd>La suma de los datos dividida por <i>n</i>.</dd></div>
           <div><dt>Mediana</dt><dd>El dato central de la muestra ordenada.</dd></div>
-          <div><dt>Desviación típica</dt><dd>Una medida de dispersión basada en distancias a la media, elevadas al cuadrado.</dd></div>
-          <div><dt>MAD escalada</dt><dd>Una medida de dispersión basada en la mediana, multiplicada por 1,4826.</dd></div>
-          <div><dt>Punto de ruptura</dt><dd>La proporción de datos malos que una medida soporta.</dd></div>
+          <div><dt>Desviación típica</dt><dd>Una medida de dispersión basada en las distancias a la media, elevadas al cuadrado. Por eso los datos lejanos pesan mucho.</dd></div>
+          <div><dt>MAD</dt><dd>La mediana de las distancias entre cada dato y la mediana. Las siglas vienen del inglés «median absolute deviation».</dd></div>
+          <div><dt>MAD escalada</dt><dd>La MAD multiplicada por 1,4826. Así queda en la misma escala que la desviación típica.</dd></div>
+          <div><dt>Dispersión</dt><dd>Cuánto se separan los datos entre sí.</dd></div>
+          <div><dt>Medida robusta</dt><dd>Una medida que los valores extremos casi no alteran.</dd></div>
+          <div><dt>μ y σ</dt><dd>El centro real y la dispersión real con que el simulador crea los datos. En la vida real no se conocen.</dd></div>
+          <div><dt>Punto de ruptura</dt><dd>La proporción de datos malos que una medida soporta antes de fallar.</dd></div>
+          <div><dt>Eficiencia</dt><dd>La precisión que una medida logra con cada dato disponible.</dd></div>
         </dl>
       </div>
       <div class="c12 m6">
@@ -798,7 +955,7 @@ function drawD(){
   const maxAll = Math.max(...rows.flatMap(r => [r.b.sd, r.b.madS]), maxClean);
   const ymax = clamp(maxAll * 1.08, Math.max(1.6, maxClean * 1.08), 6);
   lineChart($('#chartD'), {
-    h: 300, xDom: [5, N], yDom: [0, ymax], xlog: true, xTicks: [5, 10, 20, 50, 100, 200, 400], xLab: 'Tamaño de la muestra, n (escala logarítmica)', yLab: 'Estimación / σ verdadera',
+    h: 300, xDom: [5, N], yDom: [0, ymax], xlog: true, xTicks: [5, 10, 20, 50, 100, 200, 400], xLab: 'Tamaño de la muestra, n (escala logarítmica)', yLab: 'Estimación / σ real',
     series: [
       {cls: 'ink', pts: ser(r => r.a.sd)}, {cls: 'red', pts: ser(r => r.a.madS)},
       {cls: 'ink', dash: true, pts: ser(r => r.b.sd)}, {cls: 'red', dash: true, pts: ser(r => r.b.madS)}
@@ -812,10 +969,10 @@ function drawD(){
 /* ───────── Salidas numéricas ───────── */
 function drawReadouts(){
   const a = cur.st, c = cur.cl;
-  $('#v-mean').textContent = nf(a.mean); $('#s-mean').textContent = `Limpia ${nf(c.mean)} · μ ${nf(S.mu, 0)}`;
-  $('#v-med').textContent = nf(a.med);   $('#s-med').textContent = `Limpia ${nf(c.med)} · μ ${nf(S.mu, 0)}`;
-  $('#v-sd').textContent = nf(a.sd);     $('#s-sd').textContent = `Limpia ${nf(c.sd)} · σ ${nf(S.sigma, 0)}`;
-  $('#v-mad').textContent = nf(a.madS);  $('#s-mad').textContent = `Limpia ${nf(c.madS)} · σ ${nf(S.sigma, 0)}`;
+  $('#v-mean').textContent = nf(a.mean); $('#s-mean').textContent = `Antes ${nf(c.mean)} · Real ${nf(S.mu, 0)}`;
+  $('#v-med').textContent = nf(a.med);   $('#s-med').textContent = `Antes ${nf(c.med)} · Real ${nf(S.mu, 0)}`;
+  $('#v-sd').textContent = nf(a.sd);     $('#s-sd').textContent = `Antes ${nf(c.sd)} · Real ${nf(S.sigma, 0)}`;
+  $('#v-mad').textContent = nf(a.madS);  $('#s-mad').textContent = `Antes ${nf(c.madS)} · Real ${nf(S.sigma, 0)}`;
   $('#v-ratio').textContent = a.madS > 0 ? nf(a.sd / a.madS) : '—';
   $('#o-n').textContent = S.n; $('#o-mu').textContent = S.mu; $('#o-sg').textContent = S.sigma;
   $('#o-k').textContent = `${S.k} (${nf(100 * S.k / S.n, 0)} %)`;
@@ -823,20 +980,80 @@ function drawReadouts(){
   $('#seedinfo').textContent = `Semilla ${S.seed}.` + (S.over.size ? ` Movió ${[...S.over.keys()].filter(i => i < S.n).length} dato(s) a mano.` : '');
 }
 
+/* ───────── Ejemplo guiado ───────── */
+const EX = [1.8, 2.0, 2.1, 2.2, 2.4, 2.5, 2.6];
+let exOn = false;
+const exData = on => { const a = EX.slice(); if (on) a[6] = 30; return a; };
+function drawEx(){
+  const host = $('#exChart'), W = host.clientWidth || 320, H = W < 520 ? 270 : 290;
+  const a = exData(exOn), st = stats(a), b0 = stats(exData(false)), dom = exOn ? [-6, 32] : [1.4, 3.0];
+  const ml = 14, mr = 14, axY = H - 28, sx = v => ml + (v - dom[0]) / (dom[1] - dom[0]) * (W - ml - mr);
+  const ticks = niceTicks(dom[0], dom[1], W < 480 ? 4 : 8), dd = decs(ticks);
+  let g = '';
+  ticks.forEach(v => { g += `<line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="0" y2="${axY}"/><text class="tk" x="${sx(v)}" y="${axY + 18}" text-anchor="middle">${nf(v, dd)}</text>`; });
+  g += `<line class="axis" x1="${ml}" x2="${W - mr}" y1="${axY}" y2="${axY}"/>`;
+  const bar = (c, w, y, cls, label) => {
+    const x1 = Math.max(ml, sx(c - w)), x2 = Math.min(W - mr, sx(c + w)), col = cls === 'red' ? 'var(--accent)' : 'var(--text)';
+    return `<path d="M${x1} ${y - 6}V${y + 6}M${x1} ${y}H${x2}M${x2} ${y - 6}V${y + 6}" fill="none" stroke="${col}" stroke-width="3"/><text class="txt ${cls}" x="${clamp((x1 + x2) / 2, 100, W - 100)}" y="${y - 12}" text-anchor="middle">${label}</text>`;
+  };
+  g += bar(st.mean, st.sd, 56, 'ink', `Media ± desv. típica: ${nf(st.mean - st.sd)} a ${nf(st.mean + st.sd)}`);
+  g += bar(st.med, st.madS, 92, 'red', `Mediana ± MAD esc.: ${nf(st.med - st.madS)} a ${nf(st.med + st.madS)}`);
+  const xm = sx(st.mean), xd = sx(st.med), right = st.med >= st.mean;
+  g += `<line x1="${xm}" x2="${xm}" y1="22" y2="${axY}" stroke="var(--text)" stroke-width="1.5"/><line x1="${xd}" x2="${xd}" y1="22" y2="${axY}" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+  g += `<text class="txt" x="${xm + (right ? -5 : 5)}" y="16" text-anchor="${right ? 'end' : 'start'}">Media ${nf(st.mean)}</text><text class="txt red" x="${xd + (right ? 5 : -5)}" y="16" text-anchor="${right ? 'start' : 'end'}">Mediana ${nf(st.med)}</text>`;
+  const py = axY - 50;
+  a.forEach((v, i) => {
+    const x = sx(v), isE = exOn && i === 6;
+    g += isE ? `<circle class="dot-x" cx="${x}" cy="${py}" r="6"/>` : `<circle class="dot-p" cx="${x}" cy="${py}" r="4.5"/>`;
+    if (!exOn || i === 6) g += `<text class="tk" x="${x}" y="${py - 14}" text-anchor="middle" style="fill:var(--t2)">${i + 1}</text>`;
+  });
+  host.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${g}</svg>`;
+  host.setAttribute('aria-label', `Siete sueldos. Media ${nf(st.mean)}. Mediana ${nf(st.med)}. Desviación típica ${nf(st.sd)}. MAD escalada ${nf(st.madS)}.`);
+
+  // Tarjetas
+  const card = (cls, nm, def, now, before) => `<div class="card ${cls}"><div class="lbl"><span class="mark"></span>${nm}</div><div class="def">${def}</div><div class="v">${nf(now)}</div><div class="s">Original: <b>${nf(before)}</b></div></div>`;
+  $('#exStats').innerHTML = card('ink', 'Media', 'El promedio', st.mean, b0.mean) + card('red', 'Mediana', 'El dato del medio', st.med, b0.med) + card('ink', 'Desv. típica', 'Dispersión clásica', st.sd, b0.sd) + card('red', 'MAD escalada', 'Dispersión robusta', st.madS, b0.madS);
+  $('#exBtn').setAttribute('aria-pressed', exOn);
+  $('#exBtn').textContent = exOn ? 'Volver al sueldo original (2,6)' : 'Cambiar el último sueldo a 30';
+  $('#exState').textContent = exOn ? 'El vecino 7 gana 30.' : 'Los siete sueldos son parecidos.';
+  // Conclusión dinámica
+  $('#exTake').innerHTML = exOn
+    ? `<span class="lbl">Qué ocurrió</span><p>Un solo sueldo cambió el resultado. La media subió de ${nf(b0.mean)} a ${nf(st.mean)}. La desviación típica pasó de ${nf(b0.sd)} a ${nf(st.sd)}, unas ${nf(st.sd / b0.sd, 0)} veces más. La mediana quedó en ${nf(st.med)}. La MAD escalada quedó en ${nf(st.madS)}, igual que antes.</p><p>Los números clásicos describen ahora una dispersión que casi ningún vecino vive. Los números robustos siguen describiendo a los seis vecinos normales.</p>`
+    : `<span class="lbl">Qué ocurre sin extremos</span><p>Los sueldos son parecidos. La media y la mediana casi coinciden. La desviación típica y la MAD escalada también casi coinciden. Pulse el botón para ver qué ocurre si un sueldo se dispara.</p>`;
+  // Pasos
+  const sq = a.map(v => (v - st.mean) ** 2), ss = sq.reduce((x, y) => x + y, 0), ad = a.map(v => Math.abs(v - st.med));
+  $('#stepsInk').innerHTML =
+    `<li><span><b>Media.</b> Sume los siete sueldos y divida por 7. <span class="res">Resultado: ${nf(st.mean)}.</span></span></li>` +
+    `<li><span><b>Distancias al cuadrado.</b> Reste la media a cada sueldo. Eleve cada resultado al cuadrado. Así, una distancia grande pesa mucho más. Vea la tercera columna de la tabla 1.</span></li>` +
+    `<li><span><b>Desviación típica.</b> Sume esos siete números: ${nf(ss)}. Divida por 6. Calcule la raíz cuadrada. <span class="res">Resultado: ${nf(st.sd)}.</span></span></li>`;
+  $('#stepsRed').innerHTML =
+    `<li><span><b>Mediana.</b> Ordene los sueldos. Tome el del medio, el cuarto. <span class="res">Resultado: ${nf(st.med)}.</span></span></li>` +
+    `<li><span><b>Distancias a la mediana.</b> Reste la mediana a cada sueldo. Ignore el signo. Vea la cuarta columna de la tabla 1.</span></li>` +
+    `<li><span><b>MAD.</b> Ordene esas distancias. Tome la del medio. <span class="res">Resultado: ${nf(st.mad)}.</span></span></li>` +
+    `<li><span><b>MAD escalada.</b> Multiplique la MAD por 1,4826. Así queda en la misma escala que la desviación típica. <span class="res">Resultado: ${nf(st.madS)}.</span></span></li>`;
+  // Tabla
+  $('#exBody').innerHTML = a.map((v, i) => `<tr class="${exOn && i === 6 ? 'hl' : ''}"><th scope="row" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--border)">Vecino ${i + 1}</th><td class="r" style="padding:12px 16px 12px 0">${nf(v, 1)}</td><td class="r" style="padding:12px 16px 12px 0">${nf(sq[i])}</td><td class="r" style="padding:12px 16px 12px 0">${nf(ad[i])}</td></tr>`).join('') +
+    `<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--text)">Resumen</th><td class="r" style="padding:12px 16px 12px 0;border-bottom:1px solid var(--text)">Media ${nf(st.mean)}</td><td class="r" style="padding:12px 16px 12px 0;border-bottom:1px solid var(--text)">Suma ${nf(ss)}</td><td class="r" style="padding:12px 16px 12px 0;border-bottom:1px solid var(--text)">Mediana ${nf(st.mad)}</td></tr>`;
+}
+
 function drawReading(){
   const a = cur.st, c = cur.cl, n = S.n, k = S.k, eps = k / n, ov = [...S.over.keys()].filter(i => i < n).length;
   const el = $('#reading'); let h = '';
   if (k === 0 && ov === 0){
-    h += `<p><b>La muestra no tiene valores extremos.</b> La media y la mediana casi coinciden. La desviación típica y la MAD escalada también casi coinciden.</p>`;
-    h += `<p class="note">La coincidencia no es exacta. La muestra tiene error de muestreo, y ese error baja cuando n crece.</p>`;
+    h += `<p><b>Resultado.</b> La muestra no tiene valores extremos. La media y la mediana casi coinciden. La desviación típica y la MAD escalada también casi coinciden.</p>`;
+    h += `<p class="note">La coincidencia no es exacta. Una muestra tiene siempre un pequeño error de azar. Ese error baja cuando hay más datos.</p>`;
   } else {
     const dm = (a.mean - c.mean) / S.sigma, dd = (a.med - c.med) / S.sigma, rs = c.sd > 0 ? a.sd / c.sd : NaN, rm = c.madS > 0 ? a.madS / c.madS : NaN;
-    h += `<p><b>Comparación con la muestra limpia.</b> La media se mueve ${sgn(dm)}${SIG}. La mediana se mueve ${sgn(dd)}${SIG}. La desviación típica se multiplica por ${nf(rs)}. La MAD escalada se multiplica por ${nf(rm)}.</p>`;
+    h += `<p><b>Resultado.</b> La desviación típica pasa de ${nf(c.sd)} a ${nf(a.sd)}. La MAD escalada pasa de ${nf(c.madS)} a ${nf(a.madS)}. La media se mueve ${sgn(dm)}${SIG}. La mediana se mueve ${sgn(dd)}${SIG}.</p>`;
+    if (rs > 2 && rm < 1.5) h += `<p><b>Lectura.</b> Los extremos engañan a la desviación típica. Multiplican su valor por ${nf(rs)}. La MAD escalada casi no cambia: la multiplican por ${nf(rm)}.</p>`;
+    else if (rm >= 2) h += `<p><b>Lectura.</b> Los extremos son tantos que también engañan a la MAD escalada. Ya no protege.</p>`;
+    else h += `<p><b>Lectura.</b> Con esta distancia y esta cantidad, los extremos cambian poco las dos medidas. Suba <i>k</i> o <i>d</i> para ver más efecto.</p>`;
     const r = a.madS > 0 ? a.sd / a.madS : NaN;
     if (r > 1.5) h += `<p>El cociente <i>s</i> / MAD escalada vale ${nf(r)}. Un valor alto sugiere valores extremos o colas pesadas. No lo prueba.</p>`;
     if (eps >= 0.5) h += `<p class="note"><b>Nota.</b> Los extremos forman la mitad o más de la muestra. La mediana y la MAD escalada ya no protegen. Siguen a los extremos.</p>`;
     else if (eps >= 0.4) h += `<p class="note"><b>Nota.</b> Cerca de 50 % de extremos, la MAD escalada puede fallar de repente. Suba <i>k</i> poco a poco para ver el salto.</p>`;
   }
+  h += `<p class="note">Una unidad σ es la dispersión normal de los datos limpios.</p>`;
   el.innerHTML = h;
 }
 
@@ -877,7 +1094,7 @@ function syncControls(){
   document.querySelectorAll('input[name=side]').forEach(r => r.checked = r.value === S.side);
 }
 function render(){
-  raf = 0; compute(); drawReadouts(); drawA();
+  raf = 0; compute(); drawReadouts(); drawA(); drawEx();
   if (!light){ drawReading(); drawTable(); drawTex(); drawB(); drawC(); drawD(); }
   else { drawReading(); drawTable(); drawTex(); }
 }
@@ -889,6 +1106,7 @@ document.querySelectorAll('input[name=side]').forEach(r => r.addEventListener('c
 document.querySelectorAll('[data-p]').forEach(b => b.addEventListener('click', () => {
   const p = b.dataset.p; S.k = p === 'one' ? 1 : Math.round(+p * S.n); S.over.clear(); syncControls(); light = false; schedule();
 }));
+$('#exBtn').addEventListener('click', () => { exOn = !exOn; drawEx(); });
 $('#b-new').addEventListener('click', () => { S.seed = 1 + Math.floor(Math.random() * 99999); pool = makePool(S.seed, 400); S.over.clear(); light = false; schedule(); });
 $('#b-reset').addEventListener('click', () => { Object.assign(S, DEF); S.over.clear(); pool = makePool(S.seed, 400); syncControls(); light = false; schedule(); });
 
