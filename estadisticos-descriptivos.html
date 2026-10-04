@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafaf9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0a09" media="(prefers-color-scheme: dark)">
+<title>Siete números para describir datos</title>
+<meta name="description" content="Consola interactiva que explica media, mediana, SD, MAD, IQR, asimetría y curtosis sin conocimientos previos.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/contrib/auto-render.min.js"></script>
+
+<style>
+
+/* ───────── Tokens ───────── */
+:root{
+  --font:'IBM Plex Sans','Hanken Grotesk','Barlow','Host Grotesk','DM Sans',system-ui,sans-serif;
+  --mono:'IBM Plex Mono','Fira Code',ui-monospace,monospace;
+  --bg:#fafaf9; --surface:#f5f5f4; --surface-2:#e7e5e4; --border:#e7e5e4;
+  --text:#1c1917;
+  --t2:rgba(28,25,23,.70); --t3:rgba(28,25,23,.40); --t4:rgba(28,25,23,.20);
+  --accent:#C8102E; --a60:rgba(200,16,46,.60); --a20:rgba(200,16,46,.20); --a10:rgba(200,16,46,.10);
+  --u:8px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0c0a09; --surface:#1c1917; --surface-2:#292524; --border:#292524;
+    --text:#fafaf9;
+    --t2:rgba(250,250,249,.70); --t3:rgba(250,250,249,.40); --t4:rgba(250,250,249,.20);
+  }
+}
+html{color-scheme:light dark;-webkit-text-size-adjust:100%}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.625;font-weight:400;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,figure,dl,dd,ul{margin:0}
+.tab{font-variant-numeric:tabular-nums}
+
+/* ───────── Layout ───────── */
+.wrap{max-width:72rem;margin:0 auto;padding:0 16px}
+@media(min-width:768px){.wrap{padding:0 32px}}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+@media(min-width:768px){.grid{gap:32px}}
+.c12{grid-column:span 12}
+@media(min-width:768px){.m3{grid-column:span 3}.m4{grid-column:span 4}.m5{grid-column:span 5}.m6{grid-column:span 6}.m7{grid-column:span 7}.m8{grid-column:span 8}.m9{grid-column:span 9}}
+@media(min-width:1024px){.l4{grid-column:span 4}.l8{grid-column:span 8}.l3{grid-column:span 3}.l9{grid-column:span 9}}
+.min0{min-width:0}
+
+.sec{padding:64px 0;border-top:1px solid var(--text)}
+@media(min-width:768px){.sec{padding:96px 0}}
+.sec-head{margin-bottom:48px}
+.num{font-size:clamp(3rem,10vw,6rem);font-weight:300;line-height:1;letter-spacing:-.02em;color:var(--accent);font-variant-numeric:tabular-nums}
+h2{font-size:clamp(1.75rem,4vw,2.25rem);font-weight:300;line-height:1.25;letter-spacing:-.02em;text-wrap:balance}
+h3{font-size:1.125rem;font-weight:500;line-height:1.375}
+.body{max-width:60ch;text-wrap:pretty;color:var(--t2)}
+.body+.body{margin-top:16px}
+.body b,.body strong{font-weight:500;color:var(--text)}
+.cap{font-size:12px;line-height:1.5;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);font-weight:400}
+.cap b{font-weight:500;color:var(--text)}
+.lbl{font-size:12px;line-height:1.3;letter-spacing:.04em;font-weight:500;color:var(--t2)}
+
+/* ───────── Header ───────── */
+.top{padding:24px 0 64px}
+@media(min-width:768px){.top{padding:32px 0 96px}}
+.bar{display:flex;justify-content:space-between;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--text);margin-bottom:64px}
+.rule{width:96px;height:8px;background:var(--accent);margin-bottom:32px}
+.display{font-size:clamp(2.5rem,9vw,6rem);font-weight:300;line-height:1;letter-spacing:-.02em;text-wrap:balance}
+.display .acc{color:var(--accent)}
+.lead{font-size:clamp(1.125rem,2.2vw,1.375rem);font-weight:300;line-height:1.5;max-width:44ch;color:var(--t2)}
+.key{display:grid;gap:16px;margin-top:48px}
+@media(min-width:640px){.key{grid-template-columns:1fr 1fr}}
+.key div{border-top:1px solid var(--text);padding-top:16px;display:flex;gap:16px;align-items:flex-start}
+.key p{font-size:14px;color:var(--t2);line-height:1.5}
+.key b{display:block;font-weight:500;color:var(--text);font-size:16px}
+.sq{flex:none;width:16px;height:16px;margin-top:4px}
+.sq.ink{background:var(--text)}
+.sq.red{background:var(--accent)}
+
+/* ───────── Controls ───────── */
+.ctl{border-top:1px solid var(--text);padding-top:16px}
+@media(min-width:1024px){.ctl{position:sticky;top:16px;align-self:start}}
+.ctl h3{margin-bottom:8px}
+.field{padding:8px 0 0}
+.field .row{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+.field output{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;margin:0;background:transparent;cursor:pointer;border-radius:0}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--t3)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-7px;border:0;border-radius:0;background:var(--accent)}
+input[type=range]::-moz-range-track{height:2px;background:var(--t3)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:0;border-radius:0;background:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+fieldset{border:0;margin:0;padding:24px 0 0;min-width:0}
+legend{padding:0}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);margin-top:8px;border:1px solid var(--text)}
+.seg label{position:relative;min-height:44px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;border-left:1px solid var(--text)}
+.seg label:first-child{border-left:0}
+.seg input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0}
+.seg label:has(input:checked){background:var(--text);color:var(--bg)}
+.seg label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.btn{min-height:44px;min-width:44px;padding:8px 16px;background:transparent;color:var(--text);border:1px solid var(--text);border-radius:0;font:inherit;font-size:14px;cursor:pointer}
+.btn:hover{background:var(--text);color:var(--bg)}
+.btn.main{background:var(--accent);border-color:var(--accent);color:#fafaf9}
+.btn.main:hover{background:var(--a60);border-color:var(--a60);color:var(--text)}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.presets .btn{padding:8px 12px;font-size:13px}
+.hint{font-size:13px;line-height:1.5;color:var(--t3);margin-top:16px}
+
+/* ───────── Readouts ───────── */
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border-top:1px solid var(--text)}
+@media(min-width:640px){.cards{grid-template-columns:repeat(5,1fr)}}
+.card{padding:16px 16px 16px 0;border-bottom:1px solid var(--border)}
+@media(min-width:640px){.card{border-bottom:0;padding-right:8px}}
+.card .v{font-size:clamp(1.5rem,3.4vw,2rem);font-weight:300;letter-spacing:-.02em;line-height:1.2;margin-top:8px;font-variant-numeric:tabular-nums}
+.card .s{font-size:12px;line-height:1.4;color:var(--t3);margin-top:8px;font-variant-numeric:tabular-nums}
+.card.ink .v{color:var(--text)}
+.card.red .v{color:var(--accent)}
+.card .mark{display:inline-block;width:8px;height:8px;margin-right:8px}
+.card.ink .mark{background:var(--text)}
+.card.red .mark{background:var(--accent)}
+.card.neutral .mark{background:transparent;border:1px solid var(--text)}
+
+/* ───────── Figures ───────── */
+figure{margin-top:32px}
+figcaption{margin-top:16px;font-size:13px;line-height:1.5;color:var(--t3);max-width:70ch}
+.legend{display:flex;flex-wrap:wrap;gap:8px 24px;margin-bottom:8px;font-size:13px;color:var(--t2)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.sw{display:inline-block;width:24px;height:0;border-top:2px solid var(--text)}
+.sw.red{border-color:var(--accent)}
+.sw.dash{border-top-style:dashed}
+.sw.dot{border-top-style:dotted;border-color:var(--t3)}
+.sw.band{height:8px;border:0;background:var(--text);opacity:.85}
+.sw.band.red{background:var(--accent)}
+.sw.grey{height:0;border-top:3px solid var(--t3)}
+.sw.ring{width:10px;height:10px;border:1.5px solid var(--text);border-radius:50%;background:transparent}
+.sw.pt{width:8px;height:8px;border:0;border-radius:50%;background:var(--t2)}
+.chart{width:100%;position:relative;line-height:0}
+.chart svg{display:block;overflow:visible}
+.chart svg text{font-family:var(--font)}
+.gl{stroke:var(--border);stroke-width:1}
+.axis{stroke:var(--text);stroke-width:1}
+.tk{font-size:11px;fill:var(--t3);font-variant-numeric:tabular-nums}
+.ax-lab{font-size:11px;fill:var(--t3);letter-spacing:.04em}
+.ln{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.ln.ink{stroke:var(--text)}
+.ln.red{stroke:var(--accent)}
+.ln.dash{stroke-dasharray:6 4}
+.ref{stroke:var(--t3);stroke-width:1;stroke-dasharray:2 3}
+.mk{stroke:var(--text);stroke-width:1;stroke-dasharray:2 3}
+.mk-t{font-size:11px;fill:var(--t2)}
+.hv{stroke:var(--text);stroke-width:1;opacity:.5}
+.pt{cursor:grab}
+.pt:active{cursor:grabbing}
+.dot-p{fill:var(--t2)}
+.dot-x{fill:var(--bg);stroke:var(--text);stroke-width:1.6}
+.hit{fill:transparent}
+.txt{font-size:11px;fill:var(--text);paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+.txt.red{fill:var(--accent)}
+.txt.muted{fill:var(--t2)}
+.read{min-height:3em;font-size:13px;line-height:1.5;color:var(--text);margin-top:8px;font-variant-numeric:tabular-nums}
+.pair{display:grid;gap:32px}
+@media(min-width:768px){.pair{grid-template-columns:1fr 1fr}}
+
+/* ───────── Reading & table ───────── */
+.reading{border-top:1px solid var(--text);padding-top:16px;margin-top:32px}
+.reading p{max-width:60ch;color:var(--t2)}
+.reading p+p{margin-top:8px}
+.reading b{font-weight:500;color:var(--text)}
+.reading .note{font-size:14px;color:var(--t3)}
+.tbl-wrap{overflow-x:auto;margin-top:32px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:560px}
+th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:500;color:var(--t2);text-align:left;padding:8px 16px 8px 0;border-bottom:1px solid var(--text)}
+td{padding:16px 16px 16px 0;border-bottom:1px solid var(--border);font-size:15px;vertical-align:middle}
+td.r,th.r{text-align:right}
+.barcell{width:30%}
+.bar-track{height:8px;background:var(--surface-2);position:relative}
+.bar-fill{position:absolute;left:0;top:0;bottom:0}
+.bar-fill.ink{background:var(--text)}
+.bar-fill.red{background:var(--accent)}
+
+/* ───────── Math ───────── */
+.formulas{display:grid;gap:0}
+.f{border-top:1px solid var(--text);padding:24px 0}
+@media(min-width:768px){.f{display:grid;grid-template-columns:repeat(12,1fr);gap:32px}.f .n{grid-column:span 3}.f .e{grid-column:span 9}}
+.f .n .cap{display:block;margin-bottom:8px}
+.f p{max-width:60ch;color:var(--t2);font-size:15px}
+.f .eq{overflow-x:auto;overflow-y:hidden;padding:8px 0;font-size:1.05em;margin-bottom:8px}
+.live{background:var(--surface);padding:16px;margin-top:32px;overflow-x:auto}
+.katex-display{margin:8px 0;text-align:left}.katex-display>.katex{text-align:left}
+.mathwarn{display:none;margin-top:16px;font-size:13px;color:var(--accent)}
+dl.gloss{display:grid;gap:0;margin-top:0}
+dl.gloss div{display:grid;gap:4px;padding:16px 0;border-top:1px solid var(--border)}
+@media(min-width:768px){dl.gloss div{grid-template-columns:200px 1fr;gap:32px}}
+dl.gloss dt{font-weight:500}
+dl.gloss dd{color:var(--t2);max-width:60ch}
+ul.lim{list-style:none;padding:0;display:grid;gap:0}
+ul.lim li{padding:16px 0;border-top:1px solid var(--border);max-width:60ch;color:var(--t2)}
+footer{border-top:1px solid var(--text);padding:32px 0 64px;font-size:13px;color:var(--t3)}
+footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
+
+
+.how,.take{max-width:72ch;margin-top:24px;margin-bottom:24px;padding:16px 16px 16px 16px;border-left:2px solid var(--text)}
+.how .lbl,.take .lbl{display:block;margin-bottom:8px}
+.how p,.take p{color:var(--t2)}
+.how p+p,.take p+p{margin-top:8px}
+.take{border-left:6px solid var(--accent);background:var(--surface)}
+.take p{color:var(--text)}
+.primer{display:grid;gap:0 32px;margin-top:64px;border-top:1px solid var(--text);padding-top:16px}
+@media(min-width:640px){.primer{grid-template-columns:1fr 1fr}}
+@media(min-width:1024px){.primer{grid-template-columns:repeat(4,1fr)}}
+.primer div{padding:16px 0;border-bottom:1px solid var(--border)}
+.primer dt{font-weight:500}
+.primer dd{font-size:14px;line-height:1.5;color:var(--t2);margin-top:4px}
+.toc{display:flex;flex-wrap:wrap;gap:0 24px;margin-top:32px}
+.toc a{min-height:44px;display:inline-flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;font-size:14px;border-bottom:1px solid transparent}
+.toc a:hover{border-bottom-color:var(--accent)}
+.toc a span{color:var(--accent);font-variant-numeric:tabular-nums}
+.def{font-size:12px;line-height:1.4;color:var(--t2);margin-top:4px}
+.help{font-size:12px;line-height:1.4;color:var(--t3);margin-top:-4px;margin-bottom:4px}
+.exgrid{display:grid;gap:32px;margin-top:32px}
+@media(min-width:768px){.exgrid{grid-template-columns:1fr 1fr}}
+.steps{list-style:none;padding:0;margin:0;counter-reset:st}
+.steps li{counter-increment:st;display:grid;grid-template-columns:32px 1fr;gap:8px;padding:12px 0;border-top:1px solid var(--border);color:var(--t2);font-size:15px;line-height:1.5}
+.steps li::before{content:counter(st);font-weight:300;font-size:1.5rem;line-height:1;color:var(--text)}
+.steps.red li::before{color:var(--accent)}
+.steps b{font-weight:500;color:var(--text)}
+.steps .res{color:var(--text);font-variant-numeric:tabular-nums}
+.colhead{border-top:1px solid var(--text);padding-top:16px;margin-bottom:8px}
+.colhead h3{font-weight:500}
+table.compact{min-width:420px}
+tr.hl td,tr.hl th{background:var(--a10)}
+.exstats{display:grid;grid-template-columns:repeat(2,1fr);border-top:1px solid var(--text);margin-top:32px}
+@media(min-width:768px){.exstats{grid-template-columns:repeat(4,1fr)}}
+.exstats .card .s b{font-weight:500;color:var(--text)}
+.tog{margin-top:24px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.tog .btn{min-height:48px}
+.tog .btn[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fafaf9}
+.three{display:grid;gap:0 32px;margin-top:0}
+@media(min-width:768px){.three{grid-template-columns:repeat(3,1fr)}}
+.three div{border-top:1px solid var(--text);padding:16px 0 24px}
+.three h3{margin-bottom:8px}
+.three p{color:var(--t2);font-size:15px}
+details.opt summary{min-height:48px;display:inline-flex;align-items:center;cursor:pointer;border:1px solid var(--text);padding:8px 24px;list-style:none;font-size:15px}
+details.opt summary::-webkit-details-marker{display:none}
+details.opt summary::after{content:'  +'}
+details[open].opt summary{background:var(--text);color:var(--bg)}
+details[open].opt summary::after{content:'  −'}
+details.opt .formulas{margin-top:32px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ───────── Añadidos de esta consola ───────── */
+.gauge{margin-top:16px}
+.gauge .gh{display:flex;justify-content:space-between;gap:16px;font-size:12px;color:var(--t2)}
+.gauge .gt{position:relative;height:28px;margin:4px 7px}
+.gauge .gt::before{content:'';position:absolute;left:-7px;right:-7px;top:13px;height:2px;background:var(--t3)}
+.gauge .gt i{position:absolute;top:7px;width:14px;height:14px;margin-left:-7px}
+.gauge .gz{width:2px!important;margin-left:-1px!important;top:3px!important;height:22px!important;background:var(--text)}
+.gauge .gm{background:var(--text)}
+.gauge .gg{border:2px solid var(--text);background:transparent}
+.gauge .gl2{position:relative;height:16px;margin:0 7px;font-size:11px;color:var(--t3);font-variant-numeric:tabular-nums}
+.gauge .gl2 span{position:absolute;transform:translateX(-50%)}
+.gauge .gl2 span:first-child{left:0;transform:none}
+.gauge .gl2 span:last-child{right:0;left:auto;transform:none}
+.gtitle{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-top:24px;border-top:1px solid var(--text);padding-top:16px}
+.gtitle output{font-family:var(--mono);font-size:14px}
+.groups{display:grid;gap:0 32px;margin-top:0}
+.grp{border-top:1px solid var(--text);padding-top:16px;margin-bottom:8px}
+.grp>.cap{display:block;margin-bottom:8px}
+.grp .cards{border-top:0;grid-template-columns:repeat(2,1fr)}
+.grp.g3 .cards{grid-template-columns:repeat(2,1fr)}
+@media(min-width:640px){.grp .cards{grid-template-columns:repeat(2,1fr)}.grp.g3 .cards{grid-template-columns:repeat(3,1fr)}}
+.card .v.sm{font-size:clamp(1.375rem,3vw,1.75rem)}
+.fam{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.fam .btn{padding:8px 12px;font-size:13px}
+.fam .btn[aria-pressed=true]{background:var(--text);color:var(--bg)}
+.gal{display:grid;gap:32px 32px;grid-template-columns:1fr}
+@media(min-width:640px){.gal{grid-template-columns:1fr 1fr}}
+@media(min-width:1024px){.gal{grid-template-columns:repeat(3,1fr)}}
+.gcard{border-top:1px solid var(--text);padding-top:16px;display:flex;flex-direction:column;gap:8px}
+.gcard svg{display:block;width:100%;height:96px}
+.gcard p{font-size:14px;line-height:1.5;color:var(--t2)}
+.gcard .nums{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-variant-numeric:tabular-nums}
+.gcard .nums div{border-top:1px solid var(--border);padding-top:8px}
+.gcard .nums b{display:block;font-weight:300;font-size:1.5rem;line-height:1.2}
+.gcard .btn{margin-top:auto}
+.four{display:grid;gap:32px}
+@media(min-width:768px){.four{grid-template-columns:1fr 1fr}}
+.bar-fill.mid{background:var(--accent);opacity:.6}
+.rtab td.l,.rtab th.l{text-align:left}
+.rtab td{vertical-align:top;font-size:14px;line-height:1.5;color:var(--t2)}
+.rtab td:first-child{color:var(--text);font-weight:500;white-space:nowrap}
+.rtab td.pr{font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap}
+.rtab{min-width:720px}
+.formulas{grid-template-columns:minmax(0,1fr)}.f,.f .e,.f .n{min-width:0}.f .eq{max-width:100%}
+.grid>*{min-width:0}
+</style>
+</head>
+
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="bar">
+      <span class="cap"><b>Consola</b> · Estadística descriptiva</span>
+      <span class="cap">Centro · Dispersión · Forma</span>
+    </div>
+    <div class="grid">
+      <div class="c12 l9">
+        <div class="rule" aria-hidden="true"></div>
+        <h1 class="display">Siete números para describir <span class="acc">datos</span></h1>
+      </div>
+      <div class="c12 m8" style="margin-top:32px">
+        <p class="lead">Una lista de datos puede tener cientos de números. Para describirla se resumen en pocos. Esta página explica siete: media, mediana, SD, MAD, IQR, asimetría y curtosis. Usa ejemplos y simulaciones. No necesita conocimientos previos.</p>
+      </div>
+    </div>
+    <div class="key" role="group" aria-label="Clave de colores">
+      <div><span class="sq ink" aria-hidden="true"></span><p><b>Tinta · números clásicos</b>Media, SD, asimetría y curtosis. Los datos lejanos pesan mucho en ellos.</p></div>
+      <div><span class="sq red" aria-hidden="true"></span><p><b>Rojo · números robustos</b>Mediana, MAD e IQR. Los datos lejanos casi no pesan en ellos.</p></div>
+    </div>
+    <div class="take" style="margin-top:48px;max-width:60ch"><span class="lbl">La idea en una frase</span><p>Los siete números responden a tres preguntas: dónde está el centro, cuánto se dispersan los datos y qué forma tienen. Un solo dato extremo engaña a algunos números. Otros lo resisten.</p></div>
+
+    <div class="three" style="margin-top:32px">
+      <div><span class="lbl">Pregunta 1 · Centro</span><h3 style="margin-top:8px">¿Cuál es un valor típico?</h3><p>Dos números: la <b>media</b> y la <b>mediana</b>.</p></div>
+      <div><span class="lbl">Pregunta 2 · Dispersión</span><h3 style="margin-top:8px">¿Cuánto se separan los datos?</h3><p>Tres números: la <b>SD</b>, la <b>MAD</b> y el <b>IQR</b>.</p></div>
+      <div><span class="lbl">Pregunta 3 · Forma</span><h3 style="margin-top:8px">¿Qué aspecto tiene el conjunto?</h3><p>Dos números: la <b>asimetría</b> y la <b>curtosis</b>.</p></div>
+    </div>
+
+    <nav class="toc" aria-label="Contenido">
+      <a href="#ejemplo"><span>01</span>Ejemplo</a><a href="#laboratorio"><span>02</span>Laboratorio</a><a href="#galeria"><span>03</span>Galería de formas</a><a href="#alejamiento"><span>04</span>Un dato nuevo</a><a href="#ruptura"><span>05</span>Muchos extremos</a><a href="#resumen"><span>06</span>Resumen</a><a href="#formulas"><span>07</span>Fórmulas</a><a href="#lectura"><span>08</span>Términos</a>
+    </nav>
+
+    <dl class="primer">
+      <div><dt>Dato</dt><dd>Un número de la lista. Por ejemplo, el tiempo de espera de un paciente.</dd></div>
+      <div><dt>Muestra</dt><dd>La lista completa de datos.</dd></div>
+      <div><dt>Valor extremo</dt><dd>Un dato muy lejos del resto. Puede ser un error o un caso real poco habitual.</dd></div>
+      <div><dt>Distribución</dt><dd>El patrón que forman los datos al contarlos por zonas. Un histograma la dibuja con barras.</dd></div>
+      <div><dt>Centro</dt><dd>El valor alrededor del cual se reparten los datos.</dd></div>
+      <div><dt>Dispersión</dt><dd>Cuánto se separan los datos entre sí. Si todos son parecidos, es baja.</dd></div>
+      <div><dt>Forma</dt><dd>Si los datos se reparten por igual a los dos lados del centro y cuántos datos lejanos hay.</dd></div>
+      <div><dt>Cuartil</dt><dd>Un valor que corta la lista ordenada. Q1 deja 25 % de los datos por debajo. Q3 deja 75 %.</dd></div>
+    </dl>
+  </div>
+</header>
+
+<!-- ═══════════════ 01 EJEMPLO ═══════════════ -->
+<section class="sec" id="ejemplo" aria-labelledby="h-ej">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">01</div></div>
+      <div class="c12 m9">
+        <h2 id="h-ej">Los siete números en un ejemplo</h2>
+        <p class="body" style="margin-top:16px">Once pacientes esperan en una clínica. El dato es el tiempo de espera, en minutos. Los tiempos son parecidos. Ahora imagine que el último paciente espera 45 minutos. Pulse el botón y mire cómo cambian los siete números.</p>
+        <div class="tog">
+          <button type="button" class="btn" id="exBtn" aria-pressed="false">Cambiar la última espera a 45</button>
+          <span class="hint" style="margin:0" id="exState"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="how" style="margin-top:0"><span class="lbl">Cómo leer la figura A</span>
+      <p>Cada punto es un paciente. La línea negra marca la media. La línea roja discontinua marca la mediana. La caja roja cubre la mitad central de los datos: su anchura es el IQR.</p>
+      <p>Las dos barras de abajo muestran la dispersión que mide la SD y la que mide la MAD. El eje cambia de escala cuando se pulsa el botón.</p></div>
+    <figure style="margin-top:0">
+      <div class="legend" aria-hidden="true">
+        <span><i class="sw"></i>Media</span>
+        <span><i class="sw red dash"></i>Mediana</span>
+        <span><i class="sw band red" style="height:0;border-top:2px solid var(--accent);background:none"></i>Caja: IQR</span>
+        <span><i class="sw band"></i>Media ± SD</span>
+        <span><i class="sw band red"></i>Mediana ± MAD</span>
+        <span><i class="sw ring"></i>Valor extremo</span>
+      </div>
+      <div class="chart" id="exChart" role="img" aria-label="Once tiempos de espera"></div>
+      <figcaption>Figura A. Cada punto es el tiempo de espera de un paciente, en minutos.</figcaption>
+    </figure>
+
+    <div class="groups" id="exGroups" role="group" aria-label="Resultados del ejemplo"></div>
+    <div class="take" id="exTake" aria-live="polite"></div>
+
+    <div class="exgrid" style="grid-template-columns:1fr">
+      <div class="grid" style="gap:32px">
+        <div class="c12 m4">
+          <div class="colhead"><span class="lbl">Pregunta 1</span><h3>Centro</h3></div>
+          <ol class="steps" id="stepsCentro"></ol>
+        </div>
+        <div class="c12 m4">
+          <div class="colhead"><span class="lbl">Pregunta 2</span><h3>Dispersión</h3></div>
+          <ol class="steps red" id="stepsDisp" style="counter-reset:st 2"></ol>
+        </div>
+        <div class="c12 m4">
+          <div class="colhead"><span class="lbl">Pregunta 3</span><h3>Forma</h3></div>
+          <ol class="steps" id="stepsForma" style="counter-reset:st 5"></ol>
+        </div>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="compact" style="min-width:720px">
+        <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 1. Cálculo paso a paso con los once datos</caption>
+        <thead><tr><th scope="col">Paciente</th><th scope="col" class="r">Dato</th><th scope="col" class="r">(dato − media)²</th><th scope="col" class="r">(dato − media)³</th><th scope="col" class="r">(dato − media)⁴</th><th scope="col" class="r">|dato − mediana|</th></tr></thead>
+        <tbody id="exBody"></tbody>
+      </table>
+    </div>
+    <p class="hint" style="max-width:60ch">Las columnas con potencias sirven para la SD, la asimetría y la curtosis. La última columna sirve para la MAD. La barra «|…|» significa «valor sin signo». Los cuartiles usan interpolación lineal. Otros programas usan otras reglas y dan resultados algo distintos.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ 02 LABORATORIO ═══════════════ -->
+<section class="sec" id="laboratorio" aria-labelledby="h-lab">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">02</div></div>
+      <div class="c12 m9">
+        <h2 id="h-lab">Laboratorio: pruebe con muestras grandes</h2>
+        <p class="body" style="margin-top:16px">El laboratorio crea datos con la forma que usted elija. Después puede añadir valores extremos. Vea cómo cambian los siete números y cómo se mueve cada uno sobre el gráfico.</p>
+        <p class="body"><b>Experimento guiado.</b> Elija «Normal». Pulse en orden «Sin extremos», «Un extremo», «10 %», «30 %» y «55 %». Con 30 %, el IQR falla y la MAD sube mucho menos que la SD. Con 55 %, todo falla. Después elija otras formas y mire la asimetría y la curtosis.</p>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="c12 l4">
+        <form class="ctl" id="ctl" onsubmit="return false" aria-label="Controles del laboratorio">
+          <h3>Forma de los datos</h3>
+          <fieldset style="padding-top:8px">
+            <legend class="lbl">Elija una forma</legend>
+            <div class="fam" id="famBtns" role="group"></div>
+            <div class="help" id="famHelp" style="margin-top:8px"></div>
+          </fieldset>
+          <div class="field">
+            <div class="row"><label class="lbl" for="n">Cantidad de datos, n</label><output id="o-n" for="n"></output></div>
+            <input type="range" id="n" min="10" max="200" step="1" value="40">
+            <div class="help">Cuántos datos tiene la muestra.</div>
+          </div>
+
+          <h3 style="margin-top:32px">Valores extremos</h3>
+          <div class="field">
+            <div class="row"><label class="lbl" for="k">Cantidad de extremos, k</label><output id="o-k" for="k"></output></div>
+            <input type="range" id="k" min="0" max="24" step="1" value="4">
+            <div class="help">Cuántos datos se sustituyen por valores muy alejados.</div>
+          </div>
+          <div class="field">
+            <div class="row"><label class="lbl" for="d">Distancia al centro, d</label><output id="o-d" for="d"></output></div>
+            <input type="range" id="d" min="0" max="30" step="0.5" value="8">
+            <div class="help">«10 σ» significa diez veces la dispersión normal de los datos limpios.</div>
+          </div>
+          <fieldset>
+            <legend class="lbl">Lado del centro donde caen los extremos</legend>
+            <div class="seg" role="radiogroup">
+              <label><input type="radio" name="side" value="right" checked>Derecha</label>
+              <label><input type="radio" name="side" value="left">Izquierda</label>
+              <label><input type="radio" name="side" value="both">Ambos</label>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend class="lbl">Escenarios rápidos</legend>
+            <div class="presets">
+              <button type="button" class="btn" data-p="0">Sin extremos</button>
+              <button type="button" class="btn" data-p="one">Un extremo</button>
+              <button type="button" class="btn" data-p="0.1">10&nbsp;%</button>
+              <button type="button" class="btn" data-p="0.3">30&nbsp;%</button>
+              <button type="button" class="btn" data-p="0.55">55&nbsp;%</button>
+            </div>
+          </fieldset>
+          <div class="btns">
+            <button type="button" class="btn main" id="b-new">Nueva muestra</button>
+            <button type="button" class="btn" id="b-reset">Restablecer</button>
+          </div>
+          <p class="hint" id="seedinfo"></p>
+        </form>
+      </div>
+
+      <div class="c12 l8 min0">
+        <div class="groups" id="groups" role="group" aria-label="Los siete números de la muestra actual"></div>
+
+        <div class="gtitle"><span class="lbl">Asimetría en la escala</span><output id="o-sk"></output></div>
+        <div id="gSkew"></div>
+        <div class="gtitle"><span class="lbl">Curtosis en la escala</span><output id="o-ku"></output></div>
+        <div id="gKurt"></div>
+        <p class="hint" style="max-width:60ch;margin-top:8px">El cuadrado macizo marca la muestra actual. El cuadrado hueco marca la muestra antes de añadir extremos.</p>
+
+        <div class="how" style="margin-top:32px"><span class="lbl">Cómo leer la figura 1</span>
+          <p>Las barras grises cuentan cuántos datos caen en cada zona: es el histograma. Debajo, la caja roja muestra el IQR y las barras muestran la SD y la MAD. Los puntos del final son los datos. Arrastre uno para moverlo.</p>
+          <p>La línea negra es la media. La línea roja discontinua es la mediana. Si están lejos una de otra, la forma es asimétrica o hay extremos. Un anillo marca un valor extremo.</p></div>
+        <figure style="margin-top:0">
+          <div class="legend" aria-hidden="true">
+            <span><i class="sw"></i>Media</span>
+            <span><i class="sw red dash"></i>Mediana</span>
+            <span><i class="sw band red" style="height:0;border-top:2px solid var(--accent);background:none"></i>Caja: IQR</span>
+            <span><i class="sw band"></i>Media ± SD</span>
+            <span><i class="sw band red"></i>Mediana ± MAD</span>
+            <span><i class="sw pt"></i>Dato</span>
+            <span><i class="sw ring"></i>Valor extremo</span>
+          </div>
+          <div class="chart" id="chartA" role="img" aria-label="Histograma y diagrama de puntos"></div>
+          <figcaption>Figura 1. La altura de un punto no tiene significado. Solo importa su posición horizontal.</figcaption>
+        </figure>
+
+        <div class="reading" aria-live="polite" id="reading"></div>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 2. Qué cambia al añadir los valores extremos</caption>
+        <thead>
+          <tr><th scope="col">Número</th><th scope="col" class="r">Antes (sin extremos)</th><th scope="col" class="r">Ahora</th><th scope="col" class="r">Cambio</th><th scope="col" class="barcell">Tamaño del cambio</th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="hint" style="max-width:60ch">La letra σ designa la dispersión de los datos limpios. El cambio de la media y de la mediana se mide en unidades de σ. El cambio de SD, MAD e IQR se mide como porcentaje de su valor anterior. El cambio de asimetría y curtosis se mide en puntos de la escala. Una barra completa equivale a 1&nbsp;σ, a +100&nbsp;%, a 2 puntos de asimetría o a 6 puntos de curtosis.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ 03 GALERIA ═══════════════ -->
+<section class="sec" id="galeria" aria-labelledby="h-gal">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">03</div></div>
+      <div class="c12 m9">
+        <h2 id="h-gal">Cómo se ven las formas</h2>
+        <p class="body" style="margin-top:16px">La asimetría y la curtosis son difíciles de imaginar solo con números. Esta galería muestra seis formas típicas. Cada una usa una muestra de 4000 datos, para que el azar pese poco. En las formas simétricas, la muestra se refleja respecto al centro: así su asimetría vale exactamente 0.</p>
+        <p class="body">Pulse «Probar en el laboratorio» para cargar una forma y añadirle extremos.</p>
+      </div>
+    </div>
+    <div class="how" style="margin-top:0"><span class="lbl">Cómo leer las tarjetas</span>
+      <p>Cada gráfico es un histograma. La línea negra marca la media. La línea roja marca la mediana.</p>
+      <p><b>Asimetría.</b> Cero significa simétrica. Positiva significa cola larga a la derecha. Negativa significa cola larga a la izquierda. <b>Curtosis.</b> Cero significa colas como las de la campana normal. Positiva significa más datos lejanos. Negativa significa menos datos lejanos.</p></div>
+    <div class="gal" id="gallery"></div>
+    <div class="take" style="margin-top:32px"><span class="lbl">Una confusión frecuente</span><p>La curtosis no mide si la cima es puntiaguda. Mide sobre todo cuántos datos caen lejos del centro, es decir, el peso de las colas. Una forma plana y una forma con dos grupos tienen curtosis negativa porque casi no tienen datos lejanos.</p></div>
+  </div>
+</section>
+
+<!-- ═══════════════ 04 UN DATO ═══════════════ -->
+<section class="sec" id="alejamiento" aria-labelledby="h-alej">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">04</div></div>
+      <div class="c12 m9">
+        <h2 id="h-alej">Qué pasa cuando llega un dato nuevo</h2>
+        <p class="body" style="margin-top:16px">Imagine una muestra limpia con la forma elegida en el laboratorio. Llega un solo dato más. Los cuatro gráficos muestran qué hace cada número según dónde caiga ese dato.</p>
+        <p class="body">Una línea que sube sin parar es vulnerable: un dato lejano la arrastra. Una línea que se aplana es resistente: un dato lejano deja de importar.</p>
+      </div>
+    </div>
+    <div class="how" style="margin-top:0"><span class="lbl">Cómo leer estos gráficos</span>
+      <p>El eje horizontal indica dónde cae el dato nuevo. El 0 es el centro de los datos. «+10σ» es diez dispersiones normales a la derecha. «−10σ» es lo mismo a la izquierda.</p>
+      <p>El eje vertical indica el valor que toma cada número. Mueva el puntero sobre un gráfico para leer los valores exactos.</p></div>
+    <div class="four">
+      <figure style="margin-top:0">
+        <div class="lbl" style="margin-bottom:8px">Centro</div>
+        <div class="legend" aria-hidden="true"><span><i class="sw"></i>Media</span><span><i class="sw red"></i>Mediana</span></div>
+        <div class="chart" id="chB1" role="img" aria-label="Media y mediana según la posición de un dato añadido"></div>
+        <div class="read" id="cpB1"></div>
+      </figure>
+      <figure style="margin-top:0">
+        <div class="lbl" style="margin-bottom:8px">Dispersión</div>
+        <div class="legend" aria-hidden="true"><span><i class="sw"></i>SD</span><span><i class="sw red"></i>MAD escalada</span><span><i class="sw red dash"></i>IQR ÷ 1,349</span></div>
+        <div class="chart" id="chB2" role="img" aria-label="SD, MAD e IQR según la posición de un dato añadido"></div>
+        <div class="read" id="cpB2"></div>
+      </figure>
+      <figure style="margin-top:0">
+        <div class="lbl" style="margin-bottom:8px">Asimetría</div>
+        <div class="legend" aria-hidden="true"><span><i class="sw"></i>Asimetría clásica</span><span><i class="sw red"></i>Asimetría de Bowley (robusta)</span></div>
+        <div class="chart" id="chB3" role="img" aria-label="Asimetría según la posición de un dato añadido"></div>
+        <div class="read" id="cpB3"></div>
+      </figure>
+      <figure style="margin-top:0">
+        <div class="lbl" style="margin-bottom:8px">Curtosis</div>
+        <div class="legend" aria-hidden="true"><span><i class="sw"></i>Curtosis clásica</span></div>
+        <div class="chart" id="chB4" role="img" aria-label="Curtosis según la posición de un dato añadido"></div>
+        <div class="read" id="cpB4"></div>
+      </figure>
+    </div>
+    <p class="hint" style="max-width:70ch;margin-top:16px">Figuras 2a a 2d. «MAD escalada» es la MAD multiplicada por 1,4826. «IQR ÷ 1,349» es el IQR dividido por 1,349. Con estos factores, los dos números se comparan con la SD si los datos son normales. La asimetría de Bowley usa solo los cuartiles y la mediana, y va de −1 a +1.</p>
+    <div class="take"><span class="lbl">Conclusión</span><p>La media, la SD, la asimetría y la curtosis clásicas no tienen tope práctico: un dato lejano las mueve mucho. La mediana, la MAD y el IQR tienen tope: un dato lejano deja de importar más allá de cierta distancia.</p></div>
+  </div>
+</section>
+
+<!-- ═══════════════ 05 MUCHOS EXTREMOS ═══════════════ -->
+<section class="sec" id="ruptura" aria-labelledby="h-rupt">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">05</div></div>
+      <div class="c12 m9">
+        <h2 id="h-rupt">Cuántos extremos aguanta cada número</h2>
+        <p class="body" style="margin-top:16px">Ahora no llega un dato, sino muchos. Los gráficos aumentan la proporción de valores extremos de 0&nbsp;% a 60&nbsp;%. Usan la distancia y el lado que usted eligió en el laboratorio.</p>
+        <p class="body">La proporción de datos malos que un número soporta se llama <b>punto de ruptura</b>. El del IQR es 25&nbsp;%. El de la mediana y el de la MAD es 50&nbsp;%. El de los demás es casi 0&nbsp;%.</p>
+      </div>
+    </div>
+    <div class="how" style="margin-top:0"><span class="lbl">Cómo leer estos gráficos</span>
+      <p>El eje horizontal indica qué porcentaje de los datos son extremos. Las marcas verticales señalan 25&nbsp;%, 50&nbsp;% y el valor de <i>k</i> que usted fijó.</p>
+      <p>Lea cada línea de izquierda a derecha. Una línea que se queda baja resiste. Una línea que salta de golpe ha llegado a su punto de ruptura.</p></div>
+    <div class="four">
+      <figure style="margin-top:0">
+        <div class="lbl" style="margin-bottom:8px">Centro</div>
+        <div class="legend" aria-hidden="true"><span><i class="sw"></i>Media</span><span><i class="sw red"></i>Mediana</span></div>
+        <div class="chart" id="chC1" role="img" aria-label="Media y mediana según la proporción de extremos"></div>
+        <div class="read" id="cpC1"></div>
+      </figure>
+      <figure style="margin-top:0">
+        <div class="lbl" style="margin-bottom:8px">Dispersión</div>
+        <div class="legend" aria-hidden="true"><span><i class="sw"></i>SD</span><span><i class="sw red"></i>MAD escalada</span><span><i class="sw red dash"></i>IQR ÷ 1,349</span></div>
+        <div class="chart" id="chC2" role="img" aria-label="SD, MAD e IQR según la proporción de extremos"></div>
+        <div class="read" id="cpC2"></div>
+      </figure>
+      <figure style="margin-top:0">
+        <div class="lbl" style="margin-bottom:8px">Asimetría</div>
+        <div class="legend" aria-hidden="true"><span><i class="sw"></i>Asimetría clásica</span><span><i class="sw red"></i>Asimetría de Bowley</span></div>
+        <div class="chart" id="chC3" role="img" aria-label="Asimetría según la proporción de extremos"></div>
+        <div class="read" id="cpC3"></div>
+      </figure>
+      <figure style="margin-top:0">
+        <div class="lbl" style="margin-bottom:8px">Curtosis</div>
+        <div class="legend" aria-hidden="true"><span><i class="sw"></i>Curtosis clásica</span></div>
+        <div class="chart" id="chC4" role="img" aria-label="Curtosis según la proporción de extremos"></div>
+        <div class="read" id="cpC4"></div>
+      </figure>
+    </div>
+    <p class="hint" style="max-width:70ch;margin-top:16px">Figuras 3a a 3d. Las líneas que salen del gráfico continúan fuera de la escala.</p>
+    <div class="take"><span class="lbl">Conclusión</span><p>Entre 0 % y 25 % de extremos, la mediana, la MAD y el IQR resisten. Entre 25 % y 50 %, el IQR falla, mientras que la mediana y la MAD resisten mejor, aunque suben algo. Pasado 50 %, los extremos son la mayoría y los números pasan a describirlos a ellos: por eso la MAD vuelve a bajar. En ese caso, revise cómo se recogieron los datos.</p></div>
+  </div>
+</section>
+
+<!-- ═══════════════ 06 RESUMEN ═══════════════ -->
+<section class="sec" id="resumen" aria-labelledby="h-res">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">06</div></div>
+      <div class="c12 m9">
+        <h2 id="h-res">Resumen: qué mide cada número</h2>
+        <p class="body" style="margin-top:16px">Ningún número es mejor en todos los casos. La tabla resume qué pregunta responde cada uno y cuánto resiste a los extremos.</p>
+      </div>
+    </div>
+    <div class="tbl-wrap" style="margin-top:0">
+      <table class="rtab">
+        <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 3. Los siete números</caption>
+        <thead><tr><th scope="col" class="l">Número</th><th scope="col" class="l">Pregunta que responde</th><th scope="col" class="l">Cómo se calcula, en palabras</th><th scope="col" class="l">Punto de ruptura</th></tr></thead>
+        <tbody>
+          <tr><td>Media</td><td>¿Cuál es el valor típico si se repartiera todo por igual?</td><td>Suma de los datos dividida por la cantidad.</td><td class="pr">≈ 0&nbsp;%<br><span style="font-weight:400;color:var(--t2)">Un dato basta para moverla.</span></td></tr>
+          <tr><td>Mediana</td><td>¿Qué valor deja la mitad de los datos a cada lado?</td><td>El dato del medio de la lista ordenada.</td><td class="pr">50&nbsp;%<br><span style="font-weight:400;color:var(--t2)">Resiste hasta la mitad.</span></td></tr>
+          <tr><td>SD (desviación típica)</td><td>¿Cuánto se alejan los datos de la media?</td><td>Raíz del promedio de las distancias a la media, elevadas al cuadrado.</td><td class="pr">≈ 0&nbsp;%<br><span style="font-weight:400;color:var(--t2)">Los lejanos pesan mucho.</span></td></tr>
+          <tr><td>MAD</td><td>¿Cuánto se alejan los datos del valor del medio?</td><td>Mediana de las distancias a la mediana, sin signo.</td><td class="pr">50&nbsp;%<br><span style="font-weight:400;color:var(--t2)">Resiste hasta la mitad.</span></td></tr>
+          <tr><td>IQR (rango intercuartílico)</td><td>¿Qué anchura ocupa la mitad central de los datos?</td><td>Q3 menos Q1.</td><td class="pr">25&nbsp;%<br><span style="font-weight:400;color:var(--t2)">Resiste hasta una cuarta parte.</span></td></tr>
+          <tr><td>Asimetría</td><td>¿Una cola es más larga que la otra?</td><td>Promedio de las distancias a la media elevadas al cubo, dividido por la dispersión elevada a 3.</td><td class="pr">≈ 0&nbsp;%<br><span style="font-weight:400;color:var(--t2)">Muy sensible.</span></td></tr>
+          <tr><td>Curtosis</td><td>¿Hay más o menos datos lejanos que en una campana normal?</td><td>Promedio de las distancias a la media elevadas a la cuarta, dividido por la dispersión elevada a 4, menos 3.</td><td class="pr">≈ 0&nbsp;%<br><span style="font-weight:400;color:var(--t2)">Muy sensible.</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hint" style="max-width:70ch">Los puntos de ruptura son valores teóricos para muestras grandes.</p>
+
+    <div class="three" style="margin-top:48px">
+      <div><h3>Datos limpios y regulares</h3><p>Use media y SD. Son las más precisas con pocos datos. Mediana, MAD e IQR dan resultados parecidos.</p></div>
+      <div><h3>Posibles errores o casos raros</h3><p>Use mediana, MAD e IQR. Calcule también media y SD. Si difieren mucho de los robustos, examine los datos.</p></div>
+      <div><h3>Datos con cola larga</h3><p>Use la mediana mejor que la media para describir el valor típico. Informe también de la asimetría. Mire el histograma antes de resumir.</p></div>
+    </div>
+    <div class="take" style="margin-top:32px"><span class="lbl">Regla práctica</span><p>Calcule siempre un número clásico y su pareja robusta: media con mediana, SD con MAD o con IQR. Si coinciden, los datos son regulares. Si difieren mucho, hay extremos o una forma asimétrica. No es una prueba, es una señal para mirar los datos.</p><p>La asimetría y la curtosis necesitan muchos datos. Con pocos datos cambian mucho de una muestra a otra. No las use sin el histograma.</p></div>
+  </div>
+</section>
+
+<!-- ═══════════════ 07 FORMULAS ═══════════════ -->
+<section class="sec" id="formulas" aria-labelledby="h-form">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">07</div></div>
+      <div class="c12 m9">
+        <h2 id="h-form">Fórmulas</h2>
+        <p class="body" style="margin-top:16px">Esta sección es opcional. Todo lo anterior se entiende sin ella. Sirve a quien quiere ver la matemática exacta.</p>
+        <p class="body"><b>Cómo leer los símbolos.</b> <i>x<sub>i</sub></i> es el dato número <i>i</i>. <i>n</i> es la cantidad de datos. El signo Σ significa «sumar todos». Una barra encima, como en <i>x̄</i>, indica la media. Una tilde, como en <i>x̃</i>, indica la mediana.</p>
+        <p class="mathwarn" id="mathwarn" role="status">KaTeX no se cargó. La página muestra el código LaTeX en lugar de las fórmulas. Conecte el equipo a internet y recargue la página.</p>
+      </div>
+    </div>
+    <details class="opt"><summary>Mostrar las fórmulas</summary>
+    <div class="formulas">
+      <div class="f"><div class="n"><span class="cap">Media</span></div><div class="e"><div class="eq">$$\bar{x}=\frac{1}{n}\sum_{i=1}^{n}x_i$$</div><p>La media suma todos los datos y divide por <i>n</i>.</p></div></div>
+      <div class="f"><div class="n"><span class="cap">Mediana</span></div><div class="e"><div class="eq">$$\tilde{x}=\operatorname{med}\left(x_1,\dots,x_n\right)$$</div><p>La mediana es el dato central de la muestra ordenada. Con <i>n</i> par, es el promedio de los dos centrales.</p></div></div>
+      <div class="f"><div class="n"><span class="cap">Cuartiles e IQR</span></div><div class="e"><div class="eq">$$Q_p=x_{(j)}+\left(h-\lfloor h\rfloor\right)\left(x_{(j+1)}-x_{(j)}\right),\quad h=(n-1)p,\ j=\lfloor h\rfloor+1$$$$\mathrm{IQR}=Q_3-Q_1,\qquad \frac{\mathrm{IQR}}{1{,}349}\approx\sigma\ \text{(datos normales)}$$</div><p>Los datos ordenados son <i>x</i><sub>(1)</sub> ≤ … ≤ <i>x</i><sub>(n)</sub>. Q1 usa <i>p</i> = 0,25 y Q3 usa <i>p</i> = 0,75. Esta es una de varias reglas de cálculo.</p></div></div>
+      <div class="f"><div class="n"><span class="cap">SD</span></div><div class="e"><div class="eq">$$s=\sqrt{\frac{1}{n-1}\sum_{i=1}^{n}\left(x_i-\bar{x}\right)^{2}}$$</div><p>La SD eleva al cuadrado cada distancia a la media. Por eso un dato lejano pesa mucho.</p></div></div>
+      <div class="f"><div class="n"><span class="cap">MAD</span></div><div class="e"><div class="eq">$$\mathrm{MAD}=\operatorname{med}_{i}\left|\,x_i-\tilde{x}\,\right|,\qquad \hat{\sigma}_{\mathrm{MAD}}=1{,}4826\cdot\mathrm{MAD}$$</div><p>La MAD usa solo valores centrales. El factor 1,4826 la lleva a la escala de σ si los datos son normales.</p></div></div>
+      <div class="f"><div class="n"><span class="cap">Asimetría</span></div><div class="e"><div class="eq">$$m_k=\frac{1}{n}\sum_{i=1}^{n}\left(x_i-\bar{x}\right)^{k},\qquad g_1=\frac{m_3}{m_2^{3/2}}$$</div><p>La asimetría promedia los cubos de las distancias. El cubo conserva el signo. Un dato lejano a la derecha da un valor positivo grande.</p></div></div>
+      <div class="f"><div class="n"><span class="cap">Curtosis</span></div><div class="e"><div class="eq">$$g_2=\frac{m_4}{m_2^{2}}-3$$</div><p>La curtosis promedia las cuartas potencias. Esta es la curtosis en exceso: vale 0 para datos normales. Muchos programas aplican una corrección de muestra y dan otro número.</p></div></div>
+      <div class="f"><div class="n"><span class="cap">Asimetría de Bowley</span></div><div class="e"><div class="eq">$$B=\frac{Q_3+Q_1-2\tilde{x}}{Q_3-Q_1}$$</div><p>La asimetría de Bowley usa solo cuartiles y mediana. Va de −1 a +1 y resiste los extremos.</p></div></div>
+      <div class="f"><div class="n"><span class="cap">Punto de ruptura</span></div><div class="e"><div class="eq">$$\varepsilon^{*}(\bar{x})=\varepsilon^{*}(s)=\frac{1}{n},\quad \varepsilon^{*}(\mathrm{IQR})\approx\frac{1}{4},\quad \varepsilon^{*}(\tilde{x})=\varepsilon^{*}(\mathrm{MAD})\approx\frac{1}{2}$$</div><p>El punto de ruptura es la mayor proporción de datos que se puede cambiar sin que el número se vaya al infinito.</p></div></div>
+    </div>
+
+    <div class="live" aria-live="polite">
+      <div class="cap" style="margin-bottom:8px">Cálculo con la muestra actual del laboratorio</div>
+      <div id="texLive"></div>
+    </div>
+    </details>
+  </div>
+</section>
+
+<!-- ═══════════════ 08 TERMINOS ═══════════════ -->
+<section class="sec" id="lectura" aria-labelledby="h-lec">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">08</div></div>
+      <div class="c12 m9"><h2 id="h-lec">Diccionario y límites</h2></div>
+    </div>
+    <div class="grid">
+      <div class="c12 m6">
+        <div class="cap" style="margin-bottom:16px">Términos</div>
+        <dl class="gloss">
+          <div><dt>Media</dt><dd>La suma de los datos dividida por <i>n</i>.</dd></div>
+          <div><dt>Mediana</dt><dd>El dato central de la muestra ordenada.</dd></div>
+          <div><dt>SD</dt><dd>Desviación típica. Una medida de dispersión basada en las distancias a la media, elevadas al cuadrado.</dd></div>
+          <div><dt>MAD</dt><dd>Desviación absoluta mediana. La mediana de las distancias a la mediana. Las siglas vienen del inglés.</dd></div>
+          <div><dt>MAD escalada</dt><dd>La MAD multiplicada por 1,4826.</dd></div>
+          <div><dt>IQR</dt><dd>Rango intercuartílico. La distancia entre Q3 y Q1.</dd></div>
+          <div><dt>Cuartil</dt><dd>Un valor que deja 25 %, 50 % o 75 % de los datos por debajo.</dd></div>
+          <div><dt>Asimetría</dt><dd>Un número que indica hacia qué lado se alarga la cola.</dd></div>
+          <div><dt>Curtosis</dt><dd>Un número que indica si hay más o menos datos lejanos que en una campana normal.</dd></div>
+          <div><dt>Cola</dt><dd>La zona de datos alejados del centro, a un lado o al otro.</dd></div>
+          <div><dt>Medida robusta</dt><dd>Una medida que los valores extremos casi no alteran.</dd></div>
+          <div><dt>Punto de ruptura</dt><dd>La proporción de datos malos que un número soporta antes de fallar.</dd></div>
+        </dl>
+      </div>
+      <div class="c12 m6">
+        <div class="cap" style="margin-bottom:16px">Límites de esta consola</div>
+        <ul class="lim">
+          <li>La consola usa una sola muestra por vez. Otra muestra da otros números. La tendencia general se mantiene, pero los valores exactos cambian.</li>
+          <li>La asimetría y la curtosis fluctúan mucho con pocos datos. Con menos de 100 datos, no las interprete sin el histograma.</li>
+          <li>Los programas calculan estos números con reglas distintas. Los cuartiles, la asimetría y la curtosis pueden diferir de los de esta página.</li>
+          <li>Los factores 1,4826 y 1,349 valen solo para datos normales. Con otras formas, la MAD escalada y el IQR ÷ 1,349 no coinciden con la SD.</li>
+          <li>Un valor extremo no es siempre un error. Puede ser un dato real e importante. Examine la causa antes de borrarlo.</li>
+          <li>La MAD y el IQR pueden valer 0 si muchos datos son iguales. En ese caso no sirven como medida de dispersión.</li>
+          <li>Con dos grupos separados, ningún número del centro describe bien los datos. Mire siempre el histograma.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Consola de estadística descriptiva · Simulación con semilla fija</span>
+    <span>Fórmulas: KaTeX · Tipografía: IBM Plex Sans</span>
+  </div>
+</footer>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+'use strict';
+const $ = s => document.querySelector(s);
+const K = 1.4826, KI = 1.349;
+const SIG = ' σ';
+const nf = (v, d = 2) => Number.isFinite(v) ? (Math.abs(v) < 0.5 * Math.pow(10, -d) ? 0 : v).toLocaleString('es-ES', {minimumFractionDigits: d, maximumFractionDigits: d}) : '—';
+const sgn = (v, d = 2) => (v > 0 ? '+' : v < 0 ? '−' : '') + nf(Math.abs(v), d);
+
+/* ───────── Generador pseudoaleatorio con semilla ───────── */
+function rng(seed){
+  let a = seed >>> 0;
+  return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+function makePool(seed, N){
+  const r = rng(seed), P = {z: [], u: [], v: [], w: [[], [], [], [], []], e: [], j: []};
+  const g = () => { let u = 0; while (!u) u = r(); const v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  for (let i = 0; i < N; i++){
+    P.z.push(g()); P.u.push(Math.min(1 - 1e-9, Math.max(1e-9, r()))); P.v.push(r());
+    for (let m = 0; m < 5; m++) P.w[m].push(g());
+    P.e.push(g()); P.j.push(r());
+  }
+  return P;
+}
+
+/* ───────── Familias de forma ───────── */
+const FAM = {
+  normal: {name: 'Normal', m: 0, s: 1, f: (P, i) => P.z[i],
+    help: 'Forma de campana. Simétrica. Es la referencia: asimetría 0 y curtosis 0.',
+    desc: 'Simétrica. Pocos datos lejanos. Es la referencia de las demás.'},
+  der: {name: 'Cola derecha', m: 1, s: 1, f: (P, i) => -Math.log(P.u[i]),
+    help: 'Muchos datos bajos y pocos muy altos. Ejemplos: sueldos, precios de viviendas.',
+    desc: 'Muchos datos bajos y pocos muy altos. La media supera a la mediana. Ejemplos: sueldos y precios de viviendas.'},
+  izq: {name: 'Cola izquierda', m: -1, s: 1, f: (P, i) => Math.log(P.u[i]),
+    help: 'Muchos datos altos y pocos muy bajos. Ejemplo: notas de un examen fácil.',
+    desc: 'Muchos datos altos y pocos muy bajos. La media queda por debajo de la mediana. Ejemplo: notas de un examen fácil.'},
+  pesadas: {name: 'Colas pesadas', m: 0, s: Math.sqrt(5 / 3), f: (P, i) => { let c = 0; for (let m = 0; m < 5; m++) c += P.w[m][i] ** 2; return P.z[i] / Math.sqrt(c / 5); },
+    help: 'Simétrica, pero con más datos lejanos que la campana normal.',
+    desc: 'Simétrica, pero con más datos lejanos de lo normal. Los extremos aparecen de forma natural. Ejemplo frecuente: rendimientos diarios de una acción.'},
+  ligeras: {name: 'Colas ligeras', m: 0, s: 1, f: (P, i) => (2 * P.u[i] - 1) * Math.sqrt(3),
+    help: 'Todos los valores posibles son igual de probables. No hay datos lejanos.',
+    desc: 'Todos los valores posibles son igual de probables. No hay datos lejanos. Es una forma plana, llamada uniforme.'},
+  bimodal: {name: 'Dos grupos', m: 0, s: Math.sqrt(2.74), f: (P, i) => (P.v[i] < 0.5 ? -1.5 : 1.5) + 0.7 * P.z[i],
+    help: 'Dos grupos separados. La media cae entre ellos, donde casi no hay datos.',
+    desc: 'Dos grupos separados. La media cae entre ellos, donde casi no hay datos. Ejemplo: visitas a un comercio con un pico por la mañana y otro por la tarde.'}
+};
+const std = (P, fam, i) => (FAM[fam].f(P, i) - FAM[fam].m) / FAM[fam].s;
+
+/* ───────── Estadísticos ───────── */
+const quant = (s, p) => { const h = (s.length - 1) * p, lo = Math.floor(h), hi = Math.ceil(h); return s[lo] + (h - lo) * (s[hi] - s[lo]); };
+function stats(a){
+  const n = a.length, s = Float64Array.from(a).sort();
+  let t = 0; for (const v of a) t += v;
+  const mean = t / n, med = quant(s, 0.5), q1 = quant(s, 0.25), q3 = quant(s, 0.75);
+  let m2 = 0, m3 = 0, m4 = 0;
+  for (const v of a){ const d = v - mean, d2 = d * d; m2 += d2; m3 += d2 * d; m4 += d2 * d2; }
+  const ss = m2; m2 /= n; m3 /= n; m4 /= n;
+  const sd = n > 1 ? Math.sqrt(ss / (n - 1)) : 0;
+  const ad = Float64Array.from(a, v => Math.abs(v - med)).sort(), mad = quant(ad, 0.5);
+  const iqr = q3 - q1;
+  return {n, mean, med, q1, q3, iqr, iqrS: iqr / KI, sd, mad, madS: K * mad, m2, m3, m4, ss,
+    skew: m2 > 1e-12 ? m3 / Math.pow(m2, 1.5) : NaN, kurt: m2 > 1e-12 ? m4 / (m2 * m2) - 3 : NaN,
+    bowley: iqr > 1e-12 ? (q3 + q1 - 2 * med) / iqr : NaN};
+}
+
+/* ───────── Estado ───────── */
+const DEF = {n: 40, mu: 50, sigma: 10, k: 4, d: 8, side: 'normal-placeholder', fam: 'normal', seed: 7};
+DEF.side = 'right';
+const S = {...DEF, over: new Map()};
+let pool = makePool(S.seed, 400);
+const signOf = (j, side) => side === 'right' ? 1 : side === 'left' ? -1 : (j % 2 ? -1 : 1);
+
+function buildSample(n, k){
+  const clean = new Array(n);
+  for (let i = 0; i < n; i++) clean[i] = S.mu + S.sigma * std(pool, S.fam, i);
+  const data = clean.slice();
+  for (let j = 0; j < k; j++){
+    const i = n - 1 - j;
+    data[i] = S.mu + signOf(j, S.side) * S.d * S.sigma * (1 + 0.06 * pool.e[i]);
+  }
+  return {clean, data};
+}
+const kMax = () => Math.floor(0.6 * S.n);
+let cur = null;
+function compute(){
+  const {clean, data} = buildSample(S.n, S.k);
+  for (const [i, v] of S.over) if (i < S.n) data[i] = v;
+  cur = {clean, data, cl: stats(clean), st: stats(data)};
+}
+
+/* ───────── Utilidades de gráfico ───────── */
+function niceTicks(a, b, n = 5){
+  const span = b - a; if (!(span > 0)) return [a];
+  const s0 = span / n, p = Math.pow(10, Math.floor(Math.log10(s0))), e = s0 / p;
+  const step = (e < 1.5 ? 1 : e < 3 ? 2 : e < 7 ? 5 : 10) * p;
+  const out = []; for (let v = Math.ceil(a / step - 1e-9) * step; v <= b + 1e-9; v += step) out.push(+v.toPrecision(12));
+  out.step = step; return out;
+}
+const decs = t => { const s = t.step || 1; return Math.max(0, -Math.floor(Math.log10(s) + 1e-9)); };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+let uid = 0;
+
+
+
+/* ───────── Figura 1: histograma, caja y puntos ───────── */
+let drag = null;
+function histBins(data, d0, d1, iqr){
+  const n = data.length, fd = iqr > 0 ? 2 * iqr / Math.cbrt(n) : (d1 - d0) / 10;
+  const nb = clamp(Math.ceil((d1 - d0) / fd), 10, 40), w = (d1 - d0) / nb, c = new Array(nb).fill(0);
+  data.forEach(v => { c[clamp(Math.floor((v - d0) / w), 0, nb - 1)]++; });
+  return {nb, w, c};
+}
+function drawA(){
+  const host = $('#chartA'), W = host.clientWidth || 320, H = 380;
+  const {data, st} = cur;
+  const lo = Math.min(...data, st.mean - st.sd, st.med - st.madS, S.mu - 3 * S.sigma);
+  const hi = Math.max(...data, st.mean + st.sd, st.med + st.madS, S.mu + 3 * S.sigma);
+  const pd = (hi - lo) * 0.04 || 1;
+  const dom = drag ? drag.dom : [lo - pd, hi + pd];
+  const ml = 12, mr = 12, axY = H - 28;
+  const sx = v => ml + (v - dom[0]) / (dom[1] - dom[0]) * (W - ml - mr);
+  const ticks = niceTicks(dom[0], dom[1], W < 480 ? 4 : 8), dd = decs(ticks);
+  let g = '';
+  ticks.forEach(v => { g += `<line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="22" y2="${axY}"/><text class="tk" x="${sx(v)}" y="${axY + 18}" text-anchor="middle">${nf(v, dd)}</text>`; });
+  g += `<line class="axis" x1="${ml}" x2="${W - mr}" y1="${axY}" y2="${axY}"/>`;
+  // Histograma
+  const hb = histBins(data, dom[0], dom[1], st.iqr), hTop = 30, hBase = 162, mx = Math.max(...hb.c, 1);
+  hb.c.forEach((c, b) => {
+    if (!c) return;
+    const x1 = sx(dom[0] + b * hb.w), x2 = sx(dom[0] + (b + 1) * hb.w), h = (hBase - hTop) * c / mx;
+    g += `<rect x="${x1 + 0.5}" y="${hBase - h}" width="${Math.max(1, x2 - x1 - 1)}" height="${h}" fill="var(--t4)"/>`;
+  });
+  g += `<line x1="${ml}" x2="${W - mr}" y1="${hBase}" y2="${hBase}" stroke="var(--t3)" stroke-width="1"/>`;
+  // Caja (IQR) con bigotes de Tukey
+  const by = 196, fence1 = st.q1 - 1.5 * st.iqr, fence2 = st.q3 + 1.5 * st.iqr;
+  const inl = data.filter(v => v >= fence1 && v <= fence2), wl = Math.min(...inl), wh = Math.max(...inl);
+  g += `<path d="M${sx(wl)} ${by}H${sx(st.q1)}M${sx(st.q3)} ${by}H${sx(wh)}M${sx(wl)} ${by - 6}V${by + 6}M${sx(wh)} ${by - 6}V${by + 6}" stroke="var(--accent)" stroke-width="2" fill="none"/>`;
+  g += `<rect x="${sx(st.q1)}" y="${by - 11}" width="${Math.max(2, sx(st.q3) - sx(st.q1))}" height="22" fill="var(--a10)" stroke="var(--accent)" stroke-width="2"/>`;
+  g += `<line x1="${sx(st.med)}" x2="${sx(st.med)}" y1="${by - 11}" y2="${by + 11}" stroke="var(--accent)" stroke-width="3"/>`;
+  data.forEach(v => { if (v < fence1 || v > fence2) g += `<circle cx="${sx(clamp(v, dom[0], dom[1]))}" cy="${by}" r="3" fill="none" stroke="var(--accent)" stroke-width="1.5"/>`; });
+  g += `<text class="txt red" x="${clamp((sx(st.q1) + sx(st.q3)) / 2, 80, W - 80)}" y="${by - 17}" text-anchor="middle">Caja · IQR = ${nf(st.iqr)}</text>`;
+  // Barras de dispersión
+  const bar = (c, w, y, cls, label) => {
+    const x1 = sx(c - w), x2 = sx(c + w), col = cls === 'red' ? 'var(--accent)' : 'var(--text)';
+    return `<path d="M${x1} ${y - 6}V${y + 6}M${x1} ${y}H${x2}M${x2} ${y - 6}V${y + 6}" fill="none" stroke="${col}" stroke-width="3"/><text class="txt ${cls}" x="${clamp((x1 + x2) / 2, 100, W - 100)}" y="${y - 12}" text-anchor="middle">${label}</text>`;
+  };
+  g += bar(st.mean, st.sd, 244, 'ink', `Media ± SD · ${nf(st.mean - st.sd)} a ${nf(st.mean + st.sd)}`);
+  g += bar(st.med, st.madS, 278, 'red', `Mediana ± MAD esc. · ${nf(st.med - st.madS)} a ${nf(st.med + st.madS)}`);
+  // Líneas verticales
+  const xm = sx(st.mean), xd = sx(st.med), right = st.med >= st.mean;
+  g += `<line x1="${xm}" x2="${xm}" y1="22" y2="${axY}" stroke="var(--text)" stroke-width="1.5"/>`;
+  g += `<line x1="${xd}" x2="${xd}" y1="22" y2="${axY}" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+  g += `<text class="txt" x="${xm + (right ? -5 : 5)}" y="16" text-anchor="${right ? 'end' : 'start'}">Media ${nf(st.mean)}</text>`;
+  g += `<text class="txt red" x="${xd + (right ? 5 : -5)}" y="16" text-anchor="${right ? 'start' : 'end'}">Mediana ${nf(st.med)}</text>`;
+  // Puntos
+  const y0 = 298, y1 = axY - 12, n = S.n, k = S.k;
+  let pts = '', ext = '', hits = '';
+  data.forEach((v, i) => {
+    const x = sx(clamp(v, dom[0], dom[1])), y = y0 + (y1 - y0) * pool.j[i], isE = i >= n - k;
+    if (isE) ext += `<circle class="dot-x" cx="${x}" cy="${y}" r="5.5" pointer-events="none"/>`;
+    else pts += `<circle class="dot-p" cx="${x}" cy="${y}" r="3.5" pointer-events="none"/>`;
+    hits += `<circle class="hit pt" data-i="${i}" cx="${x}" cy="${y}" r="11"/>`;
+  });
+  host.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="touch-action:pan-y">${g}${pts}${ext}${hits}</svg>`;
+  host.setAttribute('aria-label', `Histograma y puntos de ${n} datos con ${k} valores extremos. Media ${nf(st.mean)}. Mediana ${nf(st.med)}. SD ${nf(st.sd)}. MAD escalada ${nf(st.madS)}. IQR ${nf(st.iqr)}. Asimetría ${nf(st.skew)}. Curtosis ${nf(st.kurt)}.`);
+  host._A = {dom, ml, mr, W};
+}
+(() => {
+  const host = $('#chartA');
+  host.addEventListener('pointerdown', e => {
+    const t = e.target.closest('[data-i]'); if (!t || !host._A) return;
+    drag = {i: +t.dataset.i, dom: host._A.dom.slice()};
+    host.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  host.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const A = host._A, r = host.getBoundingClientRect();
+    const px = clamp(e.clientX - r.left, A.ml, A.W - A.mr);
+    S.over.set(drag.i, drag.dom[0] + (px - A.ml) / (A.W - A.ml - A.mr) * (drag.dom[1] - drag.dom[0]));
+    schedule(true);
+  });
+  const end = () => { if (drag){ drag = null; schedule(); } };
+  host.addEventListener('pointerup', end);
+  host.addEventListener('pointercancel', end);
+})();
+
+/* ───────── Gráfico de líneas genérico ───────── */
+function lineChart(host, o){
+  const W = host.clientWidth || 320, H = o.h || 250, m = {l: 48, r: 14, t: 24, b: 40};
+  const pw = W - m.l - m.r, ph = H - m.t - m.b, id = 'cp' + (++uid);
+  const [x0, x1] = o.xDom, [y0, y1] = o.yDom;
+  const tx = o.xlog ? Math.log : v => v;
+  const sx = v => m.l + (tx(v) - tx(x0)) / (tx(x1) - tx(x0)) * pw;
+  const sy = v => m.t + ph - (v - y0) / (y1 - y0) * ph;
+  const xt = o.xTicks || niceTicks(x0, x1, W < 480 ? 4 : 7), yt = o.yTicks || niceTicks(y0, y1, 4);
+  const xd = decs(xt), yd = decs(yt);
+  let g = '';
+  yt.forEach(v => { g += `<line class="gl" x1="${m.l}" x2="${W - m.r}" y1="${sy(v)}" y2="${sy(v)}"/><text class="tk" x="${m.l - 8}" y="${sy(v) + 4}" text-anchor="end">${o.yFmt ? o.yFmt(v) : nf(v, yd)}</text>`; });
+  xt.forEach(v => { g += `<text class="tk" x="${sx(v)}" y="${H - m.b + 18}" text-anchor="middle">${o.xFmt ? o.xFmt(v) : nf(v, xd)}</text><line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="${m.t}" y2="${m.t + ph}" opacity=".5"/>`; });
+  g += `<line class="axis" x1="${m.l}" x2="${W - m.r}" y1="${m.t + ph}" y2="${m.t + ph}"/>`;
+  g += `<text class="ax-lab" x="${m.l}" y="12">${o.yLab || ''}</text><text class="ax-lab" x="${W - m.r}" y="${H - 4}" text-anchor="end">${o.xLab || ''}</text>`;
+  let body = '';
+  (o.refs || []).forEach(r => { if (r.y >= y0 && r.y <= y1) body += `<line class="ref" x1="${m.l}" x2="${W - m.r}" y1="${sy(r.y)}" y2="${sy(r.y)}"/><text class="tk" x="${W - m.r - 4}" y="${sy(r.y) - 5}" text-anchor="end">${r.label}</text>`; });
+  (o.markers || []).forEach(k => { if (k.x >= x0 && k.x <= x1) body += `<line class="mk" x1="${sx(k.x)}" x2="${sx(k.x)}" y1="${m.t}" y2="${m.t + ph}"/><text class="mk-t" x="${sx(k.x) + 4}" y="${m.t + 12}">${k.label}</text>`; });
+  o.series.forEach(s => {
+    const d = s.pts.map((p, i) => (i ? 'L' : 'M') + sx(p[0]).toFixed(1) + ' ' + sy(p[1]).toFixed(1)).join('');
+    body += `<path class="ln ${s.cls}${s.dash ? ' dash' : ''}" d="${d}" clip-path="url(#${id})"/>`;
+  });
+  let hv = `<line class="hv" id="${id}l" y1="${m.t}" y2="${m.t + ph}" visibility="hidden"/>`;
+  o.series.forEach((s, i) => { hv += `<circle id="${id}c${i}" r="4" fill="var(--bg)" stroke="${s.cls === 'red' ? 'var(--accent)' : 'var(--text)'}" stroke-width="2" visibility="hidden"/>`; });
+  host.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="touch-action:pan-y"><defs><clipPath id="${id}"><rect x="${m.l}" y="${m.t}" width="${pw}" height="${ph}"/></clipPath></defs>${g}${body}${hv}</svg>`;
+  host._L = {o, sx, sy, id, m, W};
+  const cap = o.cap ? $(o.cap) : null;
+  if (cap && !host._init) cap.textContent = o.capDefault || '';
+  if (cap) cap.dataset.def = o.capDefault || '';
+  if (!host._hook){
+    host._hook = true;
+    host.addEventListener('pointermove', e => {
+      const L = host._L; if (!L) return;
+      const r = host.getBoundingClientRect(), px = e.clientX - r.left;
+      const pts = L.o.series[0].pts; let bi = 0, bd = 1e9;
+      for (let i = 0; i < pts.length; i++){ const dd = Math.abs(L.sx(pts[i][0]) - px); if (dd < bd){ bd = dd; bi = i; } }
+      const lx = L.sx(pts[bi][0]), ln = host.querySelector('#' + L.id + 'l');
+      ln.setAttribute('x1', lx); ln.setAttribute('x2', lx); ln.setAttribute('visibility', 'visible');
+      L.o.series.forEach((s, i) => { const c = host.querySelector('#' + L.id + 'c' + i); c.setAttribute('cx', lx); c.setAttribute('cy', clamp(L.sy(s.pts[bi][1]), L.m.t, L.m.t + (L.o.h || 250) - L.m.t - L.m.b)); c.setAttribute('visibility', 'visible'); });
+      const c = L.o.cap ? $(L.o.cap) : null; if (c) c.textContent = L.o.hover(bi);
+    });
+    host.addEventListener('pointerleave', () => {
+      const L = host._L; if (!L) return;
+      host.querySelectorAll('[visibility=visible]').forEach(n => n.setAttribute('visibility', 'hidden'));
+      const c = L.o.cap ? $(L.o.cap) : null; if (c) c.textContent = c.dataset.def || '';
+    });
+  }
+  host._init = true;
+}
+
+const pad = (a, b, f = 0.08) => { const p = (b - a) * f || 1; return [a - p, b + p]; };
+
+
+
+/* ───────── Tarjetas y medidores ───────── */
+const CARDS = [
+  ['ink', 'Media', 'El promedio', 'mean', 2],
+  ['red', 'Mediana', 'El dato del medio', 'med', 2],
+  ['ink', 'SD', 'Dispersión clásica', 'sd', 2],
+  ['red', 'MAD escalada', 'Dispersión robusta', 'madS', 2],
+  ['red', 'IQR', 'Anchura de la mitad central', 'iqr', 2],
+  ['ink', 'Asimetría', 'Hacia dónde se alarga la cola', 'skew', 2],
+  ['ink', 'Curtosis', 'Peso de las colas', 'kurt', 2]
+];
+const GROUPS = [['Centro', [0, 1], ''], ['Dispersión', [2, 3, 4], ' g3'], ['Forma', [5, 6], '']];
+function groupsHTML(a, b, labelBefore){
+  return GROUPS.map(([nm, idx, cls]) => `<div class="grp${cls}"><span class="cap">${nm}</span><div class="cards">${idx.map(i => {
+    const [c, t, d, key, dg] = CARDS[i];
+    let extra = '';
+    if (key === 'iqr') extra = ` · ÷1,349 = <b>${nf(a.iqrS)}</b>`;
+    return `<div class="card ${c}"><div class="lbl"><span class="mark"></span>${t}</div><div class="def">${d}</div><div class="v${i === 4 || i === 3 ? '' : ''}">${nf(a[key], dg)}</div><div class="s">${labelBefore} <b>${nf(b[key], dg)}</b>${extra}</div></div>`;
+  }).join('')}</div></div>`).join('');
+}
+function gaugeHTML(val, ghost, lo, hi, left, right){
+  const pct = v => clamp((v - lo) / (hi - lo), 0, 1) * 100;
+  return `<div class="gauge"><div class="gh"><span>${left}</span><span>${right}</span></div><div class="gt"><i class="gz" style="left:${pct(0)}%"></i>${Number.isFinite(ghost) ? `<i class="gg" style="left:${pct(ghost)}%"></i>` : ''}${Number.isFinite(val) ? `<i class="gm" style="left:${pct(val)}%"></i>` : ''}</div><div class="gl2"><span>${lo}</span><span style="left:${pct(0)}%">0</span><span>${hi}</span></div></div>`;
+}
+function drawReadouts(){
+  const a = cur.st, c = cur.cl;
+  $('#groups').innerHTML = groupsHTML(a, c, 'Antes');
+  $('#gSkew').innerHTML = gaugeHTML(a.skew, c.skew, -3, 3, 'Cola izquierda larga', 'Cola derecha larga');
+  $('#gKurt').innerHTML = gaugeHTML(a.kurt, c.kurt, -2, 10, 'Colas ligeras', 'Colas pesadas');
+  $('#o-sk').textContent = nf(a.skew);
+  $('#o-ku').textContent = nf(a.kurt);
+  $('#o-n').textContent = S.n;
+  $('#o-k').textContent = `${S.k} (${nf(100 * S.k / S.n, 0)} %)`;
+  $('#o-d').textContent = nf(S.d, 1) + SIG;
+  $('#famHelp').textContent = FAM[S.fam].help;
+  $('#seedinfo').textContent = `Semilla ${S.seed}.` + (S.over.size ? ` Movió ${[...S.over.keys()].filter(i => i < S.n).length} dato(s) a mano.` : '');
+}
+
+/* ───────── Ejemplo guiado ───────── */
+const EX = [4, 5, 6, 6, 7, 8, 8, 9, 10, 11, 12];
+let exOn = false;
+const exData = on => { const a = EX.slice(); if (on) a[10] = 45; return a; };
+function drawEx(){
+  const host = $('#exChart'), W = host.clientWidth || 320, H = 340;
+  const a = exData(exOn), st = stats(a), b0 = stats(exData(false)), dom = exOn ? [-12, 50] : [0, 16];
+  const ml = 14, mr = 14, axY = H - 28, sx = v => ml + (v - dom[0]) / (dom[1] - dom[0]) * (W - ml - mr);
+  const ticks = niceTicks(dom[0], dom[1], W < 480 ? 4 : 8), dd = decs(ticks);
+  let g = '';
+  ticks.forEach(v => { g += `<line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="22" y2="${axY}"/><text class="tk" x="${sx(v)}" y="${axY + 18}" text-anchor="middle">${nf(v, dd)}</text>`; });
+  g += `<line class="axis" x1="${ml}" x2="${W - mr}" y1="${axY}" y2="${axY}"/>`;
+  const by = 62, f1 = st.q1 - 1.5 * st.iqr, f2 = st.q3 + 1.5 * st.iqr, inl = a.filter(v => v >= f1 && v <= f2), wl = Math.min(...inl), wh = Math.max(...inl);
+  g += `<path d="M${sx(wl)} ${by}H${sx(st.q1)}M${sx(st.q3)} ${by}H${sx(wh)}M${sx(wl)} ${by - 6}V${by + 6}M${sx(wh)} ${by - 6}V${by + 6}" stroke="var(--accent)" stroke-width="2" fill="none"/>`;
+  g += `<rect x="${sx(st.q1)}" y="${by - 11}" width="${Math.max(2, sx(st.q3) - sx(st.q1))}" height="22" fill="var(--a10)" stroke="var(--accent)" stroke-width="2"/><line x1="${sx(st.med)}" x2="${sx(st.med)}" y1="${by - 11}" y2="${by + 11}" stroke="var(--accent)" stroke-width="3"/>`;
+  a.forEach(v => { if (v < f1 || v > f2) g += `<circle cx="${sx(v)}" cy="${by}" r="3" fill="none" stroke="var(--accent)" stroke-width="1.5"/>`; });
+  g += `<text class="txt red" x="${clamp((sx(st.q1) + sx(st.q3)) / 2, 90, W - 90)}" y="${by - 17}" text-anchor="middle">Caja · IQR = ${nf(st.iqr)}</text>`;
+  const bar = (c, w, y, cls, label) => {
+    const x1 = Math.max(ml, sx(c - w)), x2 = Math.min(W - mr, sx(c + w)), col = cls === 'red' ? 'var(--accent)' : 'var(--text)';
+    return `<path d="M${x1} ${y - 6}V${y + 6}M${x1} ${y}H${x2}M${x2} ${y - 6}V${y + 6}" fill="none" stroke="${col}" stroke-width="3"/><text class="txt ${cls}" x="${clamp((x1 + x2) / 2, 100, W - 100)}" y="${y - 12}" text-anchor="middle">${label}</text>`;
+  };
+  g += bar(st.mean, st.sd, 118, 'ink', `Media ± SD: ${nf(st.mean - st.sd)} a ${nf(st.mean + st.sd)}`);
+  g += bar(st.med, st.madS, 160, 'red', `Mediana ± MAD esc.: ${nf(st.med - st.madS)} a ${nf(st.med + st.madS)}`);
+  const xm = sx(st.mean), xd = sx(st.med), right = st.med >= st.mean;
+  g += `<line x1="${xm}" x2="${xm}" y1="22" y2="${axY}" stroke="var(--text)" stroke-width="1.5"/><line x1="${xd}" x2="${xd}" y1="22" y2="${axY}" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+  g += `<text class="txt" x="${xm + (right ? -5 : 5)}" y="16" text-anchor="${right ? 'end' : 'start'}">Media ${nf(st.mean)}</text><text class="txt red" x="${xd + (right ? 5 : -5)}" y="16" text-anchor="${right ? 'start' : 'end'}">Mediana ${nf(st.med)}</text>`;
+  const py = axY - 40;
+  a.forEach((v, i) => {
+    const x = sx(v), isE = exOn && i === 10, yy = py - (i % 2) * 14;
+    g += isE ? `<circle class="dot-x" cx="${x}" cy="${yy}" r="6"/>` : `<circle class="dot-p" cx="${x}" cy="${yy}" r="4.5"/>`;
+  });
+  host.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${g}</svg>`;
+  host.setAttribute('aria-label', `Once tiempos de espera. Media ${nf(st.mean)}. Mediana ${nf(st.med)}. SD ${nf(st.sd)}. MAD escalada ${nf(st.madS)}. IQR ${nf(st.iqr)}. Asimetría ${nf(st.skew)}. Curtosis ${nf(st.kurt)}.`);
+
+  $('#exGroups').innerHTML = groupsHTML(st, b0, 'Original:');
+  $('#exBtn').setAttribute('aria-pressed', exOn);
+  $('#exBtn').textContent = exOn ? 'Volver a la espera original (12)' : 'Cambiar la última espera a 45';
+  $('#exState').textContent = exOn ? 'El paciente 11 espera 45 minutos.' : 'Los once tiempos son parecidos.';
+
+  const rs = st.sd / b0.sd, rm = st.madS / b0.madS;
+  $('#exTake').innerHTML = exOn
+    ? `<span class="lbl">Qué ocurrió</span><p>Un solo dato cambió el resultado. La media subió de ${nf(b0.mean)} a ${nf(st.mean)}. La SD pasó de ${nf(b0.sd)} a ${nf(st.sd)}, unas ${nf(rs, 1)} veces más. La asimetría pasó de ${nf(b0.skew)} a ${nf(st.skew)}. La curtosis pasó de ${nf(b0.kurt)} a ${nf(st.kurt)}.</p><p>La mediana pasó de ${nf(b0.med)} a ${nf(st.med)}. La MAD escalada pasó de ${nf(b0.madS)} a ${nf(st.madS)}. El IQR pasó de ${nf(b0.iqr)} a ${nf(st.iqr)}. Los tres números robustos casi no se movieron.</p>`
+    : `<span class="lbl">Qué ocurre sin extremos</span><p>Los tiempos son parecidos. La media y la mediana casi coinciden. Las tres dispersiones dan valores del mismo orden. La asimetría vale cerca de 0. La curtosis es algo negativa porque, con once datos, ninguno cae muy lejos. Pulse el botón para ver qué ocurre si una espera se dispara.</p>`;
+
+  const sorted = Float64Array.from(a).sort(), n = a.length;
+  const pos = p => (n - 1) * p + 1;
+  const ad = a.map(v => Math.abs(v - st.med)), sq = a.map(v => (v - st.mean) ** 2), cu = a.map(v => (v - st.mean) ** 3), qu = a.map(v => (v - st.mean) ** 4);
+  $('#stepsCentro').innerHTML =
+    `<li><span><b>Media.</b> Sume los ${n} tiempos y divida por ${n}. <span class="res">Resultado: ${nf(st.mean)}.</span></span></li>` +
+    `<li><span><b>Mediana.</b> Ordene los datos: ${[...sorted].join('; ')}. Tome el del medio, el sexto. <span class="res">Resultado: ${nf(st.med)}.</span></span></li>`;
+  $('#stepsDisp').innerHTML =
+    `<li><span><b>SD.</b> Eleve al cuadrado cada (dato − media). Sume: ${nf(st.ss)}. Divida por ${n - 1}. Calcule la raíz cuadrada. <span class="res">Resultado: ${nf(st.sd)}.</span></span></li>` +
+    `<li><span><b>MAD escalada.</b> Reste la mediana a cada dato, sin signo. Ordene esas distancias y tome la del medio: ${nf(st.mad)}. Multiplique por 1,4826. <span class="res">Resultado: ${nf(st.madS)}.</span></span></li>` +
+    `<li><span><b>IQR.</b> Q1 está en la posición ${nf(pos(0.25), 1)} de la lista ordenada. Q3 está en la posición ${nf(pos(0.75), 1)}. Si la posición no es entera, interpole entre los dos datos vecinos. Q1 = ${nf(st.q1)} y Q3 = ${nf(st.q3)}. <span class="res">IQR = ${nf(st.iqr)}.</span></span></li>`;
+  $('#stepsForma').innerHTML =
+    `<li><span><b>Asimetría.</b> Eleve al cubo cada (dato − media) y promedie: m₃ = ${nf(st.m3)}. Calcule m₂, el promedio de los cuadrados: ${nf(st.m2)}. Divida m₃ por m₂ elevado a 3/2. <span class="res">Resultado: ${nf(st.skew)}.</span> Positiva: cola larga a la derecha.</span></li>` +
+    `<li><span><b>Curtosis.</b> Eleve a la cuarta potencia cada (dato − media) y promedie: m₄ = ${nf(st.m4)}. Divida m₄ por m₂ al cuadrado. Reste 3. <span class="res">Resultado: ${nf(st.kurt)}.</span> Cero: colas de campana normal.</span></li>`;
+
+  const cs = 'padding:12px 16px 12px 0', th = 'text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--border)';
+  const sum = arr => arr.reduce((x, y) => x + y, 0);
+  $('#exBody').innerHTML = a.map((v, i) => `<tr class="${exOn && i === 10 ? 'hl' : ''}"><th scope="row" style="${th}">Paciente ${i + 1}</th><td class="r" style="${cs}">${nf(v, 0)}</td><td class="r" style="${cs}">${nf(sq[i])}</td><td class="r" style="${cs}">${nf(cu[i])}</td><td class="r" style="${cs}">${nf(qu[i])}</td><td class="r" style="${cs}">${nf(ad[i])}</td></tr>`).join('') +
+    `<tr><th scope="row" style="${th};border-bottom:1px solid var(--text)">Resumen</th><td class="r" style="${cs};border-bottom:1px solid var(--text)">Media ${nf(st.mean)}</td><td class="r" style="${cs};border-bottom:1px solid var(--text)">Suma ${nf(sum(sq))}</td><td class="r" style="${cs};border-bottom:1px solid var(--text)">Suma ${nf(sum(cu))}</td><td class="r" style="${cs};border-bottom:1px solid var(--text)">Suma ${nf(sum(qu))}</td><td class="r" style="${cs};border-bottom:1px solid var(--text)">Mediana ${nf(st.mad)}</td></tr>`;
+}
+
+/* ───────── Lectura dinámica ───────── */
+const skewTxt = g => !Number.isFinite(g) ? 'No se puede calcular la asimetría' : Math.abs(g) < 0.3 ? 'La forma es casi simétrica' : (Math.abs(g) < 1 ? 'La forma es algo asimétrica' : 'La forma es muy asimétrica') + (g > 0 ? ': la cola derecha es más larga' : ': la cola izquierda es más larga');
+const kurtTxt = g => !Number.isFinite(g) ? 'No se puede calcular la curtosis' : g > 0.5 ? 'Hay más datos lejanos que en una campana normal (colas pesadas)' : g < -0.5 ? 'Hay menos datos lejanos que en una campana normal (colas ligeras)' : 'Los datos lejanos son tan frecuentes como en una campana normal';
+function drawReading(){
+  const a = cur.st, c = cur.cl, n = S.n, k = S.k, eps = k / n, ov = [...S.over.keys()].filter(i => i < n).length;
+  let h = '';
+  const diff = a.mean - a.med, sd = a.sd;
+  h += `<p><b>Forma.</b> ${skewTxt(a.skew)}. ${kurtTxt(a.kurt)}.</p>`;
+  h += `<p><b>Centro.</b> La media (${nf(a.mean)}) ${Math.abs(diff) < 0.1 * sd ? 'casi coincide con' : diff > 0 ? 'queda a la derecha de' : 'queda a la izquierda de'} la mediana (${nf(a.med)}).</p>`;
+  if (k > 0 || ov > 0){
+    const rs = c.sd > 0 ? a.sd / c.sd : NaN, rm = c.madS > 0 ? a.madS / c.madS : NaN, ri = c.iqr > 0 ? a.iqr / c.iqr : NaN;
+    h += `<p><b>Resultado.</b> La SD pasa de ${nf(c.sd)} a ${nf(a.sd)}. La MAD escalada pasa de ${nf(c.madS)} a ${nf(a.madS)}. El IQR pasa de ${nf(c.iqr)} a ${nf(a.iqr)}. La asimetría pasa de ${nf(c.skew)} a ${nf(a.skew)}. La curtosis pasa de ${nf(c.kurt)} a ${nf(a.kurt)}.</p>`;
+    let v;
+    if (eps >= 0.5) v = 'Los extremos son tantos que engañan a las tres dispersiones.';
+    else if (rs > 2 && ri > 2) v = `Los extremos engañan a la SD (por ${nf(rs, 1)}) y al IQR (por ${nf(ri, 1)}). La MAD sube menos (por ${nf(rm, 1)}) y protege mejor.`;
+    else if (rs > 2) v = 'Los extremos engañan a la SD. La MAD y el IQR resisten.';
+    else v = 'Con esta distancia y esta cantidad, los extremos cambian poco las tres dispersiones. Suba <i>k</i> o <i>d</i> para ver más efecto.';
+    h += `<p><b>Lectura.</b> ${v}</p>`;
+    if (Math.abs(a.skew - c.skew) > 0.5 || Math.abs(a.kurt - c.kurt) > 1) h += `<p>La asimetría y la curtosis reaccionan mucho a los extremos. Un cambio de forma puede venir de pocos datos.</p>`;
+    if (eps >= 0.5) h += `<p class="note"><b>Nota.</b> Los extremos forman la mitad o más de la muestra. La mediana, la MAD y el IQR siguen a los extremos.</p>`;
+    else if (eps > 0.25) h += `<p class="note"><b>Nota.</b> Con más de 25 % de extremos, el IQR puede fallar. La mediana y la MAD aguantan hasta cerca de 50 %.</p>`;
+  }
+  if (n < 100) h += `<p class="note">Con ${n} datos, la asimetría y la curtosis cambian mucho de una muestra a otra. Pulse «Nueva muestra» para comprobarlo.</p>`;
+  h += `<p class="note">Una unidad σ es la dispersión normal de los datos limpios.</p>`;
+  $('#reading').innerHTML = h;
+}
+
+function drawTable(){
+  const a = cur.st, c = cur.cl, sg = S.sigma, rel = (x, y) => y ? x / y - 1 : NaN;
+  const rows = [
+    ['Media', 'ink', c.mean, a.mean, (a.mean - c.mean) / sg, 'loc'],
+    ['Mediana', 'red', c.med, a.med, (a.med - c.med) / sg, 'loc'],
+    ['SD', 'ink', c.sd, a.sd, rel(a.sd, c.sd), 'pct'],
+    ['MAD escalada', 'red', c.madS, a.madS, rel(a.madS, c.madS), 'pct'],
+    ['IQR', 'red', c.iqr, a.iqr, rel(a.iqr, c.iqr), 'pct'],
+    ['Asimetría', 'ink', c.skew, a.skew, a.skew - c.skew, 'sk'],
+    ['Curtosis', 'ink', c.kurt, a.kurt, a.kurt - c.kurt, 'ku']
+  ];
+  const th = 'font-size:15px;text-transform:none;letter-spacing:0;color:var(--text);font-weight:500;border-bottom:1px solid var(--border);padding:16px 16px 16px 0';
+  $('#tbody').innerHTML = rows.map(([nm, cls, x, y, ch, t]) => {
+    const sg2 = ch > 0 ? '+' : ch < 0 ? '−' : '';
+    const txt = !Number.isFinite(ch) ? '—' : t === 'loc' ? `${sgn(ch)}${SIG}` : t === 'pct' ? `${sg2}${nf(Math.abs(ch) * 100, 0)} %` : `${sgn(ch)} pts`;
+    const cap = t === 'sk' ? 2 : t === 'ku' ? 6 : 1, w = Number.isFinite(ch) ? clamp(Math.abs(ch) / cap, 0, 1) * 100 : 0;
+    return `<tr><th scope="row" style="${th}">${nm}</th><td class="r">${nf(x)}</td><td class="r">${nf(y)}</td><td class="r">${txt}</td><td class="barcell"><div class="bar-track"><div class="bar-fill ${cls}" style="width:${w}%"></div></div></td></tr>`;
+  }).join('');
+}
+
+/* ───────── Galería de formas ───────── */
+function drawGallery(){
+  const GP = makePool(99, 4000), host = $('#gallery'), D0 = -4, D1 = 6, NB = 40;
+  host.innerHTML = Object.keys(FAM).map(f => {
+    const sym = ['normal', 'pesadas', 'ligeras', 'bimodal'].includes(f), v = sym ? Array.from({length: 4000}, (_, i) => (i < 2000 ? 1 : -1) * std(GP, f, i % 2000)) : Array.from({length: 4000}, (_, i) => std(GP, f, i)), st = stats(v), cnt = new Array(NB).fill(0), w = (D1 - D0) / NB;
+    v.forEach(x => { if (x >= D0 && x < D1) cnt[Math.floor((x - D0) / w)]++; });
+    const mx = Math.max(...cnt), X = u => (u - D0) / (D1 - D0) * 200;
+    let bars = cnt.map((c, b) => `<rect x="${b * 200 / NB + 0.4}" y="${88 - 80 * c / mx}" width="${200 / NB - 0.8}" height="${80 * c / mx}" fill="var(--t4)"/>`).join('');
+    bars += `<line x1="0" x2="200" y1="88" y2="88" stroke="var(--t3)"/><line x1="${X(st.mean)}" x2="${X(st.mean)}" y1="4" y2="88" stroke="var(--text)" stroke-width="1.5"/><line x1="${X(st.med)}" x2="${X(st.med)}" y1="4" y2="88" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+    return `<div class="gcard"><h3>${FAM[f].name}</h3><svg viewBox="0 0 200 92" preserveAspectRatio="none" role="img" aria-label="Histograma de la forma ${FAM[f].name}">${bars}</svg><div class="nums"><div><span class="lbl">Asimetría</span><b>${nf(st.skew, 1)}</b></div><div><span class="lbl">Curtosis</span><b>${nf(st.kurt, 1)}</b></div></div><p>${FAM[f].desc}</p><button type="button" class="btn" data-fam="${f}">Probar en el laboratorio</button></div>`;
+  }).join('');
+  host.querySelectorAll('[data-fam]').forEach(b => b.addEventListener('click', () => {
+    S.fam = b.dataset.fam; S.over.clear(); syncControls(); light = false; schedule();
+    $('#laboratorio').scrollIntoView({behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
+  }));
+}
+
+/* ───────── Figuras 2 y 3: cuatro paneles ───────── */
+function fourPanels(pre, X, rows, o){
+  const ser = f => X.map((x, i) => [x, Number.isFinite(f(rows[i])) ? f(rows[i]) : 0]);
+  const ext = (arr, lo0, hi0) => { const l = Math.min(...arr, lo0), h = Math.max(...arr, hi0); return [l, h]; };
+  const sg = S.sigma, mu = S.mu;
+  // Panel 1
+  let [l1, h1] = ext(rows.flatMap(r => [r.mean, r.med]), mu, mu);
+  if (o.clip){ l1 = Math.max(l1, mu - 12 * sg); h1 = Math.min(h1, mu + 12 * sg); }
+  // Panel 2
+  let h2 = Math.max(...rows.flatMap(r => [r.sd, r.madS, r.iqrS]), sg);
+  if (o.clip) h2 = Math.min(h2, 8 * sg);
+  // Panel 3 y 4
+  const [l3, h3] = ext(rows.flatMap(r => [r.skew, r.bowley].filter(Number.isFinite)), 0, 0);
+  const [l4, h4] = ext(rows.map(r => r.kurt).filter(Number.isFinite), 0, 0);
+  const base = {xDom: o.xDom, xTicks: o.xTicks, xFmt: o.xFmt, xLab: o.xLab, markers: o.markers, h: 240, yLab: 'Valor'};
+  const hov = (i, t) => `${o.hdr(i)} ${t}`;
+  lineChart($(`#ch${pre}1`), {...base, yDom: pad(l1, h1), series: [{cls: 'ink', pts: ser(r => r.mean)}, {cls: 'red', pts: ser(r => r.med)}], refs: [{y: mu, label: 'μ'}], cap: `#cp${pre}1`, capDefault: 'Mueva el puntero sobre el gráfico.', hover: i => hov(i, `Media: ${nf(rows[i].mean)}. Mediana: ${nf(rows[i].med)}.`)});
+  lineChart($(`#ch${pre}2`), {...base, yDom: [0, h2 * 1.08], series: [{cls: 'ink', pts: ser(r => r.sd)}, {cls: 'red', pts: ser(r => r.madS)}, {cls: 'red', dash: true, pts: ser(r => r.iqrS)}], refs: [{y: sg, label: 'σ'}], cap: `#cp${pre}2`, capDefault: 'Mueva el puntero sobre el gráfico.', hover: i => hov(i, `SD: ${nf(rows[i].sd)}. MAD escalada: ${nf(rows[i].madS)}. IQR ÷ 1,349: ${nf(rows[i].iqrS)}.`)});
+  lineChart($(`#ch${pre}3`), {...base, yDom: pad(l3, h3, 0.12), series: [{cls: 'ink', pts: ser(r => r.skew)}, {cls: 'red', pts: ser(r => r.bowley)}], refs: [{y: 0, label: '0 = simétrica'}], cap: `#cp${pre}3`, capDefault: 'Mueva el puntero sobre el gráfico.', hover: i => hov(i, `Asimetría: ${nf(rows[i].skew)}. Bowley: ${nf(rows[i].bowley)}.`)});
+  lineChart($(`#ch${pre}4`), {...base, yDom: pad(l4, h4, 0.12), series: [{cls: 'ink', pts: ser(r => r.kurt)}], refs: [{y: 0, label: '0 = campana normal'}], cap: `#cp${pre}4`, capDefault: 'Mueva el puntero sobre el gráfico.', hover: i => hov(i, `Curtosis: ${nf(rows[i].kurt)}.`)});
+}
+function drawB(){
+  const {clean} = cur, T = [], rows = [];
+  for (let i = 0; i <= 120; i++) T.push(-20 + i / 3);
+  T.forEach(t => rows.push(stats(clean.concat(S.mu + t * S.sigma))));
+  const mk = []; if (S.side !== 'left') mk.push({x: S.d, label: 'd'}); if (S.side !== 'right') mk.push({x: -S.d, label: 'd'});
+  fourPanels('B', T, rows, {xDom: [-20, 20], xTicks: [-20, -10, 0, 10, 20], xFmt: v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + 'σ', xLab: 'Posición del dato añadido', markers: mk, hdr: i => `Dato añadido a ${sgn(T[i], 1)}${SIG} de μ.`});
+}
+function drawC(){
+  const n = S.n, km = Math.ceil(0.6 * n), X = [], rows = [];
+  for (let k = 0; k <= km; k++){ X.push(100 * k / n); rows.push(stats(buildSample(n, k).data)); }
+  const mk = [{x: 25, label: '25 %'}, {x: 50, label: '50 %'}]; if (S.k > 0) mk.push({x: 100 * S.k / n, label: 'k'});
+  fourPanels('C', X, rows, {xDom: [0, 60], xTicks: [0, 10, 20, 30, 40, 50, 60], xFmt: v => v + ' %', xLab: 'Proporción de valores extremos', markers: mk, clip: true, hdr: i => `Extremos: ${nf(X[i], 0)} % (${Math.round(X[i] * n / 100)} de ${n}).`});
+}
+
+/* ───────── Ciclo de dibujo ───────── */
+let raf = 0, light = false, lastW = 0;
+function schedule(isDrag){ light = !!isDrag; if (!raf) raf = requestAnimationFrame(render); }
+function syncControls(){
+  const kmax = kMax(); S.k = Math.min(S.k, kmax);
+  const kEl = $('#k'); kEl.max = kmax; kEl.value = S.k;
+  $('#n').value = S.n; $('#d').value = S.d;
+  document.querySelectorAll('input[name=side]').forEach(r => r.checked = r.value === S.side);
+  document.querySelectorAll('#famBtns [data-f]').forEach(b => b.setAttribute('aria-pressed', b.dataset.f === S.fam));
+}
+function drawTex(){
+  if (!window.katex) return;
+  const t = v => nf(v).replace(',', '{,}'), a = cur.st;
+  const tex = String.raw`\begin{aligned}
+\bar{x}&=${t(a.mean)} \qquad \tilde{x}=${t(a.med)} \\[4pt]
+s&=\sqrt{\tfrac{1}{${a.n - 1}}\textstyle\sum_{i=1}^{${a.n}}\left(x_i-\bar{x}\right)^{2}}=${t(a.sd)} \\[4pt]
+\hat{\sigma}_{\mathrm{MAD}}&=1{,}4826\times ${t(a.mad)}=${t(a.madS)} \\[4pt]
+\mathrm{IQR}&=Q_3-Q_1=${t(a.q3)}-${t(a.q1)}=${t(a.iqr)} \\[4pt]
+g_1&=\frac{m_3}{m_2^{3/2}}=\frac{${t(a.m3)}}{${t(Math.pow(a.m2, 1.5))}}=${t(a.skew)} \\[4pt]
+g_2&=\frac{m_4}{m_2^{2}}-3=\frac{${t(a.m4)}}{${t(a.m2 * a.m2)}}-3=${t(a.kurt)}
+\end{aligned}`;
+  try { katex.render(tex, $('#texLive'), {displayMode: true, throwOnError: false}); } catch (e) {}
+}
+function render(){
+  raf = 0; compute(); drawReadouts(); drawA(); drawEx();
+  drawReading(); drawTable(); drawTex();
+  if (!light){ drawB(); drawC(); }
+}
+
+/* ───────── Eventos ───────── */
+$('#famBtns').innerHTML = Object.keys(FAM).map(f => `<button type="button" class="btn" data-f="${f}" aria-pressed="false">${FAM[f].name}</button>`).join('');
+$('#famBtns').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (!b) return; S.fam = b.dataset.f; S.over.clear(); syncControls(); light = false; schedule(); });
+const bind = (id, key) => $(id).addEventListener('input', e => { S[key] = +e.target.value; syncControls(); light = false; schedule(); });
+bind('#n', 'n'); bind('#k', 'k'); bind('#d', 'd');
+document.querySelectorAll('input[name=side]').forEach(r => r.addEventListener('change', e => { S.side = e.target.value; light = false; schedule(); }));
+document.querySelectorAll('[data-p]').forEach(b => b.addEventListener('click', () => {
+  const p = b.dataset.p; S.k = p === 'one' ? 1 : Math.round(+p * S.n); S.over.clear(); syncControls(); light = false; schedule();
+}));
+$('#exBtn').addEventListener('click', () => { exOn = !exOn; drawEx(); });
+$('#b-new').addEventListener('click', () => { S.seed = 1 + Math.floor(Math.random() * 99999); pool = makePool(S.seed, 400); S.over.clear(); light = false; schedule(); });
+$('#b-reset').addEventListener('click', () => { Object.assign(S, DEF); S.over.clear(); pool = makePool(S.seed, 400); syncControls(); light = false; schedule(); });
+new ResizeObserver(es => { const w = es[0].contentRect.width; if (Math.abs(w - lastW) > 1){ lastW = w; light = false; schedule(); } }).observe($('#chartA'));
+
+function typeset(){
+  if (window.renderMathInElement){
+    renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});
+  }
+  if (!window.katex) $('#mathwarn').style.display = 'block';
+  drawTex();
+}
+drawGallery(); syncControls(); render(); typeset();
+window.addEventListener('load', () => { if (!window.katex) $('#mathwarn').style.display = 'block'; });
+});
+</script>
+</body>
+</html>
