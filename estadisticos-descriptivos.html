@@ -242,7 +242,7 @@ tr.hl td,tr.hl th{background:var(--a10)}
 .tog .btn[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fafaf9}
 .three{display:grid;gap:0 32px;margin-top:0}
 @media(min-width:768px){.three{grid-template-columns:repeat(3,1fr)}}
-.three div{border-top:1px solid var(--text);padding:16px 0 24px}
+.three>div{border-top:1px solid var(--text);padding:16px 0 24px}
 .three h3{margin-bottom:8px}
 .three p{color:var(--t2);font-size:15px}
 details.opt summary{min-height:48px;display:inline-flex;align-items:center;cursor:pointer;border:1px solid var(--text);padding:8px 24px;list-style:none;font-size:15px}
@@ -298,6 +298,8 @@ details.opt .formulas{margin-top:32px}
 .rtab{min-width:720px}
 .formulas{grid-template-columns:minmax(0,1fr)}.f,.f .e,.f .n{min-width:0}.f .eq{max-width:100%}
 .grid>*{min-width:0}
+.cards.c3{grid-template-columns:repeat(2,1fr)}@media(min-width:640px){.cards.c3{grid-template-columns:repeat(3,1fr)}}
+.gcard .nums small{display:block;font-size:12px;color:var(--t2);margin-top:2px}
 </style>
 </head>
 
@@ -331,7 +333,7 @@ details.opt .formulas{margin-top:32px}
     </div>
 
     <nav class="toc" aria-label="Contenido">
-      <a href="#ejemplo"><span>01</span>Ejemplo</a><a href="#laboratorio"><span>02</span>Laboratorio</a><a href="#galeria"><span>03</span>Galería de formas</a><a href="#alejamiento"><span>04</span>Un dato nuevo</a><a href="#ruptura"><span>05</span>Muchos extremos</a><a href="#resumen"><span>06</span>Resumen</a><a href="#formulas"><span>07</span>Fórmulas</a><a href="#lectura"><span>08</span>Términos</a>
+      <a href="#ejemplo"><span>01</span>Ejemplo</a><a href="#laboratorio"><span>02</span>Laboratorio</a><a href="#galeria"><span>03</span>Galería de formas</a><a href="#curtosis"><span>04</span>Curtosis</a><a href="#alejamiento"><span>05</span>Un dato nuevo</a><a href="#ruptura"><span>06</span>Muchos extremos</a><a href="#resumen"><span>07</span>Resumen</a><a href="#formulas"><span>08</span>Fórmulas</a><a href="#lectura"><span>09</span>Términos</a>
     </nav>
 
     <dl class="primer">
@@ -535,11 +537,86 @@ details.opt .formulas{margin-top:32px}
   </div>
 </section>
 
-<!-- ═══════════════ 04 UN DATO ═══════════════ -->
-<section class="sec" id="alejamiento" aria-labelledby="h-alej">
+<!-- ═══════════════ 04 CURTOSIS ═══════════════ -->
+<section class="sec" id="curtosis" aria-labelledby="h-kur">
   <div class="wrap">
     <div class="sec-head grid">
       <div class="c12 m3"><div class="num" aria-hidden="true">04</div></div>
+      <div class="c12 m9">
+        <h2 id="h-kur">Curtosis: tres tipos de colas</h2>
+        <p class="body" style="margin-top:16px">La curtosis responde a una pregunta: ¿hay más o menos datos lejanos que en una campana normal? Según la respuesta, la forma recibe uno de tres nombres. Los nombres vienen del griego y describen el aspecto del gráfico.</p>
+        <p class="body">Dos conjuntos pueden tener la misma media y la misma SD, y aun así tener curtosis muy distinta. La curtosis informa de lo que la SD no dice: cuántos datos caen lejos.</p>
+      </div>
+    </div>
+
+    <div class="three" style="margin-top:0">
+      <div><span class="lbl">Curtosis menor que 0</span><h3 style="margin-top:8px">Platicúrtica</h3><div class="chart" id="chT1" role="img" aria-label="Curva de la forma y de la campana normal" style="margin:16px 0 0"></div><div class="read" id="cpT1" style="min-height:2.6em"></div><p>Del griego «platys», plano. Colas ligeras: hay menos datos lejanos que en una campana normal. Ejemplos: una forma uniforme y dos grupos separados.</p><p class="def" id="tT1"></p></div>
+      <div><span class="lbl">Curtosis cercana a 0</span><h3 style="margin-top:8px">Mesocúrtica</h3><div class="chart" id="chT2" role="img" aria-label="Curva de la forma y de la campana normal" style="margin:16px 0 0"></div><div class="read" id="cpT2" style="min-height:2.6em"></div><p>Del griego «mesos», medio. Colas como las de la campana normal. Es la referencia con la que se compara.</p><p class="def" id="tT2"></p></div>
+      <div><span class="lbl">Curtosis mayor que 0</span><h3 style="margin-top:8px">Leptocúrtica</h3><div class="chart" id="chT3" role="img" aria-label="Curva de la forma y de la campana normal" style="margin:16px 0 0"></div><div class="read" id="cpT3" style="min-height:2.6em"></div><p>Del griego «leptos», fino. Colas pesadas: hay más datos lejanos que en una campana normal. Ejemplos: rendimientos diarios de una acción y errores de medida con extremos ocasionales.</p><p class="def" id="tT3"></p></div>
+    </div>
+
+    <div class="grid" style="margin-top:48px">
+      <div class="c12 l4">
+        <form class="ctl" style="position:static" onsubmit="return false" aria-label="Controles de la curtosis">
+          <h3>Peso de las colas</h3>
+          <div class="field">
+            <div class="row"><label class="lbl" for="kt">Colas ligeras → pesadas</label><output id="o-kt" for="kt"></output></div>
+            <input type="range" id="kt" min="0" max="100" step="1" value="57">
+            <div class="help">Mueva el control a la derecha para añadir datos lejanos. La media y la SD no cambian: valen 0 y 1 en todas las curvas.</div>
+          </div>
+          <fieldset>
+            <legend class="lbl">Tipos de curtosis</legend>
+            <div class="presets" id="kPresets">
+              <button type="button" class="btn" data-b="10">Platicúrtica</button>
+              <button type="button" class="btn" data-b="2">Mesocúrtica</button>
+              <button type="button" class="btn" data-b="1">Leptocúrtica</button>
+              <button type="button" class="btn" data-b="0.6">Muy leptocúrtica</button>
+            </div>
+          </fieldset>
+          <p class="hint">Las curvas son una familia llamada «normal generalizada». Todas tienen media 0 y SD 1. Su forma cambia con un parámetro, β, que el control gestiona por usted.</p>
+        </form>
+      </div>
+      <div class="c12 l8 min0">
+        <div class="cards c3" id="kCards" role="group" aria-label="Resultados de la curtosis"></div>
+        <div class="take" id="kTake" aria-live="polite" style="margin-top:24px"></div>
+        <div class="how" style="margin-top:0"><span class="lbl">Cómo leer las figuras 2a y 2b</span>
+          <p>La línea continua es la forma que usted eligió. La línea discontinua es la campana normal, que sirve de referencia. Las dos curvas tienen la misma media y la misma SD.</p>
+          <p>La figura 2a muestra toda la curva. La figura 2b amplía la cola derecha, a más de 2 SD de la media. Allí se ve la diferencia: si la línea continua queda por encima de la discontinua, hay más datos lejanos que en la campana normal.</p></div>
+        <div class="legend" aria-hidden="true"><span><i class="sw"></i>Forma elegida</span><span><i class="sw dash"></i>Campana normal (referencia)</span></div>
+        <div class="pair">
+          <figure style="margin-top:0">
+            <div class="lbl" style="margin-bottom:8px">Toda la curva</div>
+            <div class="chart" id="chK1" role="img" aria-label="Curva de la forma elegida y de la campana normal"></div>
+            <div class="read" id="cpK1"></div>
+            <figcaption>Figura 2a. Eje horizontal: distancia a la media, en SD.</figcaption>
+          </figure>
+          <figure style="margin-top:0">
+            <div class="lbl" style="margin-bottom:8px">Zoom a la cola derecha</div>
+            <div class="chart" id="chK2" role="img" aria-label="Cola derecha ampliada de la forma elegida y de la campana normal"></div>
+            <div class="read" id="cpK2"></div>
+            <figcaption>Figura 2b. Misma curva ampliada entre 2 y 5 SD.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="rtab" style="min-width:640px">
+        <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 3. Los tres tipos de curtosis, con cuatro ejemplos</caption>
+        <thead><tr><th scope="col" class="l">Tipo</th><th scope="col" class="l">Curtosis en exceso</th><th scope="col" class="l">Datos a más de 3 SD</th><th scope="col" class="l">Ejemplo</th></tr></thead>
+        <tbody id="kTbody"></tbody>
+      </table>
+    </div>
+    <p class="hint" style="max-width:70ch">«Datos a más de 3 SD» es la proporción de datos que caen a más de tres SD de la media, por arriba o por abajo. Los límites entre tipos no son exactos. En la práctica, se llama mesocúrtica a la forma que queda cerca de 0.</p>
+    <div class="take" style="margin-top:24px"><span class="lbl">Conclusión</span><p>La curtosis no mide si la cima es puntiaguda, aunque los nombres griegos describan ese aspecto. Hoy se lee como el peso de las colas: cuántos datos caen lejos del centro. Con muchos datos lejanos, la forma es leptocúrtica. Con pocos, es platicúrtica.</p></div>
+  </div>
+</section>
+
+<!-- ═══════════════ 05 UN DATO ═══════════════ -->
+<section class="sec" id="alejamiento" aria-labelledby="h-alej">
+  <div class="wrap">
+    <div class="sec-head grid">
+      <div class="c12 m3"><div class="num" aria-hidden="true">05</div></div>
       <div class="c12 m9">
         <h2 id="h-alej">Qué pasa cuando llega un dato nuevo</h2>
         <p class="body" style="margin-top:16px">Imagine una muestra limpia con la forma elegida en el laboratorio. Llega un solo dato más. Los cuatro gráficos muestran qué hace cada número según dónde caiga ese dato.</p>
@@ -575,7 +652,7 @@ details.opt .formulas{margin-top:32px}
         <div class="read" id="cpB4"></div>
       </figure>
     </div>
-    <p class="hint" style="max-width:70ch;margin-top:16px">Figuras 2a a 2d. «MAD escalada» es la MAD multiplicada por 1,4826. «IQR ÷ 1,349» es el IQR dividido por 1,349. Con estos factores, los dos números se comparan con la SD si los datos son normales. La asimetría de Bowley usa solo los cuartiles y la mediana, y va de −1 a +1.</p>
+    <p class="hint" style="max-width:70ch;margin-top:16px">Figuras 3a a 3d. «MAD escalada» es la MAD multiplicada por 1,4826. «IQR ÷ 1,349» es el IQR dividido por 1,349. Con estos factores, los dos números se comparan con la SD si los datos son normales. La asimetría de Bowley usa solo los cuartiles y la mediana, y va de −1 a +1.</p>
     <div class="take"><span class="lbl">Conclusión</span><p>La media, la SD, la asimetría y la curtosis clásicas no tienen tope práctico: un dato lejano las mueve mucho. La mediana, la MAD y el IQR tienen tope: un dato lejano deja de importar más allá de cierta distancia.</p></div>
   </div>
 </section>
@@ -584,7 +661,7 @@ details.opt .formulas{margin-top:32px}
 <section class="sec" id="ruptura" aria-labelledby="h-rupt">
   <div class="wrap">
     <div class="sec-head grid">
-      <div class="c12 m3"><div class="num" aria-hidden="true">05</div></div>
+      <div class="c12 m3"><div class="num" aria-hidden="true">06</div></div>
       <div class="c12 m9">
         <h2 id="h-rupt">Cuántos extremos aguanta cada número</h2>
         <p class="body" style="margin-top:16px">Ahora no llega un dato, sino muchos. Los gráficos aumentan la proporción de valores extremos de 0&nbsp;% a 60&nbsp;%. Usan la distancia y el lado que usted eligió en el laboratorio.</p>
@@ -620,7 +697,7 @@ details.opt .formulas{margin-top:32px}
         <div class="read" id="cpC4"></div>
       </figure>
     </div>
-    <p class="hint" style="max-width:70ch;margin-top:16px">Figuras 3a a 3d. Las líneas que salen del gráfico continúan fuera de la escala.</p>
+    <p class="hint" style="max-width:70ch;margin-top:16px">Figuras 4a a 4d. Las líneas que salen del gráfico continúan fuera de la escala.</p>
     <div class="take"><span class="lbl">Conclusión</span><p>Entre 0 % y 25 % de extremos, la mediana, la MAD y el IQR resisten. Entre 25 % y 50 %, el IQR falla, mientras que la mediana y la MAD resisten mejor, aunque suben algo. Pasado 50 %, los extremos son la mayoría y los números pasan a describirlos a ellos: por eso la MAD vuelve a bajar. En ese caso, revise cómo se recogieron los datos.</p></div>
   </div>
 </section>
@@ -629,7 +706,7 @@ details.opt .formulas{margin-top:32px}
 <section class="sec" id="resumen" aria-labelledby="h-res">
   <div class="wrap">
     <div class="sec-head grid">
-      <div class="c12 m3"><div class="num" aria-hidden="true">06</div></div>
+      <div class="c12 m3"><div class="num" aria-hidden="true">07</div></div>
       <div class="c12 m9">
         <h2 id="h-res">Resumen: qué mide cada número</h2>
         <p class="body" style="margin-top:16px">Ningún número es mejor en todos los casos. La tabla resume qué pregunta responde cada uno y cuánto resiste a los extremos.</p>
@@ -637,7 +714,7 @@ details.opt .formulas{margin-top:32px}
     </div>
     <div class="tbl-wrap" style="margin-top:0">
       <table class="rtab">
-        <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 3. Los siete números</caption>
+        <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 4. Los siete números</caption>
         <thead><tr><th scope="col" class="l">Número</th><th scope="col" class="l">Pregunta que responde</th><th scope="col" class="l">Cómo se calcula, en palabras</th><th scope="col" class="l">Punto de ruptura</th></tr></thead>
         <tbody>
           <tr><td>Media</td><td>¿Cuál es el valor típico si se repartiera todo por igual?</td><td>Suma de los datos dividida por la cantidad.</td><td class="pr">≈ 0&nbsp;%<br><span style="font-weight:400;color:var(--t2)">Un dato basta para moverla.</span></td></tr>
@@ -646,7 +723,7 @@ details.opt .formulas{margin-top:32px}
           <tr><td>MAD</td><td>¿Cuánto se alejan los datos del valor del medio?</td><td>Mediana de las distancias a la mediana, sin signo.</td><td class="pr">50&nbsp;%<br><span style="font-weight:400;color:var(--t2)">Resiste hasta la mitad.</span></td></tr>
           <tr><td>IQR (rango intercuartílico)</td><td>¿Qué anchura ocupa la mitad central de los datos?</td><td>Q3 menos Q1.</td><td class="pr">25&nbsp;%<br><span style="font-weight:400;color:var(--t2)">Resiste hasta una cuarta parte.</span></td></tr>
           <tr><td>Asimetría</td><td>¿Una cola es más larga que la otra?</td><td>Promedio de las distancias a la media elevadas al cubo, dividido por la dispersión elevada a 3.</td><td class="pr">≈ 0&nbsp;%<br><span style="font-weight:400;color:var(--t2)">Muy sensible.</span></td></tr>
-          <tr><td>Curtosis</td><td>¿Hay más o menos datos lejanos que en una campana normal?</td><td>Promedio de las distancias a la media elevadas a la cuarta, dividido por la dispersión elevada a 4, menos 3.</td><td class="pr">≈ 0&nbsp;%<br><span style="font-weight:400;color:var(--t2)">Muy sensible.</span></td></tr>
+          <tr><td>Curtosis</td><td>¿Hay más o menos datos lejanos que en una campana normal? Da tres tipos: platicúrtica, mesocúrtica y leptocúrtica.</td><td>Promedio de las distancias a la media elevadas a la cuarta, dividido por la dispersión elevada a 4, menos 3.</td><td class="pr">≈ 0&nbsp;%<br><span style="font-weight:400;color:var(--t2)">Muy sensible.</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -665,7 +742,7 @@ details.opt .formulas{margin-top:32px}
 <section class="sec" id="formulas" aria-labelledby="h-form">
   <div class="wrap">
     <div class="sec-head grid">
-      <div class="c12 m3"><div class="num" aria-hidden="true">07</div></div>
+      <div class="c12 m3"><div class="num" aria-hidden="true">08</div></div>
       <div class="c12 m9">
         <h2 id="h-form">Fórmulas</h2>
         <p class="body" style="margin-top:16px">Esta sección es opcional. Todo lo anterior se entiende sin ella. Sirve a quien quiere ver la matemática exacta.</p>
@@ -683,6 +760,7 @@ details.opt .formulas{margin-top:32px}
       <div class="f"><div class="n"><span class="cap">Asimetría</span></div><div class="e"><div class="eq">$$m_k=\frac{1}{n}\sum_{i=1}^{n}\left(x_i-\bar{x}\right)^{k},\qquad g_1=\frac{m_3}{m_2^{3/2}}$$</div><p>La asimetría promedia los cubos de las distancias. El cubo conserva el signo. Un dato lejano a la derecha da un valor positivo grande.</p></div></div>
       <div class="f"><div class="n"><span class="cap">Curtosis</span></div><div class="e"><div class="eq">$$g_2=\frac{m_4}{m_2^{2}}-3$$</div><p>La curtosis promedia las cuartas potencias. Esta es la curtosis en exceso: vale 0 para datos normales. Muchos programas aplican una corrección de muestra y dan otro número.</p></div></div>
       <div class="f"><div class="n"><span class="cap">Asimetría de Bowley</span></div><div class="e"><div class="eq">$$B=\frac{Q_3+Q_1-2\tilde{x}}{Q_3-Q_1}$$</div><p>La asimetría de Bowley usa solo cuartiles y mediana. Va de −1 a +1 y resiste los extremos.</p></div></div>
+      <div class="f"><div class="n"><span class="cap">Familia de colas (sección 04)</span></div><div class="e"><div class="eq">$$f(x)=\frac{\beta}{2\alpha\,\Gamma(1/\beta)}\,e^{-\left(|x|/\alpha\right)^{\beta}},\quad \alpha=\sqrt{\frac{\Gamma(1/\beta)}{\Gamma(3/\beta)}},\quad g_2=\frac{\Gamma(5/\beta)\,\Gamma(1/\beta)}{\Gamma(3/\beta)^{2}}-3$$</div><p>Las curvas de la sección 04 usan la distribución normal generalizada con media 0 y SD 1. Γ es la función gamma. Con β = 2 resulta la campana normal. Con β = 1, la distribución de Laplace. Con β grande, una forma casi uniforme.</p></div></div>
       <div class="f"><div class="n"><span class="cap">Punto de ruptura</span></div><div class="e"><div class="eq">$$\varepsilon^{*}(\bar{x})=\varepsilon^{*}(s)=\frac{1}{n},\quad \varepsilon^{*}(\mathrm{IQR})\approx\frac{1}{4},\quad \varepsilon^{*}(\tilde{x})=\varepsilon^{*}(\mathrm{MAD})\approx\frac{1}{2}$$</div><p>El punto de ruptura es la mayor proporción de datos que se puede cambiar sin que el número se vaya al infinito.</p></div></div>
     </div>
 
@@ -698,7 +776,7 @@ details.opt .formulas{margin-top:32px}
 <section class="sec" id="lectura" aria-labelledby="h-lec">
   <div class="wrap">
     <div class="sec-head grid">
-      <div class="c12 m3"><div class="num" aria-hidden="true">08</div></div>
+      <div class="c12 m3"><div class="num" aria-hidden="true">09</div></div>
       <div class="c12 m9"><h2 id="h-lec">Diccionario y límites</h2></div>
     </div>
     <div class="grid">
@@ -714,6 +792,9 @@ details.opt .formulas{margin-top:32px}
           <div><dt>Cuartil</dt><dd>Un valor que deja 25 %, 50 % o 75 % de los datos por debajo.</dd></div>
           <div><dt>Asimetría</dt><dd>Un número que indica hacia qué lado se alarga la cola.</dd></div>
           <div><dt>Curtosis</dt><dd>Un número que indica si hay más o menos datos lejanos que en una campana normal.</dd></div>
+          <div><dt>Platicúrtica</dt><dd>Forma con curtosis menor que 0. Colas ligeras: hay menos datos lejanos que en una campana normal. Del griego «platys», plano.</dd></div>
+          <div><dt>Mesocúrtica</dt><dd>Forma con curtosis cercana a 0. Colas como las de la campana normal. Del griego «mesos», medio.</dd></div>
+          <div><dt>Leptocúrtica</dt><dd>Forma con curtosis mayor que 0. Colas pesadas: hay más datos lejanos que en una campana normal. Del griego «leptos», fino.</dd></div>
           <div><dt>Cola</dt><dd>La zona de datos alejados del centro, a un lado o al otro.</dd></div>
           <div><dt>Medida robusta</dt><dd>Una medida que los valores extremos casi no alteran.</dd></div>
           <div><dt>Punto de ruptura</dt><dd>La proporción de datos malos que un número soporta antes de fallar.</dd></div>
@@ -749,7 +830,11 @@ const $ = s => document.querySelector(s);
 const K = 1.4826, KI = 1.349;
 const SIG = ' σ';
 const nf = (v, d = 2) => Number.isFinite(v) ? (Math.abs(v) < 0.5 * Math.pow(10, -d) ? 0 : v).toLocaleString('es-ES', {minimumFractionDigits: d, maximumFractionDigits: d}) : '—';
-const sgn = (v, d = 2) => (v > 0 ? '+' : v < 0 ? '−' : '') + nf(Math.abs(v), d);
+const chg = (art, nm, a, b, past = false, d = 2) => nf(a, d) === nf(b, d)
+  ? `${art} ${nm} ${past ? 'no cambió' : 'no cambia'}: sigue en ${nf(b, d)}.`
+  : `${art} ${nm} ${past ? 'pasó' : 'pasa'} de ${nf(a, d)} a ${nf(b, d)}.`;
+const kurtType = g => !Number.isFinite(g) ? '—' : g > 0.5 ? 'leptocúrtica' : g < -0.5 ? 'platicúrtica' : 'mesocúrtica';
+const sgn = (v, d = 2) => { const r = nf(Math.abs(v), d); return (r === nf(0, d) ? '' : v > 0 ? '+' : '−') + r; };
 
 /* ───────── Generador pseudoaleatorio con semilla ───────── */
 function rng(seed){
@@ -995,7 +1080,7 @@ const CARDS = [
 const GROUPS = [['Centro', [0, 1], ''], ['Dispersión', [2, 3, 4], ' g3'], ['Forma', [5, 6], '']];
 function groupsHTML(a, b, labelBefore){
   return GROUPS.map(([nm, idx, cls]) => `<div class="grp${cls}"><span class="cap">${nm}</span><div class="cards">${idx.map(i => {
-    const [c, t, d, key, dg] = CARDS[i];
+    const [c, t, d0, key, dg] = CARDS[i], d = key === 'kurt' ? `Peso de las colas · ${kurtType(a.kurt)}` : d0;
     let extra = '';
     if (key === 'iqr') extra = ` · ÷1,349 = <b>${nf(a.iqrS)}</b>`;
     return `<div class="card ${c}"><div class="lbl"><span class="mark"></span>${t}</div><div class="def">${d}</div><div class="v${i === 4 || i === 3 ? '' : ''}">${nf(a[key], dg)}</div><div class="s">${labelBefore} <b>${nf(b[key], dg)}</b>${extra}</div></div>`;
@@ -1009,9 +1094,9 @@ function drawReadouts(){
   const a = cur.st, c = cur.cl;
   $('#groups').innerHTML = groupsHTML(a, c, 'Antes');
   $('#gSkew').innerHTML = gaugeHTML(a.skew, c.skew, -3, 3, 'Cola izquierda larga', 'Cola derecha larga');
-  $('#gKurt').innerHTML = gaugeHTML(a.kurt, c.kurt, -2, 10, 'Colas ligeras', 'Colas pesadas');
+  $('#gKurt').innerHTML = gaugeHTML(a.kurt, c.kurt, -2, 10, 'Platicúrtica · colas ligeras', 'Leptocúrtica · colas pesadas');
   $('#o-sk').textContent = nf(a.skew);
-  $('#o-ku').textContent = nf(a.kurt);
+  $('#o-ku').textContent = `${nf(a.kurt)} · ${kurtType(a.kurt)}`;
   $('#o-n').textContent = S.n;
   $('#o-k').textContent = `${S.k} (${nf(100 * S.k / S.n, 0)} %)`;
   $('#o-d').textContent = nf(S.d, 1) + SIG;
@@ -1060,7 +1145,7 @@ function drawEx(){
 
   const rs = st.sd / b0.sd, rm = st.madS / b0.madS;
   $('#exTake').innerHTML = exOn
-    ? `<span class="lbl">Qué ocurrió</span><p>Un solo dato cambió el resultado. La media subió de ${nf(b0.mean)} a ${nf(st.mean)}. La SD pasó de ${nf(b0.sd)} a ${nf(st.sd)}, unas ${nf(rs, 1)} veces más. La asimetría pasó de ${nf(b0.skew)} a ${nf(st.skew)}. La curtosis pasó de ${nf(b0.kurt)} a ${nf(st.kurt)}.</p><p>La mediana pasó de ${nf(b0.med)} a ${nf(st.med)}. La MAD escalada pasó de ${nf(b0.madS)} a ${nf(st.madS)}. El IQR pasó de ${nf(b0.iqr)} a ${nf(st.iqr)}. Los tres números robustos casi no se movieron.</p>`
+    ? `<span class="lbl">Qué ocurrió</span><p>Un solo dato cambió el resultado. La media subió de ${nf(b0.mean)} a ${nf(st.mean)}. La SD pasó de ${nf(b0.sd)} a ${nf(st.sd)}, unas ${nf(rs, 1)} veces más. ${chg('La', 'asimetría', b0.skew, st.skew, true)} ${chg('La', 'curtosis', b0.kurt, st.kurt, true)}${kurtType(b0.kurt) !== kurtType(st.kurt) ? ` La forma pasó de ${kurtType(b0.kurt)} a ${kurtType(st.kurt)}.` : ''}</p><p>${chg('La', 'mediana', b0.med, st.med, true)} ${chg('La', 'MAD escalada', b0.madS, st.madS, true)} ${chg('El', 'IQR', b0.iqr, st.iqr, true)} ${[[b0.med, st.med], [b0.madS, st.madS], [b0.iqr, st.iqr]].every(([x, y]) => nf(x) === nf(y)) ? 'Los tres números robustos no se movieron.' : 'Los tres números robustos casi no se movieron.'}</p>`
     : `<span class="lbl">Qué ocurre sin extremos</span><p>Los tiempos son parecidos. La media y la mediana casi coinciden. Las tres dispersiones dan valores del mismo orden. La asimetría vale cerca de 0. La curtosis es algo negativa porque, con once datos, ninguno cae muy lejos. Pulse el botón para ver qué ocurre si una espera se dispara.</p>`;
 
   const sorted = Float64Array.from(a).sort(), n = a.length;
@@ -1085,7 +1170,7 @@ function drawEx(){
 
 /* ───────── Lectura dinámica ───────── */
 const skewTxt = g => !Number.isFinite(g) ? 'No se puede calcular la asimetría' : Math.abs(g) < 0.3 ? 'La forma es casi simétrica' : (Math.abs(g) < 1 ? 'La forma es algo asimétrica' : 'La forma es muy asimétrica') + (g > 0 ? ': la cola derecha es más larga' : ': la cola izquierda es más larga');
-const kurtTxt = g => !Number.isFinite(g) ? 'No se puede calcular la curtosis' : g > 0.5 ? 'Hay más datos lejanos que en una campana normal (colas pesadas)' : g < -0.5 ? 'Hay menos datos lejanos que en una campana normal (colas ligeras)' : 'Los datos lejanos son tan frecuentes como en una campana normal';
+const kurtTxt = g => !Number.isFinite(g) ? 'No se puede calcular la curtosis' : g > 0.5 ? 'Hay más datos lejanos que en una campana normal (colas pesadas, forma leptocúrtica)' : g < -0.5 ? 'Hay menos datos lejanos que en una campana normal (colas ligeras, forma platicúrtica)' : 'Los datos lejanos son tan frecuentes como en una campana normal (forma mesocúrtica)';
 function drawReading(){
   const a = cur.st, c = cur.cl, n = S.n, k = S.k, eps = k / n, ov = [...S.over.keys()].filter(i => i < n).length;
   let h = '';
@@ -1094,7 +1179,7 @@ function drawReading(){
   h += `<p><b>Centro.</b> La media (${nf(a.mean)}) ${Math.abs(diff) < 0.1 * sd ? 'casi coincide con' : diff > 0 ? 'queda a la derecha de' : 'queda a la izquierda de'} la mediana (${nf(a.med)}).</p>`;
   if (k > 0 || ov > 0){
     const rs = c.sd > 0 ? a.sd / c.sd : NaN, rm = c.madS > 0 ? a.madS / c.madS : NaN, ri = c.iqr > 0 ? a.iqr / c.iqr : NaN;
-    h += `<p><b>Resultado.</b> La SD pasa de ${nf(c.sd)} a ${nf(a.sd)}. La MAD escalada pasa de ${nf(c.madS)} a ${nf(a.madS)}. El IQR pasa de ${nf(c.iqr)} a ${nf(a.iqr)}. La asimetría pasa de ${nf(c.skew)} a ${nf(a.skew)}. La curtosis pasa de ${nf(c.kurt)} a ${nf(a.kurt)}.</p>`;
+    h += `<p><b>Resultado.</b> ${chg('La', 'SD', c.sd, a.sd)} ${chg('La', 'MAD escalada', c.madS, a.madS)} ${chg('El', 'IQR', c.iqr, a.iqr)} ${chg('La', 'asimetría', c.skew, a.skew)} ${chg('La', 'curtosis', c.kurt, a.kurt)}</p>`;
     let v;
     if (eps >= 0.5) v = 'Los extremos son tantos que engañan a las tres dispersiones.';
     else if (rs > 2 && ri > 2) v = `Los extremos engañan a la SD (por ${nf(rs, 1)}) y al IQR (por ${nf(ri, 1)}). La MAD sube menos (por ${nf(rm, 1)}) y protege mejor.`;
@@ -1139,7 +1224,7 @@ function drawGallery(){
     const mx = Math.max(...cnt), X = u => (u - D0) / (D1 - D0) * 200;
     let bars = cnt.map((c, b) => `<rect x="${b * 200 / NB + 0.4}" y="${88 - 80 * c / mx}" width="${200 / NB - 0.8}" height="${80 * c / mx}" fill="var(--t4)"/>`).join('');
     bars += `<line x1="0" x2="200" y1="88" y2="88" stroke="var(--t3)"/><line x1="${X(st.mean)}" x2="${X(st.mean)}" y1="4" y2="88" stroke="var(--text)" stroke-width="1.5"/><line x1="${X(st.med)}" x2="${X(st.med)}" y1="4" y2="88" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 3"/>`;
-    return `<div class="gcard"><h3>${FAM[f].name}</h3><svg viewBox="0 0 200 92" preserveAspectRatio="none" role="img" aria-label="Histograma de la forma ${FAM[f].name}">${bars}</svg><div class="nums"><div><span class="lbl">Asimetría</span><b>${nf(st.skew, 1)}</b></div><div><span class="lbl">Curtosis</span><b>${nf(st.kurt, 1)}</b></div></div><p>${FAM[f].desc}</p><button type="button" class="btn" data-fam="${f}">Probar en el laboratorio</button></div>`;
+    return `<div class="gcard"><h3>${FAM[f].name}</h3><svg viewBox="0 0 200 92" preserveAspectRatio="none" role="img" aria-label="Histograma de la forma ${FAM[f].name}">${bars}</svg><div class="nums"><div><span class="lbl">Asimetría</span><b>${nf(st.skew, 1)}</b></div><div><span class="lbl">Curtosis</span><b>${nf(st.kurt, 1)}</b><small>${kurtType(st.kurt)}</small></div></div><p>${FAM[f].desc}</p><button type="button" class="btn" data-fam="${f}">Probar en el laboratorio</button></div>`;
   }).join('');
   host.querySelectorAll('[data-fam]').forEach(b => b.addEventListener('click', () => {
     S.fam = b.dataset.fam; S.over.clear(); syncControls(); light = false; schedule();
@@ -1182,6 +1267,66 @@ function drawC(){
   fourPanels('C', X, rows, {xDom: [0, 60], xTicks: [0, 10, 20, 30, 40, 50, 60], xFmt: v => v + ' %', xLab: 'Proporción de valores extremos', markers: mk, clip: true, hdr: i => `Extremos: ${nf(X[i], 0)} % (${Math.round(X[i] * n / 100)} de ${n}).`});
 }
 
+/* ───────── Curtosis: tres tipos de colas ───────── */
+function gammaF(x){
+  const g = 7, c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (x < 0.5) return Math.PI / (Math.sin(Math.PI * x) * gammaF(1 - x));
+  x -= 1; let a = c[0]; const t = x + g + 0.5;
+  for (let i = 1; i < g + 2; i++) a += c[i] / (x + i);
+  return Math.sqrt(2 * Math.PI) * Math.pow(t, x + 0.5) * Math.exp(-t) * a;
+}
+const gnA = b => Math.sqrt(gammaF(1 / b) / gammaF(3 / b));
+const gnPdf = (x, b) => { const al = gnA(b); return b / (2 * al * gammaF(1 / b)) * Math.exp(-Math.pow(Math.abs(x) / al, b)); };
+const gnKurt = b => gammaF(5 / b) * gammaF(1 / b) / Math.pow(gammaF(3 / b), 2) - 3;
+function gnTail(b, t){ let s = 0; const h = 0.01; for (let x = t; x < 60; x += h) s += gnPdf(x + h / 2, b) * h; return 2 * s; }
+const phi = x => Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI);
+const L10 = Math.log(10), L06 = Math.log(0.6);
+const bOf = t => Math.exp(L10 - t / 100 * (L10 - L06));
+const tOf = b => Math.round(100 * (L10 - Math.log(b)) / (L10 - L06));
+const kType2 = g => g > 0.25 ? 'leptocúrtica' : g < -0.25 ? 'platicúrtica' : 'mesocúrtica';
+const P_NORM3 = gnTail(2, 3);
+const oneIn = p => p < 1e-6 ? 'casi ninguno' : `1 de cada ${nf(1 / p, 0)}`;
+let kt = 57;
+function drawKurt(){
+  const b = bOf(kt), k = gnKurt(b), ty = kType2(k), p = gnTail(b, 3);
+  $('#kt').value = kt;
+  $('#o-kt').textContent = `${nf(k)} · ${ty}`;
+  const card = (nm, v, sub, big) => `<div class="card ink"><div class="lbl"><span class="mark"></span>${nm}</div><div class="v${big ? ' sm' : ''}">${v}</div><div class="s">${sub}</div></div>`;
+  $('#kCards').innerHTML = card('Curtosis en exceso', nf(k), 'Campana normal: 0') + card('Tipo', ty[0].toUpperCase() + ty.slice(1), 'Colas ' + (ty === 'leptocúrtica' ? 'pesadas' : ty === 'platicúrtica' ? 'ligeras' : 'como la campana normal'), true) + card('Datos a más de 3 SD', p < 1e-6 ? '≈ 0 %' : nf(p * 100, 2) + ' %', `${oneIn(p)} · Normal: ${nf(P_NORM3 * 100, 2)} %`);
+  $('#kTake').innerHTML = `<span class="lbl">Qué muestra esta forma</span><p>${ty === 'leptocúrtica' ? 'Los datos lejanos aparecen más a menudo que en una campana normal. Un valor extremo no sorprende. La SD es la misma, pero esa SD se reparte entre un centro más agudo y colas más largas.' : ty === 'platicúrtica' ? 'Los datos lejanos son más raros que en una campana normal. Casi todos caen a una distancia parecida del centro. Con la misma SD, la curva es más ancha y no tiene colas.' : 'Los datos lejanos aparecen con la misma frecuencia que en una campana normal. Esta forma sirve de referencia para las demás.'}</p>`;
+  const xs1 = [], xs2 = [];
+  for (let x = -5; x <= 5.0001; x += 0.05) xs1.push(+x.toFixed(2));
+  for (let x = 2; x <= 5.0001; x += 0.02) xs2.push(+x.toFixed(2));
+  const s1 = xs1.map(x => [x, gnPdf(x, b)]), n1 = xs1.map(x => [x, phi(x)]);
+  const s2 = xs2.map(x => [x, gnPdf(x, b)]), n2 = xs2.map(x => [x, phi(x)]);
+  const y1 = Math.max(...s1.map(q => q[1]), 0.4) * 1.1, y2 = Math.max(s2[0][1], n2[0][1]) * 1.1;
+  const xF = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + ' SD';
+  lineChart($('#chK1'), {h: 260, xDom: [-5, 5], yDom: [0, y1], xTicks: [-4, -2, 0, 2, 4], xFmt: xF, xLab: 'Distancia a la media', yLab: 'Densidad',
+    series: [{cls: 'ink', pts: s1}, {cls: 'ink', dash: true, pts: n1}], cap: '#cpK1', capDefault: 'Mueva el puntero sobre el gráfico.',
+    hover: i => `A ${sgn(xs1[i], 1)} SD de la media. Densidad de la forma: ${nf(s1[i][1], 3)}. Densidad normal: ${nf(n1[i][1], 3)}.`});
+  lineChart($('#chK2'), {h: 260, xDom: [2, 5], yDom: [0, y2], xTicks: [2, 3, 4, 5], xFmt: xF, xLab: 'Distancia a la media', yLab: 'Densidad',
+    yFmt: v => nf(v, 3), series: [{cls: 'ink', pts: s2}, {cls: 'ink', dash: true, pts: n2}], cap: '#cpK2', capDefault: 'Mueva el puntero sobre el gráfico.',
+    hover: i => `A ${nf(xs2[i], 1)} SD de la media. Densidad de la forma: ${nf(s2[i][1], 4)}. Densidad normal: ${nf(n2[i][1], 4)}.`});
+}
+function drawKTri(){
+  const types = [[10, 'T1', 'Platicúrtica'], [2, 'T2', 'Mesocúrtica'], [1, 'T3', 'Leptocúrtica']];
+  const xs = []; for (let x = -4; x <= 4.0001; x += 0.05) xs.push(+x.toFixed(2));
+  const ymax = Math.max(...types.map(([b]) => gnPdf(0, b)), 0.4) * 1.1;
+  const xF = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + ' SD';
+  types.forEach(([b, id, nm]) => {
+    const sp = xs.map(x => [x, gnPdf(x, b)]), np = xs.map(x => [x, phi(x)]), k = gnKurt(b), p = gnTail(b, 3);
+    lineChart($('#ch' + id), {h: 190, xDom: [-4, 4], yDom: [0, ymax], xTicks: [-4, -2, 0, 2, 4], xFmt: xF, series: [{cls: 'ink', pts: sp}, {cls: 'ink', dash: true, pts: np}],
+      cap: '#cp' + id, capDefault: 'Línea continua: ' + nm.toLowerCase() + '. Línea discontinua: campana normal.',
+      hover: i => `A ${sgn(xs[i], 1)} SD de la media. Densidad: ${nm.toLowerCase()} ${nf(sp[i][1], 3)}, normal ${nf(np[i][1], 3)}.`});
+    $('#t' + id).innerHTML = `Curtosis: <b>${sgn(k)}</b> · Datos a más de 3 SD: <b>${p < 1e-6 ? '≈ 0 %' : nf(p * 100, 2) + ' %'}</b> (${oneIn(p)})`;
+  });
+}
+function drawKTable(){
+  const rows = [[10, 'Platicúrtica', 'Casi uniforme: todos los valores son igual de probables'], [2, 'Mesocúrtica', 'Campana normal'], [1, 'Leptocúrtica', 'Distribución de Laplace: centro agudo y colas largas'], [0.6, 'Muy leptocúrtica', 'Colas muy pesadas: los datos lejanos son frecuentes']];
+  const td = 'vertical-align:top';
+  $('#kTbody').innerHTML = rows.map(([b, nm, ex]) => { const k = gnKurt(b), p = gnTail(b, 3); return `<tr><td>${nm}</td><td class="pr">${sgn(k)}</td><td class="pr">${p < 1e-6 ? '≈ 0 %' : nf(p * 100, 2) + ' %'}<br><span style="font-weight:400;color:var(--t2)">${oneIn(p)}</span></td><td style="${td}">${ex}</td></tr>`; }).join('');
+}
+
 /* ───────── Ciclo de dibujo ───────── */
 let raf = 0, light = false, lastW = 0;
 function schedule(isDrag){ light = !!isDrag; if (!raf) raf = requestAnimationFrame(render); }
@@ -1208,7 +1353,7 @@ g_2&=\frac{m_4}{m_2^{2}}-3=\frac{${t(a.m4)}}{${t(a.m2 * a.m2)}}-3=${t(a.kurt)}
 function render(){
   raf = 0; compute(); drawReadouts(); drawA(); drawEx();
   drawReading(); drawTable(); drawTex();
-  if (!light){ drawB(); drawC(); }
+  if (!light){ drawKurt(); drawKTri(); drawB(); drawC(); }
 }
 
 /* ───────── Eventos ───────── */
@@ -1220,6 +1365,8 @@ document.querySelectorAll('input[name=side]').forEach(r => r.addEventListener('c
 document.querySelectorAll('[data-p]').forEach(b => b.addEventListener('click', () => {
   const p = b.dataset.p; S.k = p === 'one' ? 1 : Math.round(+p * S.n); S.over.clear(); syncControls(); light = false; schedule();
 }));
+$('#kt').addEventListener('input', e => { kt = +e.target.value; drawKurt(); });
+$('#kPresets').addEventListener('click', e => { const b = e.target.closest('[data-b]'); if (!b) return; kt = tOf(+b.dataset.b); drawKurt(); });
 $('#exBtn').addEventListener('click', () => { exOn = !exOn; drawEx(); });
 $('#b-new').addEventListener('click', () => { S.seed = 1 + Math.floor(Math.random() * 99999); pool = makePool(S.seed, 400); S.over.clear(); light = false; schedule(); });
 $('#b-reset').addEventListener('click', () => { Object.assign(S, DEF); S.over.clear(); pool = makePool(S.seed, 400); syncControls(); light = false; schedule(); });
@@ -1232,7 +1379,7 @@ function typeset(){
   if (!window.katex) $('#mathwarn').style.display = 'block';
   drawTex();
 }
-drawGallery(); syncControls(); render(); typeset();
+drawGallery(); drawKTable(); syncControls(); render(); typeset();
 window.addEventListener('load', () => { if (!window.katex) $('#mathwarn').style.display = 'block'; });
 });
 </script>
