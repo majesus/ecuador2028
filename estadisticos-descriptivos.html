@@ -24,15 +24,16 @@
   --mono:'IBM Plex Mono','Fira Code',ui-monospace,monospace;
   --bg:#fafaf9; --surface:#f5f5f4; --surface-2:#e7e5e4; --border:#e7e5e4;
   --text:#1c1917;
-  --t2:rgba(28,25,23,.70); --t3:rgba(28,25,23,.40); --t4:rgba(28,25,23,.20);
-  --accent:#C8102E; --a60:rgba(200,16,46,.60); --a20:rgba(200,16,46,.20); --a10:rgba(200,16,46,.10);
+  --t2:rgba(28,25,23,.70); --t3:rgba(28,25,23,.64); --t4:rgba(28,25,23,.20);
+  --accent:#C8102E; --accent-t:#C8102E; --a60:rgba(200,16,46,.60); --a20:rgba(200,16,46,.20); --a10:rgba(200,16,46,.10);
   --u:8px;
 }
 @media (prefers-color-scheme:dark){
   :root{
     --bg:#0c0a09; --surface:#1c1917; --surface-2:#292524; --border:#292524;
     --text:#fafaf9;
-    --t2:rgba(250,250,249,.70); --t3:rgba(250,250,249,.40); --t4:rgba(250,250,249,.20);
+    --t2:rgba(250,250,249,.70); --t3:rgba(250,250,249,.64); --t4:rgba(250,250,249,.20);
+    --accent-t:#EF4B63;
   }
 }
 html{color-scheme:light dark;-webkit-text-size-adjust:100%}
@@ -54,7 +55,7 @@ h1,h2,h3,p,figure,dl,dd,ul{margin:0}
 .sec{padding:64px 0;border-top:1px solid var(--text)}
 @media(min-width:768px){.sec{padding:96px 0}}
 .sec-head{margin-bottom:48px}
-.num{font-size:clamp(3rem,10vw,6rem);font-weight:300;line-height:1;letter-spacing:-.02em;color:var(--accent);font-variant-numeric:tabular-nums}
+.num{font-size:clamp(3rem,10vw,6rem);font-weight:300;line-height:1;letter-spacing:-.02em;color:var(--accent-t);font-variant-numeric:tabular-nums}
 h2{font-size:clamp(1.75rem,4vw,2.25rem);font-weight:300;line-height:1.25;letter-spacing:-.02em;text-wrap:balance}
 h3{font-size:1.125rem;font-weight:500;line-height:1.375}
 .body{max-width:60ch;text-wrap:pretty;color:var(--t2)}
@@ -70,7 +71,7 @@ h3{font-size:1.125rem;font-weight:500;line-height:1.375}
 .bar{display:flex;justify-content:space-between;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--text);margin-bottom:64px}
 .rule{width:96px;height:8px;background:var(--accent);margin-bottom:32px}
 .display{font-size:clamp(2.5rem,9vw,6rem);font-weight:300;line-height:1;letter-spacing:-.02em;text-wrap:balance}
-.display .acc{color:var(--accent)}
+.display .acc{color:var(--accent-t)}
 .lead{font-size:clamp(1.125rem,2.2vw,1.375rem);font-weight:300;line-height:1.5;max-width:44ch;color:var(--t2)}
 .key{display:grid;gap:16px;margin-top:48px}
 @media(min-width:640px){.key{grid-template-columns:1fr 1fr}}
@@ -105,7 +106,7 @@ legend{padding:0}
 .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
 .btn{min-height:44px;min-width:44px;padding:8px 16px;background:transparent;color:var(--text);border:1px solid var(--text);border-radius:0;font:inherit;font-size:14px;cursor:pointer}
 .btn:hover{background:var(--text);color:var(--bg)}
-.btn.main{background:var(--accent);border-color:var(--accent);color:#fafaf9}
+.btn.main{background:var(--accent);border-color:var(--accent-t);color:#fafaf9}
 .btn.main:hover{background:var(--a60);border-color:var(--a60);color:var(--text)}
 .presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .presets .btn{padding:8px 12px;font-size:13px}
@@ -119,7 +120,7 @@ legend{padding:0}
 .card .v{font-size:clamp(1.5rem,3.4vw,2rem);font-weight:300;letter-spacing:-.02em;line-height:1.2;margin-top:8px;font-variant-numeric:tabular-nums}
 .card .s{font-size:12px;line-height:1.4;color:var(--t3);margin-top:8px;font-variant-numeric:tabular-nums}
 .card.ink .v{color:var(--text)}
-.card.red .v{color:var(--accent)}
+.card.red .v{color:var(--accent-t)}
 .card .mark{display:inline-block;width:8px;height:8px;margin-right:8px}
 .card.ink .mark{background:var(--text)}
 .card.red .mark{background:var(--accent)}
@@ -131,7 +132,7 @@ figcaption{margin-top:16px;font-size:13px;line-height:1.5;color:var(--t3);max-wi
 .legend{display:flex;flex-wrap:wrap;gap:8px 24px;margin-bottom:8px;font-size:13px;color:var(--t2)}
 .legend span{display:inline-flex;align-items:center;gap:8px}
 .sw{display:inline-block;width:24px;height:0;border-top:2px solid var(--text)}
-.sw.red{border-color:var(--accent)}
+.sw.red{border-color:var(--accent-t)}
 .sw.dash{border-top-style:dashed}
 .sw.dot{border-top-style:dotted;border-color:var(--t3)}
 .sw.band{height:8px;border:0;background:var(--text);opacity:.85}
@@ -160,7 +161,7 @@ figcaption{margin-top:16px;font-size:13px;line-height:1.5;color:var(--t3);max-wi
 .dot-x{fill:var(--bg);stroke:var(--text);stroke-width:1.6}
 .hit{fill:transparent}
 .txt{font-size:11px;fill:var(--text);paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
-.txt.red{fill:var(--accent)}
+.txt.red{fill:var(--accent-t)}
 .txt.muted{fill:var(--t2)}
 .read{min-height:3em;font-size:13px;line-height:1.5;color:var(--text);margin-top:8px;font-variant-numeric:tabular-nums}
 .pair{display:grid;gap:32px}
@@ -192,7 +193,7 @@ td.r,th.r{text-align:right}
 .f .eq{overflow-x:auto;overflow-y:hidden;padding:8px 0;font-size:1.05em;margin-bottom:8px}
 .live{background:var(--surface);padding:16px;margin-top:32px;overflow-x:auto}
 .katex-display{margin:8px 0;text-align:left}.katex-display>.katex{text-align:left}
-.mathwarn{display:none;margin-top:16px;font-size:13px;color:var(--accent)}
+.mathwarn{display:none;margin-top:16px;font-size:13px;color:var(--accent-t)}
 dl.gloss{display:grid;gap:0;margin-top:0}
 dl.gloss div{display:grid;gap:4px;padding:16px 0;border-top:1px solid var(--border)}
 @media(min-width:768px){dl.gloss div{grid-template-columns:200px 1fr;gap:32px}}
@@ -218,8 +219,8 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
 .primer dd{font-size:14px;line-height:1.5;color:var(--t2);margin-top:4px}
 .toc{display:flex;flex-wrap:wrap;gap:0 24px;margin-top:32px}
 .toc a{min-height:44px;display:inline-flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;font-size:14px;border-bottom:1px solid transparent}
-.toc a:hover{border-bottom-color:var(--accent)}
-.toc a span{color:var(--accent);font-variant-numeric:tabular-nums}
+.toc a:hover{border-bottom-color:var(--accent-t)}
+.toc a span{color:var(--accent-t);font-variant-numeric:tabular-nums}
 .def{font-size:12px;line-height:1.4;color:var(--t2);margin-top:4px}
 .help{font-size:12px;line-height:1.4;color:var(--t3);margin-top:-4px;margin-bottom:4px}
 .exgrid{display:grid;gap:32px;margin-top:32px}
@@ -227,7 +228,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
 .steps{list-style:none;padding:0;margin:0;counter-reset:st}
 .steps li{counter-increment:st;display:grid;grid-template-columns:32px 1fr;gap:8px;padding:12px 0;border-top:1px solid var(--border);color:var(--t2);font-size:15px;line-height:1.5}
 .steps li::before{content:counter(st);font-weight:300;font-size:1.5rem;line-height:1;color:var(--text)}
-.steps.red li::before{color:var(--accent)}
+.steps.red li::before{color:var(--accent-t)}
 .steps b{font-weight:500;color:var(--text)}
 .steps .res{color:var(--text);font-variant-numeric:tabular-nums}
 .colhead{border-top:1px solid var(--text);padding-top:16px;margin-bottom:8px}
@@ -239,7 +240,7 @@ tr.hl td,tr.hl th{background:var(--a10)}
 .exstats .card .s b{font-weight:500;color:var(--text)}
 .tog{margin-top:24px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
 .tog .btn{min-height:48px}
-.tog .btn[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fafaf9}
+.tog .btn[aria-pressed=true]{background:var(--accent);border-color:var(--accent-t);color:#fafaf9}
 .three{display:grid;gap:0 32px;margin-top:0}
 @media(min-width:768px){.three{grid-template-columns:repeat(3,1fr)}}
 .three>div{border-top:1px solid var(--text);padding:16px 0 24px}
@@ -301,7 +302,7 @@ details.opt .formulas{margin-top:32px}
 .cards.c3{grid-template-columns:repeat(2,1fr)}@media(min-width:640px){.cards.c3{grid-template-columns:repeat(3,1fr)}}
 .gcard .nums small{display:block;font-size:12px;color:var(--t2);margin-top:2px}
 
-.figh{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:8px}
+.figh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 16px;margin-bottom:8px}
 .btn.q{min-height:44px;padding:8px 16px;font-size:13px;white-space:nowrap}
 .btn.q::before{content:'?';display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-right:8px;border:1px solid currentColor;border-radius:50%;font-size:11px;font-weight:500}
 dialog{border:1px solid var(--text);border-radius:0;padding:0;background:var(--bg);color:var(--text);width:min(680px,calc(100% - 32px));max-height:calc(100dvh - 32px);font-family:var(--font)}
@@ -323,7 +324,7 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
 .mdl-lines .sw{margin-top:10px}
 .mdl-steps{list-style:none;padding:0;margin:0;counter-reset:ms}
 .mdl-steps li{counter-increment:ms;display:grid;grid-template-columns:32px 1fr;gap:12px;padding:8px 0;color:var(--t2);font-size:15px;line-height:1.5}
-.mdl-steps li::before{content:counter(ms);font-weight:300;font-size:1.5rem;line-height:1.1;color:var(--accent)}
+.mdl-steps li::before{content:counter(ms);font-weight:300;font-size:1.5rem;line-height:1.1;color:var(--accent-t)}
 .mdl-chart{margin:16px 0 8px;line-height:0}
 .mdl-key{background:var(--surface);border-left:6px solid var(--accent);padding:16px;margin-top:16px}
 .mdl-key p{color:var(--text);font-size:16px}
@@ -366,7 +367,7 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
     </nav>
 
     <dl class="primer">
-      <div><dt>Dato</dt><dd>Un número de la lista. Por ejemplo, el tiempo de espera de un paciente.</dd></div>
+      <div><dt>Dato</dt><dd>Un número de la lista. Por ejemplo, el gasto de un cliente en una visita.</dd></div>
       <div><dt>Muestra</dt><dd>La lista completa de datos.</dd></div>
       <div><dt>Valor extremo</dt><dd>Un dato muy lejos del resto. Puede ser un error o un caso real poco habitual.</dd></div>
       <div><dt>Distribución</dt><dd>El patrón que forman los datos al contarlos por zonas. Un histograma la dibuja con barras.</dd></div>
@@ -385,7 +386,7 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
       <div class="c12 m3"><div class="num" aria-hidden="true">01</div></div>
       <div class="c12 m9">
         <h2 id="h-ej">Los siete números en un ejemplo</h2>
-        <p class="body" style="margin-top:16px">Once pacientes esperan en una clínica. El dato es el tiempo de espera, en minutos. Los tiempos son parecidos. Ahora imagine que el último paciente espera 45 minutos. Pulse el botón y mire cómo cambian los siete números.</p>
+        <p class="body" style="margin-top:16px">Once clientes de una cafetería pagan su cuenta. El dato es el gasto de cada cliente, en euros. Los gastos son parecidos. Ahora imagine que el último cliente hace un pedido para toda su oficina y paga 45 €. Pulse el botón y mire cómo cambian los siete números.</p>
         <div class="tog">
           <button type="button" class="btn" id="exBtn" aria-pressed="false">Cambiar la última espera a 45</button>
           <span class="hint" style="margin:0" id="exState"></span>
@@ -394,7 +395,7 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
     </div>
 
     <div class="how" style="margin-top:0"><span class="lbl">Cómo leer la figura A</span>
-      <p>Cada punto es un paciente. La línea negra marca la media. La línea roja discontinua marca la mediana. La caja roja cubre la mitad central de los datos: su anchura es el IQR.</p>
+      <p>Cada punto es un cliente. La línea negra marca la media. La línea roja discontinua marca la mediana. La caja roja cubre la mitad central de los datos: su anchura es el IQR.</p>
       <p>Las dos barras de abajo muestran la dispersión que mide la SD y la que mide la MAD. El eje cambia de escala cuando se pulsa el botón.</p></div>
     <figure style="margin-top:0">
       <div class="legend" aria-hidden="true">
@@ -405,15 +406,15 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
         <span><i class="sw band red"></i>Mediana ± MAD</span>
         <span><i class="sw ring"></i>Valor extremo</span>
       </div>
-      <div class="chart" id="exChart" role="img" aria-label="Once tiempos de espera"></div>
-      <figcaption>Figura A. Cada punto es el tiempo de espera de un paciente, en minutos.</figcaption>
+      <div class="chart" id="exChart" role="img" aria-label="Once gastos de clientes"></div>
+      <figcaption>Figura A. Cada punto es el gasto de un cliente, en euros.</figcaption>
     </figure>
 
     <div class="groups" id="exGroups" role="group" aria-label="Resultados del ejemplo"></div>
     <div class="take" id="exTake" aria-live="polite"></div>
 
     <div class="exgrid" style="grid-template-columns:1fr">
-      <div class="grid" style="gap:32px">
+      <div class="grid" style="row-gap:32px">
         <div class="c12 m4">
           <div class="colhead"><span class="lbl">Pregunta 1</span><h3>Centro</h3></div>
           <ol class="steps" id="stepsCentro"></ol>
@@ -432,7 +433,7 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
     <div class="tbl-wrap">
       <table class="compact" style="min-width:720px">
         <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 1. Cálculo paso a paso con los once datos</caption>
-        <thead><tr><th scope="col">Paciente</th><th scope="col" class="r">Dato</th><th scope="col" class="r">(dato − media)²</th><th scope="col" class="r">(dato − media)³</th><th scope="col" class="r">(dato − media)⁴</th><th scope="col" class="r">|dato − mediana|</th></tr></thead>
+        <thead><tr><th scope="col">Cliente</th><th scope="col" class="r">Dato</th><th scope="col" class="r">(dato − media)²</th><th scope="col" class="r">(dato − media)³</th><th scope="col" class="r">(dato − media)⁴</th><th scope="col" class="r">|dato − mediana|</th></tr></thead>
         <tbody id="exBody"></tbody>
       </table>
     </div>
@@ -579,9 +580,9 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
     </div>
 
     <div class="three" style="margin-top:0">
-      <div><span class="lbl">Curtosis menor que 0</span><h3 style="margin-top:8px">Platicúrtica</h3><div class="chart" id="chT1" role="img" aria-label="Curva de la forma y de la campana normal" style="margin:16px 0 0"></div><div class="read" id="cpT1" style="min-height:2.6em"></div><p>Del griego «platys», plano. Colas ligeras: hay menos datos lejanos que en una campana normal. Ejemplos: una forma uniforme y dos grupos separados.</p><p class="def" id="tT1"></p></div>
+      <div><span class="lbl">Curtosis menor que 0</span><h3 style="margin-top:8px">Platicúrtica</h3><div class="chart" id="chT1" role="img" aria-label="Curva de la forma y de la campana normal" style="margin:16px 0 0"></div><div class="read" id="cpT1" style="min-height:2.6em"></div><p>Del griego «platys», plano. Colas ligeras: hay menos datos lejanos que en una campana normal. Ejemplos: valoraciones polarizadas (muchas de 1 y de 5 estrellas) y dos segmentos de clientes muy distintos.</p><p class="def" id="tT1"></p></div>
       <div><span class="lbl">Curtosis cercana a 0</span><h3 style="margin-top:8px">Mesocúrtica</h3><div class="chart" id="chT2" role="img" aria-label="Curva de la forma y de la campana normal" style="margin:16px 0 0"></div><div class="read" id="cpT2" style="min-height:2.6em"></div><p>Del griego «mesos», medio. Colas como las de la campana normal. Es la referencia con la que se compara.</p><p class="def" id="tT2"></p></div>
-      <div><span class="lbl">Curtosis mayor que 0</span><h3 style="margin-top:8px">Leptocúrtica</h3><div class="chart" id="chT3" role="img" aria-label="Curva de la forma y de la campana normal" style="margin:16px 0 0"></div><div class="read" id="cpT3" style="min-height:2.6em"></div><p>Del griego «leptos», fino. Colas pesadas: hay más datos lejanos que en una campana normal. Ejemplos: rendimientos diarios de una acción y errores de medida con extremos ocasionales.</p><p class="def" id="tT3"></p></div>
+      <div><span class="lbl">Curtosis mayor que 0</span><h3 style="margin-top:8px">Leptocúrtica</h3><div class="chart" id="chT3" role="img" aria-label="Curva de la forma y de la campana normal" style="margin:16px 0 0"></div><div class="read" id="cpT3" style="min-height:2.6em"></div><p>Del griego «leptos», fino. Colas pesadas: hay más datos lejanos que en una campana normal. Ejemplo: una tienda donde casi todos los clientes compran poco y unos pocos hacen compras muy grandes.</p><p class="def" id="tT3"></p></div>
     </div>
 
     <div class="grid" style="margin-top:48px">
@@ -636,7 +637,30 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
         <tbody id="kTbody"></tbody>
       </table>
     </div>
-    <p class="hint" style="max-width:70ch">«Datos a más de 3 SD» es la proporción de datos que caen a más de tres SD de la media, por arriba o por abajo. Los límites entre tipos no son exactos. En la práctica, se llama mesocúrtica a la forma que queda cerca de 0.</p>
+    <p class="hint" style="max-width:70ch">«Datos a más de 3 SD» es la proporción de datos que caen más allá de tres SD de la media. Cuenta los dos lados. Los límites entre tipos no son exactos. En la práctica, se llama mesocúrtica a la forma que queda cerca de 0.</p>
+    <div class="sec-line" style="border-top:1px solid var(--text);margin-top:64px;padding-top:32px">
+      <h3 style="font-size:clamp(1.375rem,3vw,1.75rem);font-weight:300;letter-spacing:-.02em;line-height:1.25;text-wrap:balance">¿Por qué la curtosis baja cuando hay muchos extremos?</h3>
+      <p class="body" style="margin-top:16px">La curtosis pregunta quién aporta la dispersión: unos pocos datos muy lejanos o todos los datos por igual. Esa pregunta explica por qué la curtosis sube con pocos extremos y baja con muchos.</p>
+    </div>
+    <div class="grid" style="margin-top:32px">
+      <div class="c12 l5 min0">
+        <ol class="steps">
+          <li><span><b>Un solo extremo.</b> Toda la dispersión extra viene de un dato. Un dato lejano manda, y la curtosis es muy positiva (leptocúrtica). Ejemplo: en una cafetería, casi todos toman un café y un cliente pide para toda la oficina.</span></li>
+          <li><span><b>Más extremos.</b> Los pedidos grandes dejan de ser una rareza. Cuando son cerca de 21 % de los clientes, la curtosis cruza el 0: ya no hay más datos lejanos de lo normal.</span></li>
+          <li><span><b>Mitad y mitad.</b> Con 50 %, hay dos grupos del mismo tamaño. Todos los clientes están a la misma distancia del gasto medio, y ninguno es más raro que otro. La curtosis llega a su mínimo posible, −2 (platicúrtica).</span></li>
+          <li><span><b>Más de 79 %.</b> Ahora los clientes normales son la rareza. Los datos lejanos vuelven a ser pocos, y la curtosis vuelve a ser positiva.</span></li>
+        </ol>
+        <div class="mdl-warn" style="margin-top:16px"><p style="color:var(--t2);font-size:15px"><b>Qué papel tiene la distancia d.</b> Con una d grande, los dos grupos quedan separados y la curva sigue siempre el mismo trazo: positiva hasta 21 %, mínima en 50 % y positiva desde 79 %. Con una d pequeña, los dos grupos se mezclan en una sola campana ancha y el efecto se atenúa. La distancia no cambia el signo: decide cuánto se acerca la muestra a ese trazo.</p></div>
+      </div>
+      <div class="c12 l7 min0">
+        <div class="legend" aria-hidden="true"><span><i class="sw"></i>d = 30 σ: grupos muy separados</span><span><i class="sw dash"></i>d = 2 σ: grupos casi mezclados</span></div>
+        <div class="figh"><div class="lbl">Curtosis según el porcentaje de extremos</div><button type="button" class="btn q" data-m="K3" aria-haspopup="dialog">¿Cómo se lee?</button></div>
+        <div class="chart" id="chK3" role="img" aria-label="Curtosis teórica según el porcentaje de extremos, para dos distancias"></div>
+        <div class="read" id="cpK3"></div>
+        <figcaption>Figura 2c. Curtosis teórica de una muestra con dos grupos: datos limpios y extremos a distancia d. Eje horizontal: porcentaje de extremos. Una muestra de 40 datos se parece a estas curvas, pero fluctúa.</figcaption>
+      </div>
+    </div>
+
     <div class="take" style="margin-top:24px"><span class="lbl">Conclusión</span><p>La curtosis no mide si la cima es puntiaguda, aunque los nombres griegos describan ese aspecto. Hoy se lee como el peso de las colas: cuántos datos caen lejos del centro. Con muchos datos lejanos, la forma es leptocúrtica. Con pocos, es platicúrtica.</p></div>
   </div>
 </section>
@@ -873,7 +897,7 @@ window.addEventListener('DOMContentLoaded', () => {
 const $ = s => document.querySelector(s);
 const K = 1.4826, KI = 1.349;
 const SIG = ' σ';
-const nf = (v, d = 2) => Number.isFinite(v) ? (Math.abs(v) < 0.5 * Math.pow(10, -d) ? 0 : v).toLocaleString('es-ES', {minimumFractionDigits: d, maximumFractionDigits: d}) : '—';
+const nf = (v, d = 2) => Number.isFinite(v) ? (Math.abs(v) < 0.5 * Math.pow(10, -d) ? 0 : v).toLocaleString('es-ES', {minimumFractionDigits: d, maximumFractionDigits: d}).replace('-', '−') : '—';
 const chg = (art, nm, a, b, past = false, d = 2) => nf(a, d) === nf(b, d)
   ? `${art} ${nm} ${past ? 'no cambió' : 'no cambia'}: sigue en ${nf(b, d)}.`
   : `${art} ${nm} ${past ? 'pasó' : 'pasa'} de ${nf(a, d)} a ${nf(b, d)}.`;
@@ -902,20 +926,20 @@ const FAM = {
     help: 'Forma de campana. Simétrica. Es la referencia: asimetría 0 y curtosis 0.',
     desc: 'Simétrica. Pocos datos lejanos. Es la referencia de las demás.'},
   der: {name: 'Cola derecha', m: 1, s: 1, f: (P, i) => -Math.log(P.u[i]),
-    help: 'Muchos datos bajos y pocos muy altos. Ejemplos: sueldos, precios de viviendas.',
-    desc: 'Muchos datos bajos y pocos muy altos. La media supera a la mediana. Ejemplos: sueldos y precios de viviendas.'},
+    help: 'Muchos datos bajos y pocos muy altos. Ejemplos: gasto por cliente, tiempo de permanencia en una tienda online.',
+    desc: 'Muchos datos bajos y pocos muy altos. La media supera a la mediana. Ejemplos: gasto por cliente y tiempo de permanencia en una tienda online.'},
   izq: {name: 'Cola izquierda', m: -1, s: 1, f: (P, i) => Math.log(P.u[i]),
-    help: 'Muchos datos altos y pocos muy bajos. Ejemplo: notas de un examen fácil.',
-    desc: 'Muchos datos altos y pocos muy bajos. La media queda por debajo de la mediana. Ejemplo: notas de un examen fácil.'},
+    help: 'Muchos datos altos y pocos muy bajos. Ejemplo: satisfacción con un producto muy querido.',
+    desc: 'Muchos datos altos y pocos muy bajos. La media queda por debajo de la mediana. Ejemplo: satisfacción de los clientes con un producto muy querido, con muchas notas altas.'},
   pesadas: {name: 'Colas pesadas', m: 0, s: Math.sqrt(5 / 3), f: (P, i) => { let c = 0; for (let m = 0; m < 5; m++) c += P.w[m][i] ** 2; return P.z[i] / Math.sqrt(c / 5); },
     help: 'Simétrica, pero con más datos lejanos que la campana normal.',
-    desc: 'Simétrica, pero con más datos lejanos de lo normal. Los extremos aparecen de forma natural. Ejemplo frecuente: rendimientos diarios de una acción.'},
+    desc: 'Simétrica, pero con más datos lejanos de lo normal. Los extremos aparecen de forma natural. Ejemplo: variación semanal de ventas, con picos ocasionales por promociones.'},
   ligeras: {name: 'Colas ligeras', m: 0, s: 1, f: (P, i) => (2 * P.u[i] - 1) * Math.sqrt(3),
     help: 'Todos los valores posibles son igual de probables. No hay datos lejanos.',
     desc: 'Todos los valores posibles son igual de probables. No hay datos lejanos. Es una forma plana, llamada uniforme.'},
   bimodal: {name: 'Dos grupos', m: 0, s: Math.sqrt(2.74), f: (P, i) => (P.v[i] < 0.5 ? -1.5 : 1.5) + 0.7 * P.z[i],
     help: 'Dos grupos separados. La media cae entre ellos, donde casi no hay datos.',
-    desc: 'Dos grupos separados. La media cae entre ellos, donde casi no hay datos. Ejemplo: visitas a un comercio con un pico por la mañana y otro por la tarde.'}
+    desc: 'Dos grupos separados. La media cae entre ellos, donde casi no hay datos. Ejemplo: valoraciones polarizadas, con muchas notas de 1 estrella y muchas de 5.'}
 };
 const std = (P, fam, i) => (FAM[fam].f(P, i) - FAM[fam].m) / FAM[fam].s;
 
@@ -1180,23 +1204,23 @@ function drawEx(){
     g += isE ? `<circle class="dot-x" cx="${x}" cy="${yy}" r="6"/>` : `<circle class="dot-p" cx="${x}" cy="${yy}" r="4.5"/>`;
   });
   host.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${g}</svg>`;
-  host.setAttribute('aria-label', `Once tiempos de espera. Media ${nf(st.mean)}. Mediana ${nf(st.med)}. SD ${nf(st.sd)}. MAD escalada ${nf(st.madS)}. IQR ${nf(st.iqr)}. Asimetría ${nf(st.skew)}. Curtosis ${nf(st.kurt)}.`);
+  host.setAttribute('aria-label', `Once gastos de clientes. Media ${nf(st.mean)}. Mediana ${nf(st.med)}. SD ${nf(st.sd)}. MAD escalada ${nf(st.madS)}. IQR ${nf(st.iqr)}. Asimetría ${nf(st.skew)}. Curtosis ${nf(st.kurt)}.`);
 
   $('#exGroups').innerHTML = groupsHTML(st, b0, 'Original:');
   $('#exBtn').setAttribute('aria-pressed', exOn);
-  $('#exBtn').textContent = exOn ? 'Volver a la espera original (12)' : 'Cambiar la última espera a 45';
-  $('#exState').textContent = exOn ? 'El paciente 11 espera 45 minutos.' : 'Los once tiempos son parecidos.';
+  $('#exBtn').textContent = exOn ? 'Volver al gasto original (12 €)' : 'Cambiar la última espera a 45';
+  $('#exState').textContent = exOn ? 'El cliente 11 gasta 45 €.' : 'Los once gastos son parecidos.';
 
   const rs = st.sd / b0.sd, rm = st.madS / b0.madS;
   $('#exTake').innerHTML = exOn
     ? `<span class="lbl">Qué ocurrió</span><p>Un solo dato cambió el resultado. La media subió de ${nf(b0.mean)} a ${nf(st.mean)}. La SD pasó de ${nf(b0.sd)} a ${nf(st.sd)}, unas ${nf(rs, 1)} veces más. ${chg('La', 'asimetría', b0.skew, st.skew, true)} ${chg('La', 'curtosis', b0.kurt, st.kurt, true)}${kurtType(b0.kurt) !== kurtType(st.kurt) ? ` La forma pasó de ${kurtType(b0.kurt)} a ${kurtType(st.kurt)}.` : ''}</p><p>${chg('La', 'mediana', b0.med, st.med, true)} ${chg('La', 'MAD escalada', b0.madS, st.madS, true)} ${chg('El', 'IQR', b0.iqr, st.iqr, true)} ${[[b0.med, st.med], [b0.madS, st.madS], [b0.iqr, st.iqr]].every(([x, y]) => nf(x) === nf(y)) ? 'Los tres números robustos no se movieron.' : 'Los tres números robustos casi no se movieron.'}</p>`
-    : `<span class="lbl">Qué ocurre sin extremos</span><p>Los tiempos son parecidos. La media y la mediana casi coinciden. Las tres dispersiones dan valores del mismo orden. La asimetría vale cerca de 0. La curtosis es algo negativa porque, con once datos, ninguno cae muy lejos. Pulse el botón para ver qué ocurre si una espera se dispara.</p>`;
+    : `<span class="lbl">Qué ocurre sin extremos</span><p>Los gastos son parecidos. La media y la mediana casi coinciden. Las tres dispersiones dan valores del mismo orden. La asimetría vale cerca de 0. La curtosis es algo negativa porque, con once datos, ninguno cae muy lejos. Pulse el botón para ver qué ocurre si un gasto se dispara.</p>`;
 
   const sorted = Float64Array.from(a).sort(), n = a.length;
   const pos = p => (n - 1) * p + 1;
   const ad = a.map(v => Math.abs(v - st.med)), sq = a.map(v => (v - st.mean) ** 2), cu = a.map(v => (v - st.mean) ** 3), qu = a.map(v => (v - st.mean) ** 4);
   $('#stepsCentro').innerHTML =
-    `<li><span><b>Media.</b> Sume los ${n} tiempos y divida por ${n}. <span class="res">Resultado: ${nf(st.mean)}.</span></span></li>` +
+    `<li><span><b>Media.</b> Sume los ${n} gastos y divida por ${n}. <span class="res">Resultado: ${nf(st.mean)}.</span></span></li>` +
     `<li><span><b>Mediana.</b> Ordene los datos: ${[...sorted].join('; ')}. Tome el del medio, el sexto. <span class="res">Resultado: ${nf(st.med)}.</span></span></li>`;
   $('#stepsDisp').innerHTML =
     `<li><span><b>SD.</b> Eleve al cuadrado cada (dato − media). Sume: ${nf(st.ss)}. Divida por ${n - 1}. Calcule la raíz cuadrada. <span class="res">Resultado: ${nf(st.sd)}.</span></span></li>` +
@@ -1208,7 +1232,7 @@ function drawEx(){
 
   const cs = 'padding:12px 16px 12px 0', th = 'text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--border)';
   const sum = arr => arr.reduce((x, y) => x + y, 0);
-  $('#exBody').innerHTML = a.map((v, i) => `<tr class="${exOn && i === 10 ? 'hl' : ''}"><th scope="row" style="${th}">Paciente ${i + 1}</th><td class="r" style="${cs}">${nf(v, 0)}</td><td class="r" style="${cs}">${nf(sq[i])}</td><td class="r" style="${cs}">${nf(cu[i])}</td><td class="r" style="${cs}">${nf(qu[i])}</td><td class="r" style="${cs}">${nf(ad[i])}</td></tr>`).join('') +
+  $('#exBody').innerHTML = a.map((v, i) => `<tr class="${exOn && i === 10 ? 'hl' : ''}"><th scope="row" style="${th}">Cliente ${i + 1}</th><td class="r" style="${cs}">${nf(v, 0)}</td><td class="r" style="${cs}">${nf(sq[i])}</td><td class="r" style="${cs}">${nf(cu[i])}</td><td class="r" style="${cs}">${nf(qu[i])}</td><td class="r" style="${cs}">${nf(ad[i])}</td></tr>`).join('') +
     `<tr><th scope="row" style="${th};border-bottom:1px solid var(--text)">Resumen</th><td class="r" style="${cs};border-bottom:1px solid var(--text)">Media ${nf(st.mean)}</td><td class="r" style="${cs};border-bottom:1px solid var(--text)">Suma ${nf(sum(sq))}</td><td class="r" style="${cs};border-bottom:1px solid var(--text)">Suma ${nf(sum(cu))}</td><td class="r" style="${cs};border-bottom:1px solid var(--text)">Suma ${nf(sum(qu))}</td><td class="r" style="${cs};border-bottom:1px solid var(--text)">Mediana ${nf(st.mad)}</td></tr>`;
 }
 
@@ -1231,6 +1255,7 @@ function drawReading(){
     else v = 'Con esta distancia y esta cantidad, los extremos cambian poco las tres dispersiones. Suba <i>k</i> o <i>d</i> para ver más efecto.';
     h += `<p><b>Lectura.</b> ${v}</p>`;
     if (Math.abs(a.skew - c.skew) > 0.5 || Math.abs(a.kurt - c.kurt) > 1) h += `<p>La asimetría y la curtosis reaccionan mucho a los extremos. Un cambio de forma puede venir de pocos datos.</p>`;
+    if (Number.isFinite(a.kurt) && a.kurt < -0.5 && a.kurt < c.kurt - 0.5) h += `<p>La curtosis ahora es negativa. Con tantos extremos, la muestra se parece a dos grupos de tamaño parecido. Vea la sección 04.</p>`;
     if (eps >= 0.5) h += `<p class="note"><b>Nota.</b> Los extremos forman la mitad o más de la muestra. La mediana, la MAD y el IQR siguen a los extremos.</p>`;
     else if (eps > 0.25) h += `<p class="note"><b>Nota.</b> Con más de 25 % de extremos, el IQR puede fallar. La mediana y la MAD aguantan hasta cerca de 50 %.</p>`;
   }
@@ -1368,6 +1393,16 @@ function drawKurt(){
     yFmt: v => nf(v, 3), series: [{cls: 'ink', pts: s2}, {cls: 'ink', dash: true, pts: n2}], cap: '#cpK2', capDefault: 'Mueva el puntero sobre el gráfico.',
     hover: i => `A ${nf(xs2[i], 1)} SD de la media. Densidad de la forma: ${nf(s2[i][1], 4)}. Densidad normal: ${nf(n2[i][1], 4)}.`});
 }
+const mixKurt = (eps, d) => { const w = [1 - eps, eps], m = [0, d], v = [1, Math.pow(0.06 * d, 2)], M = w[1] * d; let m2 = 0, m4 = 0; for (let i = 0; i < 2; i++){ const a = m[i] - M; m2 += w[i] * (a * a + v[i]); m4 += w[i] * (Math.pow(a, 4) + 6 * a * a * v[i] + 3 * v[i] * v[i]); } return m4 / (m2 * m2) - 3; };
+const KMIX = {xs: Array.from({length: 99}, (_, i) => i + 1)};
+function drawKMix(){
+  const xs = KMIX.xs, big = xs.map(x => [x, mixKurt(x / 100, 30)]), sml = xs.map(x => [x, mixKurt(x / 100, 2)]);
+  KMIX.big = big; KMIX.sml = sml;
+  lineChart($('#chK3'), {h: 280, xDom: [0, 100], yDom: [-2.6, 12], xTicks: [0, 21, 50, 79, 100], xFmt: v => v + ' %', xLab: 'Proporción de valores extremos', yLab: 'Curtosis',
+    series: [{cls: 'ink', pts: big}, {cls: 'ink', dash: true, pts: sml}], refs: [{y: 0, label: '0 = campana normal'}, {y: -2, label: '−2: mínimo posible'}],
+    markers: [{x: 21, label: '21 %'}, {x: 50, label: '50 %'}, {x: 79, label: '79 %'}], cap: '#cpK3', capDefault: 'Mueva el puntero sobre el gráfico.',
+    hover: i => `Con ${xs[i]} % de extremos: curtosis ${nf(big[i][1])} si d = 30 σ, y ${nf(sml[i][1])} si d = 2 σ.`});
+}
 function drawKTri(){
   const types = [[10, 'T1', 'Platicúrtica'], [2, 'T2', 'Mesocúrtica'], [1, 'T3', 'Leptocúrtica']];
   const xs = []; for (let x = -4; x <= 4.0001; x += 0.05) xs.push(+x.toFixed(2));
@@ -1449,11 +1484,20 @@ const MODALS = {
     now: [0, 10, 25, 50, 55].map(v => P(`${v === 0 ? 'Sin extremos' : 'Con ' + v + ' % de extremos'}: asimetría clásica ${nf(r(v).skew)}, Bowley ${nf(r(v).bowley)}.`)).join(''),
     steps: ['Recuerde el signo. Positivo es cola larga a la derecha. Negativo es cola larga a la izquierda.', 'Con pocos extremos, la asimetría clásica sube: aparece una cola larga hacia el lado de los extremos.', 'Después baja. Cerca de la mitad, la muestra forma dos grupos de tamaño parecido y ninguna cola domina.', 'Con más de 50 %, el signo puede cambiar. Los extremos son ahora la mayoría, y la cola larga es la de los datos limpios.'],
     key: 'La asimetría clásica cambia de signo según la proporción de extremos. Léala con cuidado. La de Bowley se mueve mucho menos.'}; },
+  K3: () => { const g = x => KMIX.big[x - 1][1], h = x => KMIX.sml[x - 1][1]; return {
+    title: 'Cómo leer: la curtosis según el porcentaje de extremos',
+    intro: P('Imagine una muestra formada por dos grupos: los datos limpios y un grupo de extremos a una distancia d. El gráfico calcula la curtosis que tendría esa muestra, desde 1 % hasta 99 % de extremos. Es un cálculo teórico, sin azar.'),
+    axes: P('<b>Eje horizontal.</b> El porcentaje de datos que son extremos. Las marcas señalan 21 %, 50 % y 79 %.') + P('<b>Eje vertical.</b> La curtosis. Cero es una campana normal. Más de cero son colas pesadas. Menos de cero son colas ligeras. El mínimo posible es −2.'),
+    lines: [['', '<b>Línea continua.</b> Con d = 30 σ: grupos muy separados. Es el trazo límite.'], ['dash', '<b>Línea discontinua.</b> Con d = 2 σ: grupos casi mezclados.'], ['dot', '<b>Línea gris punteada.</b> El cero y el mínimo posible.']],
+    now: P(`Con 2 % de extremos, la curtosis vale ${nf(g(2))} si d = 30 σ, y ${nf(h(2))} si d = 2 σ.`) + P(`Con 21 %: ${nf(g(21))} y ${nf(h(21))}.`) + P(`Con 50 %: ${nf(g(50))} y ${nf(h(50))}.`) + P(`Con 79 %: ${nf(g(79))} y ${nf(h(79))}.`),
+    steps: ['Mire la línea continua de izquierda a derecha. Empieza muy alta: pocos datos muy lejanos dominan la dispersión.', 'Baja y cruza el 0 cerca de 21 %. Los extremos ya no son una rareza.', 'Llega a su mínimo, −2, en 50 %. Hay dos grupos iguales y todos los datos están a la misma distancia del centro.', 'Sube otra vez desde 79 %: ahora los datos limpios son la rareza.', 'Compare con la línea discontinua. Con d pequeña, la curva es mucho más plana: los dos grupos se mezclan y el efecto se atenúa.'],
+    key: 'La curtosis no cuenta cuántos extremos hay. Mide si la dispersión la aportan pocos datos muy lejanos (positiva) o todos por igual (negativa).'}; },
   C4: () => { const {X, rows} = LC, r = v => near(X, rows, v); return {
     title: 'Cómo leer: la curtosis y muchos extremos', intro: INTC, axes: AXC,
     lines: [['', '<b>Línea negra.</b> La curtosis clásica.'], ['dot', '<b>Línea gris punteada.</b> El cero: colas como las de la campana normal.']],
     now: [0, 5, 10, 25, 50].map(v => P(`${v === 0 ? 'Sin extremos' : 'Con ' + v + ' % de extremos'}: curtosis ${nf(r(v).kurt)} (forma ${kurtType(r(v).kurt)}).`)).join(''),
-    steps: ['Recuerde el significado. Más de cero son colas pesadas. Menos de cero son colas ligeras.', 'Con pocos extremos, la línea sube mucho: aparecen colas pesadas (forma leptocúrtica).', 'Con más extremos, la línea baja. La muestra se reparte en dos grupos de tamaño parecido.', 'Con dos grupos parecidos, la curtosis es negativa: forma platicúrtica, como en la sección 04.'],
+    steps: ['Recuerde el significado. Más de cero son colas pesadas. Menos de cero son colas ligeras.', 'Con pocos extremos, la línea sube mucho: unos pocos datos muy lejanos aportan casi toda la dispersión (forma leptocúrtica).', 'Con más extremos, la línea baja. Los extremos dejan de ser una rareza. Con una d grande, la curtosis cruza el 0 cerca de 21 %.', 'Cerca de 50 %, hay dos grupos del mismo tamaño y todos los datos están a la misma distancia del centro. La curtosis llega a su mínimo posible, −2 (forma platicúrtica).'],
+    warn: 'La distancia d decide la fuerza del efecto. Con una d grande, la línea sigue el trazo límite. Con una d pequeña, los dos grupos se mezclan y la línea queda más plana. La sección 04 lo explica con un gráfico teórico.',
     key: 'La curtosis sube con pocos extremos y baja con muchos. No sirve para saber cuántos extremos hay.'}; }
 };
 const dlg = $('#dlg'); let opener = null;
@@ -1508,7 +1552,7 @@ g_2&=\frac{m_4}{m_2^{2}}-3=\frac{${t(a.m4)}}{${t(a.m2 * a.m2)}}-3=${t(a.kurt)}
 function render(){
   raf = 0; compute(); drawReadouts(); drawA(); drawEx();
   drawReading(); drawTable(); drawTex();
-  if (!light){ drawKurt(); drawKTri(); drawB(); drawC(); }
+  if (!light){ drawKMix(); drawKurt(); drawKTri(); drawB(); drawC(); }
 }
 
 /* ───────── Eventos ───────── */
