@@ -408,9 +408,9 @@ fieldset{margin-top:24px}
   <div class="sec-head grid"><div class="c12 m3"><div class="num">06</div></div><div class="c12 m9"><h2>Cómo leer los resultados</h2><p class="body">Esta guía resume qué prueba usa el panel en cada caso y cómo interpretar sus resultados.</p></div></div>
   <span class="lbl">Qué prueba se aplica</span>
   <div class="tbl-wrap" tabindex="0" role="region" aria-label="Guía de pruebas según el tipo de variables"><table class="compact" style="min-width:640px"><thead><tr><th scope="col">Sus variables</th><th scope="col">Análisis principal</th><th scope="col">Comparación paramétrica</th><th scope="col">Tamaño del efecto</th></tr></thead><tbody>
-    <tr><th scope="row" class="rh">Numérica y numérica</th><td>Spearman y Kendall</td><td>Pearson</td><td>ρ, τ, r y R²</td></tr>
+    <tr><th scope="row" class="rh">Numérica y numérica</th><td>Spearman y Kendall</td><td>Pearson</td><td>ρ, τ, r y R² con intervalos de confianza</td></tr>
     <tr><th scope="row" class="rh">Dos medidas pareadas</th><td>Wilcoxon de rangos con signo</td><td>—</td><td>Correlación biserial de rangos</td></tr>
-    <tr><th scope="row" class="rh">Numérica y categórica de 2 grupos</th><td>Mann–Whitney</td><td>t de Welch</td><td>Probabilidad de superioridad y d de Cohen</td></tr>
+    <tr><th scope="row" class="rh">Numérica y categórica de 2 grupos</th><td>Mann–Whitney</td><td>t de Welch</td><td>Hodges–Lehmann, probabilidad de superioridad y d de Cohen</td></tr>
     <tr><th scope="row" class="rh">Numérica y categórica de 3 o más grupos</th><td>Kruskal–Wallis y Dunn con Holm</td><td>ANOVA de Welch</td><td>ε² y η²</td></tr>
     <tr><th scope="row" class="rh">Categórica y categórica</th><td>Ji-cuadrado y Fisher (2 × 2)</td><td>G de razón de verosimilitud</td><td>V de Cramér y razón de odds</td></tr>
   </tbody></table></div>
@@ -423,6 +423,10 @@ fieldset{margin-top:24px}
     <div><dt>Tabla de contingencia</dt><dd>Tabla que cuenta cuántas filas hay en cada combinación de dos categorías. Permite ver si dos variables categóricas se relacionan.</dd></div>
     <div><dt>Residuo ajustado</dt><dd>Distancia de una casilla a lo esperado si no hubiera relación. Un valor mayor que 2 en valor absoluto destaca.</dd></div>
     <div><dt>Comparaciones múltiples</dt><dd>Cuantas más pruebas se hacen, más probable es un falso positivo. La corrección de Holm lo compensa.</dd></div>
+    <div><dt>Bootstrap</dt><dd>Método que repite el cálculo miles de veces con remuestreos de sus propios datos. Muestra cuánto cambia cada número de una muestra a otra, sin exigir una forma normal.</dd></div>
+    <div><dt>Media recortada</dt><dd>Media que descarta el 10 % más bajo y el 10 % más alto. Está entre la media y la mediana, y resiste mejor los extremos.</dd></div>
+    <div><dt>MAD escalada</dt><dd>Mediana de las distancias a la mediana, multiplicada por 1,4826. Equivale a la SD si los datos son normales, pero resiste los valores extremos.</dd></div>
+    <div><dt>Hodges–Lehmann</dt><dd>Diferencia típica entre dos grupos: la mediana de todas las diferencias posibles entre un dato de uno y un dato del otro. Acompaña a la prueba de Mann–Whitney.</dd></div>
     <div><dt>Valor extremo (Tukey)</dt><dd>Dato que queda a más de 1,5 veces el IQR por fuera de la caja. No es necesariamente un error.</dd></div>
   </dl>
   <span class="lbl" style="display:block;margin-top:48px">Límites del panel</span>
@@ -549,7 +553,7 @@ function pearson(x, y){
   let lo = NaN, hi = NaN; if (n > 3 && Math.abs(r) < 1){ const z = Math.atanh(r), se = 1 / Math.sqrt(n - 3); lo = Math.tanh(z - 1.959964 * se); hi = Math.tanh(z + 1.959964 * se); }
   const slope = sxx > 0 ? sxy / sxx : NaN; return {r, p, lo, hi, n, slope, icpt: my - slope * mx, r2: r * r};
 }
-function spearman(x, y){ const rx = ranks(x).r, ry = ranks(y).r, o = pearson(rx, ry), n = x.length; return {rho: o.r, p: o.p, n}; }
+function spearman(x, y){ const rx = ranks(x).r, ry = ranks(y).r, o = pearson(rx, ry), n = x.length; let lo = NaN, hi = NaN; if (n > 3 && Math.abs(o.r) < 1){ const z = Math.atanh(o.r), se = Math.sqrt(1.06 / (n - 3)); lo = Math.tanh(z - 1.959964 * se); hi = Math.tanh(z + 1.959964 * se); } return {rho: o.r, p: o.p, n, lo, hi}; }
 function kendall(x, y){
   const n = x.length; let C = 0, D = 0, tx = 0, ty = 0;
   for (let i = 0; i < n - 1; i++) for (let j = i + 1; j < n; j++){ const a = Math.sign(x[i] - x[j]), b = Math.sign(y[i] - y[j]); if (a === 0 && b === 0) continue; if (a === 0) tx++; else if (b === 0) ty++; else if (a === b) C++; else D++; }
@@ -633,6 +637,26 @@ function chiTable(T){ // T: filas × columnas de frecuencias
 }
 const wilsonCI = (k, n) => { const z = 1.959964, p = k / n, d = 1 + z * z / n, c = p + z * z / (2 * n), s = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)); return [(c - s) / d, (c + s) / d]; };
 function kdeAt(vals, xs, h){ const n = vals.length, k = 1 / (n * h * Math.sqrt(2 * Math.PI)); return xs.map(x => { let s = 0; for (let i = 0; i < n; i++){ const u = (x - vals[i]) / h; if (u > -6 && u < 6) s += Math.exp(-0.5 * u * u); } return s * k; }); }
+
+/* ───────── Incertidumbre: bootstrap y Hodges–Lehmann ───────── */
+function quickStats(a){
+  const n = a.length, s = Float64Array.from(a).sort(); let t = 0; for (const v of a) t += v; const mean = t / n; let ss = 0, m3 = 0, m4 = 0;
+  for (const v of a){ const d = v - mean, d2 = d * d; ss += d2; m3 += d2 * d; m4 += d2 * d2; }
+  const m2 = ss / n, med = quantS(s, 0.5), q1 = quantS(s, 0.25), q3 = quantS(s, 0.75), k = Math.floor(0.1 * n); let tr = 0; for (let i = k; i < n - k; i++) tr += s[i];
+  return {mean, med, trim: n - 2 * k > 0 ? tr / (n - 2 * k) : mean, sd: n > 1 ? Math.sqrt(ss / (n - 1)) : NaN, madS: KMAD * quantS(Float64Array.from(a, v => Math.abs(v - med)).sort(), 0.5), iqr: q3 - q1, skew: m2 > 1e-300 ? (m3 / n) / Math.pow(m2, 1.5) : NaN, kurt: m2 > 1e-300 ? (m4 / n) / (m2 * m2) - 3 : NaN};
+}
+function bootstrapDesc(a, B = 400, seed = 12345){
+  const n = a.length, r = rng(seed), out = {}, keys = ['mean', 'med', 'trim', 'sd', 'madS', 'iqr', 'skew', 'kurt'], buf = new Float64Array(n);
+  keys.forEach(k => { out[k] = []; });
+  for (let b = 0; b < B; b++){ for (let i = 0; i < n; i++) buf[i] = a[Math.floor(r() * n)]; const q = quickStats(buf); keys.forEach(k => { if (Number.isFinite(q[k])) out[k].push(q[k]); }); }
+  const ci = {}; keys.forEach(k => { const s = Float64Array.from(out[k]).sort(); ci[k] = s.length > 20 ? [quantS(s, 0.025), quantS(s, 0.975)] : [NaN, NaN]; });
+  return ci;
+}
+function hodgesLehmann(x, y){ // mediana de todas las diferencias x_i − y_j, con IC 95 % sin supuestos (Bauer)
+  const n1 = x.length, n2 = y.length, m = n1 * n2; if (m > 4e6) return {est: NaN, lo: NaN, hi: NaN};
+  const d = new Float64Array(m); let k = 0; for (let i = 0; i < n1; i++) for (let j = 0; j < n2; j++) d[k++] = x[i] - y[j]; d.sort();
+  const est = quantS(d, 0.5), c = Math.floor(m / 2 - 1.959964 * Math.sqrt(m * (n1 + n2 + 1) / 12)); return {est, lo: c >= 0 ? d[c] : d[0], hi: c >= 0 ? d[m - 1 - c] : d[m - 1]};
+}
 
 'use strict';
 const $ = s => document.querySelector(s);
@@ -1015,8 +1039,8 @@ function viewOverview(){
   const nums = vs.filter(v => isNumT(v.type)), cats = vs.filter(v => isCatT(v.type));
   let h = '';
   if (nums.length){
-    const rows = nums.map(v => { const a = numOf(v); if (a.length < 2) return [esc(v.name), nf(a.length, 0), '—', '—', '—', '—', '—', '—', '—']; const d = describe(a), f = mkFmt(v, d); return [esc(v.name), nf(d.n, 0), nf(nU - d.n, 0), f(d.mean), f(d.med), f(d.sd), f(d.min), f(d.max), nf(d.skew, 2)]; });
-    h += `<h3 style="margin-top:32px">Variables numéricas</h3>` + tbl(['Variable', 'n', 'Faltan', 'Media', 'Mediana', 'SD', 'Mín.', 'Máx.', 'Asim.'], rows, {right: [1, 2, 3, 4, 5, 6, 7, 8], min: 640, label: 'Resumen de variables numéricas'});
+    const rows = nums.map(v => { const a = numOf(v); if (a.length < 2) return [esc(v.name), nf(a.length, 0), '—', '—', '—', '—', '—', '—', '—', '—', '—', '—']; const d = describe(a), f = mkFmt(v, d); return [esc(v.name), nf(d.n, 0), nf(nU - d.n, 0), f(d.mean), f(d.trim), f(d.med), f(d.sd), f(d.madS), f(d.min), f(d.max), nf(d.skew, 2), nf(d.kurt, 2)]; });
+    h += `<h3 style="margin-top:32px">Variables numéricas</h3>` + tbl(['Variable', 'n', 'Faltan', 'Media', 'Media recort.', 'Mediana', 'SD', 'MAD esc.', 'Mín.', 'Máx.', 'Asim.', 'Curt.'], rows, {right: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], min: 880, label: 'Resumen de variables numéricas'});
   }
   if (cats.length){
     const rows = cats.map(v => { const {c, miss, n} = catCounts(v); const mx = c.indexOf(Math.max(...c)); return [esc(v.name), esc(TYPE_NAME[v.type]), nf(v.levels.length, 0), nf(n, 0), n ? esc(trunc(v.levels[mx], 24)) : '—', n ? pct(c[mx] / n) : '—']; });
@@ -1079,7 +1103,11 @@ function viewNum(v){
     ['IC 95 % de la media', `${f(d.ciLo)} a ${f(d.ciHi)}`, 'Intervalo donde probablemente está la media real.'], ['Varianza', nf(d.var, d.var >= 100 ? 1 : 3), 'La SD elevada al cuadrado.'], ['Coeficiente de variación', Number.isFinite(d.cv) ? pct(d.cv, 0) : '—', 'La SD como porcentaje de la media.'],
     ['MAD (sin escalar)', f(d.mad), 'Mediana de las distancias a la mediana.'], ['IQR ÷ 1,349', f(d.iqrS), 'Dispersión robusta en escala de SD.'], ['Asimetría de Bowley', nf(d.bowley, 2), 'Asimetría basada en cuartiles. Va de −1 a +1.'],
     ['Valores extremos (Tukey)', `${nf(out.length, 0)} (${nf(out.length / d.n * 100, 1)} %)`, 'Datos a más de 1,5 IQR de la caja.'], ['Shapiro–Wilk', Number.isFinite(sw.p) ? `W = ${nf(sw.W, 3)} · p ${pTxt(sw.p)}` : '—', 'p < 0,05 sugiere que la forma no es normal.'], ['Jarque–Bera', Number.isFinite(jb.p) ? `p ${pTxt(jb.p)}` : '—', 'Contraste de normalidad basado en asimetría y curtosis.']];
-  return cards + figs + `<div class="reading" id="reading1"><span class="lbl">Lectura en lenguaje sencillo</span>${rd.join('')}</div>` + `<h3 style="margin-top:32px">Todos los estadísticos</h3>` + tbl(['Estadístico', 'Valor', 'Qué significa'], rows, {min: 560, label: 'Estadísticos de ' + v.name});
+  const bootable = d.n >= 10 && d.n <= 20000 && d.sd > 0, tok = ++UI.boot;
+  if (bootable) setTimeout(() => { if (tok !== UI.boot || !$('#bootBox')) return; const ci = bootstrapDesc(a, 400);
+    const rows2 = [[{key: 'mean'}, 'Media', d.mean, f], [{key: 'trim'}, 'Media recortada (10 %)', d.trim, f], [{key: 'med'}, 'Mediana', d.med, f], [{key: 'sd'}, 'SD', d.sd, f], [{key: 'madS'}, 'MAD escalada', d.madS, f], [{key: 'iqr'}, 'IQR', d.iqr, f], [{key: 'skew'}, 'Asimetría', d.skew, x => nf(x, 2)], [{key: 'kurt'}, 'Curtosis', d.kurt, x => nf(x, 2)]].map(([k, nm, e, g]) => [nm, g(e), Number.isFinite(ci[k.key][0]) ? `${g(ci[k.key][0])} a ${g(ci[k.key][1])}` : '—']);
+    $('#bootBox').innerHTML = tbl(['Estadístico', 'Estimación', 'Intervalo de confianza 95 %'], rows2, {right: [1, 2], min: 460, label: 'Incertidumbre de cada estadístico'}) + `<p class="hint">El intervalo muestra cuánto cambiaría cada número con otra muestra parecida. Sale de 400 remuestreos con reemplazo (método bootstrap). Con pocos datos o con extremos, es aproximado.</p>`; }, 30);
+  return cards + figs + `<div class="reading" id="reading1"><span class="lbl">Lectura en lenguaje sencillo</span>${rd.join('')}</div>` + `<h3 style="margin-top:32px">Todos los estadísticos</h3>` + tbl(['Estadístico', 'Valor', 'Qué significa'], rows, {min: 560, label: 'Estadísticos de ' + v.name}) + (bootable ? `<h3 style="margin-top:32px">Incertidumbre de los estadísticos</h3><div id="bootBox"><p class="hint">Calculando…</p></div>` : '');
 }
 function viewDate(v){
   const a = numOf(v); if (a.length < 3) return msgBox('Hay menos de 3 fechas válidas.');
@@ -1148,7 +1176,7 @@ function viewNN(vx, vy){
   const fz = a => { const d = describe(a); return {lo: d.q1 - 3 * d.iqr, hi: d.q3 + 3 * d.iqr, wide: d.iqr > 0 && d.range > 8 * d.iqr}; }, zx = fz(x), zy = fz(y), outP = x.filter((_, i) => x[i] < zx.lo || x[i] > zx.hi || y[i] < zy.lo || y[i] > zy.hi).length, canZ = outP > 0 && (zx.wide || zy.wide), zOn = canZ && (UI.zoom2 === null ? true : UI.zoom2);
   const sel = zOn ? x.map((_, i) => i).filter(i => !(x[i] < zx.lo || x[i] > zx.hi || y[i] < zy.lo || y[i] > zy.hi)) : null, xs = sel ? sel.map(i => x[i]) : x, ys = sel ? sel.map(i => y[i]) : y;
   after(() => scatterChart($('#chSc'), xs, ys, {xLab: vx.name, yLab: vy.name, xName: vx.name, yName: vy.name, line: pe, diag: UI.paired, label: `Dispersión de ${vx.name} y ${vy.name}`}));
-  const rows = [['Pearson', `r = ${nf(pe.r, 3)} · IC 95 %: ${nf(pe.lo, 2)} a ${nf(pe.hi, 2)}`, pTxt(pe.p), 'Relación lineal. Sensible a valores extremos.'], ['Spearman', `ρ = ${nf(sp.rho, 3)}`, pTxt(sp.p), 'Relación que siempre sube o siempre baja. No paramétrica.'], ['Kendall', ke ? `τ = ${nf(ke.tau, 3)}` : 'No calculado (n > 3 000)', ke ? pTxt(ke.p) : '—', 'Orden de los pares. No paramétrica. Resiste a los empates.']];
+  const rows = [['Pearson', `r = ${nf(pe.r, 3)} · IC 95 %: ${nf(pe.lo, 2)} a ${nf(pe.hi, 2)}`, pTxt(pe.p), 'Relación lineal. Sensible a valores extremos.'], ['Spearman', `ρ = ${nf(sp.rho, 3)} · IC 95 %: ${nf(sp.lo, 2)} a ${nf(sp.hi, 2)}`, pTxt(sp.p), 'Relación que siempre sube o siempre baja. No paramétrica.'], ['Kendall', ke ? `τ = ${nf(ke.tau, 3)}` : 'No calculado (n > 3 000)', ke ? pTxt(ke.p) : '—', 'Orden de los pares. No paramétrica. Resiste a los empates.']];
   let pairedHTML = '', pairedRead = '';
   if (UI.paired){ const wx = wilcoxon(x, y), dm = describe(x.map((v, i) => v - y[i])); rows.push(['Wilcoxon de rangos con signo', Number.isFinite(wx.p) ? `T = ${nf(wx.W, 1)} · efecto ${nf(wx.rb, 2)}` : '—', pTxt(wx.p), 'Medidas pareadas: ¿difiere la mediana de las diferencias de 0?']);
     pairedRead = `<p><b>Medidas pareadas.</b> La diferencia media (${esc(vx.name)} − ${esc(vy.name)}) es ${sg(dm.mean, 2)} y la mediana ${sg(dm.med, 2)}. ${Number.isFinite(wx.p) ? (wx.p < 0.05 ? `La prueba de Wilcoxon indica que esa diferencia ${sigWord(wx.p)}.` : 'La prueba de Wilcoxon no encuentra una diferencia distinta del azar.') : ''} Use esta lectura solo si ambas variables miden lo mismo (por ejemplo, antes y después).</p>`; }
@@ -1167,16 +1195,16 @@ function viewNC(vn, vc){
   const f = mkFmt(vn, describe(gs.flatMap(g => g.vals))), k = gs.length, vals = gs.map(g => g.vals), kw = kruskal(vals), N = kw.N;
   const lim = gs.map(g => ({lo: g.d.q1 - 3 * g.d.iqr, hi: g.d.q3 + 3 * g.d.iqr})), allD = describe(gs.flatMap(g => g.vals)), zLo = Math.max(allD.min, Math.min(...lim.map(l => l.lo))), zHi = Math.min(allD.max, Math.max(...lim.map(l => l.hi))), outG = gs.reduce((a, g) => a + g.vals.filter(x => x < zLo || x > zHi).length, 0), canG = outG > 0 && allD.range > 8 * Math.max(...gs.map(g => g.d.iqr)), zG = canG && (UI.zoomG === null ? true : UI.zoomG);
   after(() => groupBoxes($('#chGrp'), gs, {fmt: f, zoom: zG ? {lo: zLo, hi: zHi} : null, label: `${vn.name} según ${vc.name}`}));
-  const rows = gs.map((g, i) => { const d = g.d; return [esc(g.label), nf(d.n, 0), f(d.mean), f(d.med), f(d.sd), f(d.iqr), nf(kw.meanRank[i], 1)]; });
-  const gt = tbl([esc(vc.name), 'n', 'Media', 'Mediana', 'SD', 'IQR', 'Rango medio'], rows, {right: [1, 2, 3, 4, 5, 6], min: 560, label: `Estadísticos de ${vn.name} por grupo`});
+  const rows = gs.map((g, i) => { const d = g.d; return [esc(g.label), nf(d.n, 0), f(d.mean), f(d.trim), f(d.med), f(d.sd), f(d.madS), f(d.iqr), nf(d.skew, 2), nf(d.kurt, 2), nf(kw.meanRank[i], 1)]; });
+  const gt = tbl([esc(vc.name), 'n', 'Media', 'Media recort.', 'Mediana', 'SD', 'MAD esc.', 'IQR', 'Asim.', 'Curt.', 'Rango medio'], rows, {right: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], min: 860, label: `Estadísticos de ${vn.name} por grupo`});
   let tests, rd = '', small = gs.filter(g => g.vals.length < 10).length;
   const hiMed = gs.reduce((a, g) => g.d.med > a.d.med ? g : a, gs[0]), loMed = gs.reduce((a, g) => g.d.med < a.d.med ? g : a, gs[0]);
   const intro = `<p><b>Los datos.</b> Se comparan ${pl(k, 'grupo', 'grupos')} de «${esc(vc.name)}» en la variable «${esc(vn.name)}». Hay ${nf(N, 0)} filas con dato en ambas.${note ? ' Se omiten categorías con menos de 2 datos o fuera del límite de 12.' : ''}</p>`;
   if (k === 2){
-    const mw = mannWhitney(gs[0].vals, gs[1].vals), we = welch(gs[0].vals, gs[1].vals), cl = mw.cles, cles = Math.max(cl, 1 - cl);
+    const mw = mannWhitney(gs[0].vals, gs[1].vals), we = welch(gs[0].vals, gs[1].vals), hl = hodgesLehmann(gs[0].vals, gs[1].vals), cl = mw.cles, cles = Math.max(cl, 1 - cl);
     tests = testRows([['Mann–Whitney (principal)', `U = ${nf(mw.U, 1)} · z = ${nf(mw.z, 2)}`, pTxt(mw.p), 'No paramétrica: ¿tiende un grupo a dar valores más altos?'], ['Welch (comparación)', `t = ${nf(we.t, 2)} · gl = ${nf(we.df, 1)}`, pTxt(we.p), 'Paramétrica: ¿difieren las medias? Supone formas razonables.']])
-      + tbl(['Medida del tamaño del efecto', 'Valor', 'Cómo leerla'], [['Probabilidad de superioridad', pct(cl, 0), `Si toma un dato al azar de cada grupo, en ${nf(cl * 100, 0)} de cada 100 casos el de «${esc(gs[0].label)}» es mayor. 50 % significa igualdad.`], ['Correlación biserial de rangos', nf(mw.rb, 2), `Va de −1 a +1. Efecto ${effWord(Math.abs(mw.rb), 0.1, 0.3, 0.5)}.`], ['d de Cohen', nf(we.d, 2), `Diferencia de medias en unidades de SD. Efecto ${effWord(Math.abs(we.d), 0.2, 0.5, 0.8)}.`]], {min: 560, label: 'Tamaños del efecto'});
-    rd = intro + `<p><b>Diferencia observada.</b> La mediana de «${esc(hiMed.label)}» (${f(hiMed.d.med)}) supera a la de «${esc(loMed.label)}» (${f(loMed.d.med)}). Las medias son ${f(gs[0].d.mean)} y ${f(gs[1].d.mean)}.</p><p><b>¿Es real?</b> La prueba de Mann–Whitney da p ${pTxt(mw.p)}. La diferencia ${sigWord(mw.p)}. ${mw.p < 0.05 !== we.p < 0.05 ? 'La prueba de Welch no coincide: la conclusión depende de la prueba. Dé más peso a la no paramétrica si hay valores extremos o formas muy asimétricas.' : 'La prueba de Welch llega a la misma conclusión.'}</p><p><b>¿Es importante?</b> La probabilidad de superioridad es ${pct(cl, 0)}. El efecto es ${effWord(Math.abs(mw.rb), 0.1, 0.3, 0.5)}. Un valor p pequeño con un efecto despreciable indica una diferencia real, pero sin interés práctico.</p>`;
+      + tbl(['Medida del tamaño del efecto', 'Valor', 'Cómo leerla'], [['Probabilidad de superioridad', pct(cl, 0), `Si toma un dato al azar de cada grupo, en ${nf(cl * 100, 0)} de cada 100 casos el de «${esc(gs[0].label)}» es mayor. 50 % significa igualdad.`], ['Diferencia típica de medianas (Hodges–Lehmann)', Number.isFinite(hl.est) ? `${sg(hl.est, 2)} (IC 95 %: ${nf(hl.lo, 2)} a ${nf(hl.hi, 2)})` : '—', `Mediana de todas las diferencias «${esc(gs[0].label)}» − «${esc(gs[1].label)}». Si el intervalo no incluye 0, la diferencia parece real.`], ['Correlación biserial de rangos', nf(mw.rb, 2), `Va de −1 a +1. Efecto ${effWord(Math.abs(mw.rb), 0.1, 0.3, 0.5)}.`], ['d de Cohen', nf(we.d, 2), `Diferencia de medias en unidades de SD. Efecto ${effWord(Math.abs(we.d), 0.2, 0.5, 0.8)}.`]], {min: 560, label: 'Tamaños del efecto'});
+    rd = intro + `<p><b>Diferencia observada.</b> La mediana de «${esc(hiMed.label)}» (${f(hiMed.d.med)}) supera a la de «${esc(loMed.label)}» (${f(loMed.d.med)}). Las medias son ${f(gs[0].d.mean)} y ${f(gs[1].d.mean)}.</p><p><b>¿Es real?</b> La prueba de Mann–Whitney da p ${pTxt(mw.p)}. La diferencia ${sigWord(mw.p)}. ${mw.p < 0.05 !== we.p < 0.05 ? 'La prueba de Welch no coincide: la conclusión depende de la prueba. Dé más peso a la no paramétrica si hay valores extremos o formas muy asimétricas.' : 'La prueba de Welch llega a la misma conclusión.'}</p>${Number.isFinite(hl.est) ? `<p><b>Cuánto difieren.</b> La diferencia típica entre un dato de «${esc(gs[0].label)}» y uno de «${esc(gs[1].label)}» es ${sg(hl.est, 2)}. El intervalo del 95 % va de ${nf(hl.lo, 2)} a ${nf(hl.hi, 2)}${hl.lo > 0 || hl.hi < 0 ? ' y no incluye el 0.' : ' e incluye el 0: no se puede descartar que no haya diferencia.'}</p>` : ''}<p><b>¿Es importante?</b> La probabilidad de superioridad es ${pct(cl, 0)}. El efecto es ${effWord(Math.abs(mw.rb), 0.1, 0.3, 0.5)}. Un valor p pequeño con un efecto despreciable indica una diferencia real, pero sin interés práctico.</p>`;
   } else {
     const an = anovaWelch(vals), lv = levene(vals), dn = dunn(vals, kw);
     tests = testRows([['Kruskal–Wallis (principal)', `H = ${nf(kw.H, 2)} · gl = ${kw.df}`, pTxt(kw.p), 'No paramétrica: ¿difiere al menos un grupo en su tendencia central?'], ['ANOVA de Welch (comparación)', `F = ${nf(an.Fw, 2)} · gl = ${kw.df}; ${nf(an.dfw, 1)}`, pTxt(an.pw), 'Paramétrica: ¿difieren las medias? No exige varianzas iguales.'], ['Brown–Forsythe', `F = ${nf(lv.F, 2)}`, pTxt(lv.p), '¿Es la dispersión igual en todos los grupos?']])
@@ -1240,7 +1268,7 @@ function viewCorr(){
 }
 
 /* ───────── Estado de la interfaz ───────── */
-const UI = {zoom: null, zoom2: null, zoomG: null, bins: 0, paired: false, ctMode: 'cnt', corr: 'spearman', v1: null, x2: null, y2: null};
+const UI = {boot: 0, zoom: null, zoom2: null, zoomG: null, bins: 0, paired: false, ctMode: 'cnt', corr: 'spearman', v1: null, x2: null, y2: null};
 const SAMPLE_NAME = 'Datos de prueba: clientes de una cadena de cafeterías (simulados)';
 
 function renderDict(){
