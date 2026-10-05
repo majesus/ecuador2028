@@ -300,6 +300,35 @@ details.opt .formulas{margin-top:32px}
 .grid>*{min-width:0}
 .cards.c3{grid-template-columns:repeat(2,1fr)}@media(min-width:640px){.cards.c3{grid-template-columns:repeat(3,1fr)}}
 .gcard .nums small{display:block;font-size:12px;color:var(--t2);margin-top:2px}
+
+.figh{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:8px}
+.btn.q{min-height:44px;padding:8px 16px;font-size:13px;white-space:nowrap}
+.btn.q::before{content:'?';display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-right:8px;border:1px solid currentColor;border-radius:50%;font-size:11px;font-weight:500}
+dialog{border:1px solid var(--text);border-radius:0;padding:0;background:var(--bg);color:var(--text);width:min(680px,calc(100% - 32px));max-height:calc(100dvh - 32px);font-family:var(--font)}
+dialog::backdrop{background:rgba(12,10,9,.62)}
+.dlg-in{padding:24px 24px 32px}
+@media(min-width:768px){.dlg-in{padding:32px 40px 40px}}
+.dlg-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:1px solid var(--text);padding-bottom:16px;margin-bottom:8px}
+.dlg-top h3{font-size:1.375rem;font-weight:300;letter-spacing:-.01em;line-height:1.25;text-wrap:balance}
+.dlg-x{flex:none;min-height:44px;min-width:44px;padding:8px 16px;background:transparent;color:var(--text);border:1px solid var(--text);border-radius:0;font:inherit;font-size:14px;cursor:pointer}
+.dlg-x:hover{background:var(--text);color:var(--bg)}
+.mdl-s{padding:16px 0;border-bottom:1px solid var(--border)}
+.mdl-s:last-child{border-bottom:0}
+.mdl-s>.lbl{display:block;margin-bottom:8px}
+.mdl-s p{color:var(--t2);font-size:15px;max-width:60ch}
+.mdl-s p+p{margin-top:8px}
+.mdl-s b{font-weight:500;color:var(--text)}
+.mdl-lines{list-style:none;padding:0;margin:0}
+.mdl-lines li{display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:start;margin:8px 0;font-size:15px;color:var(--t2);line-height:1.5}
+.mdl-lines .sw{margin-top:10px}
+.mdl-steps{list-style:none;padding:0;margin:0;counter-reset:ms}
+.mdl-steps li{counter-increment:ms;display:grid;grid-template-columns:32px 1fr;gap:12px;padding:8px 0;color:var(--t2);font-size:15px;line-height:1.5}
+.mdl-steps li::before{content:counter(ms);font-weight:300;font-size:1.5rem;line-height:1.1;color:var(--accent)}
+.mdl-chart{margin:16px 0 8px;line-height:0}
+.mdl-key{background:var(--surface);border-left:6px solid var(--accent);padding:16px;margin-top:16px}
+.mdl-key p{color:var(--text);font-size:16px}
+.mdl-warn{border-left:2px solid var(--text);padding:8px 0 8px 16px;margin-top:16px}
+.mdl-warn p{font-size:14px}
 </style>
 </head>
 
@@ -628,25 +657,25 @@ details.opt .formulas{margin-top:32px}
       <p>El eje vertical indica el valor que toma cada número. Mueva el puntero sobre un gráfico para leer los valores exactos.</p></div>
     <div class="four">
       <figure style="margin-top:0">
-        <div class="lbl" style="margin-bottom:8px">Centro</div>
+        <div class="figh"><div class="lbl">Centro</div><button type="button" class="btn q" data-m="B1" aria-haspopup="dialog">¿Cómo se lee?</button></div>
         <div class="legend" aria-hidden="true"><span><i class="sw"></i>Media</span><span><i class="sw red"></i>Mediana</span></div>
         <div class="chart" id="chB1" role="img" aria-label="Media y mediana según la posición de un dato añadido"></div>
         <div class="read" id="cpB1"></div>
       </figure>
       <figure style="margin-top:0">
-        <div class="lbl" style="margin-bottom:8px">Dispersión</div>
+        <div class="figh"><div class="lbl">Dispersión</div><button type="button" class="btn q" data-m="B2" aria-haspopup="dialog">¿Cómo se lee?</button></div>
         <div class="legend" aria-hidden="true"><span><i class="sw"></i>SD</span><span><i class="sw red"></i>MAD escalada</span><span><i class="sw red dash"></i>IQR ÷ 1,349</span></div>
         <div class="chart" id="chB2" role="img" aria-label="SD, MAD e IQR según la posición de un dato añadido"></div>
         <div class="read" id="cpB2"></div>
       </figure>
       <figure style="margin-top:0">
-        <div class="lbl" style="margin-bottom:8px">Asimetría</div>
+        <div class="figh"><div class="lbl">Asimetría</div><button type="button" class="btn q" data-m="B3" aria-haspopup="dialog">¿Cómo se lee?</button></div>
         <div class="legend" aria-hidden="true"><span><i class="sw"></i>Asimetría clásica</span><span><i class="sw red"></i>Asimetría de Bowley (robusta)</span></div>
         <div class="chart" id="chB3" role="img" aria-label="Asimetría según la posición de un dato añadido"></div>
         <div class="read" id="cpB3"></div>
       </figure>
       <figure style="margin-top:0">
-        <div class="lbl" style="margin-bottom:8px">Curtosis</div>
+        <div class="figh"><div class="lbl">Curtosis</div><button type="button" class="btn q" data-m="B4" aria-haspopup="dialog">¿Cómo se lee?</button></div>
         <div class="legend" aria-hidden="true"><span><i class="sw"></i>Curtosis clásica</span></div>
         <div class="chart" id="chB4" role="img" aria-label="Curtosis según la posición de un dato añadido"></div>
         <div class="read" id="cpB4"></div>
@@ -673,25 +702,25 @@ details.opt .formulas{margin-top:32px}
       <p>Lea cada línea de izquierda a derecha. Una línea que se queda baja resiste. Una línea que salta de golpe ha llegado a su punto de ruptura.</p></div>
     <div class="four">
       <figure style="margin-top:0">
-        <div class="lbl" style="margin-bottom:8px">Centro</div>
+        <div class="figh"><div class="lbl">Centro</div><button type="button" class="btn q" data-m="C1" aria-haspopup="dialog">¿Cómo se lee?</button></div>
         <div class="legend" aria-hidden="true"><span><i class="sw"></i>Media</span><span><i class="sw red"></i>Mediana</span></div>
         <div class="chart" id="chC1" role="img" aria-label="Media y mediana según la proporción de extremos"></div>
         <div class="read" id="cpC1"></div>
       </figure>
       <figure style="margin-top:0">
-        <div class="lbl" style="margin-bottom:8px">Dispersión</div>
+        <div class="figh"><div class="lbl">Dispersión</div><button type="button" class="btn q" data-m="C2" aria-haspopup="dialog">¿Cómo se lee?</button></div>
         <div class="legend" aria-hidden="true"><span><i class="sw"></i>SD</span><span><i class="sw red"></i>MAD escalada</span><span><i class="sw red dash"></i>IQR ÷ 1,349</span></div>
         <div class="chart" id="chC2" role="img" aria-label="SD, MAD e IQR según la proporción de extremos"></div>
         <div class="read" id="cpC2"></div>
       </figure>
       <figure style="margin-top:0">
-        <div class="lbl" style="margin-bottom:8px">Asimetría</div>
+        <div class="figh"><div class="lbl">Asimetría</div><button type="button" class="btn q" data-m="C3" aria-haspopup="dialog">¿Cómo se lee?</button></div>
         <div class="legend" aria-hidden="true"><span><i class="sw"></i>Asimetría clásica</span><span><i class="sw red"></i>Asimetría de Bowley</span></div>
         <div class="chart" id="chC3" role="img" aria-label="Asimetría según la proporción de extremos"></div>
         <div class="read" id="cpC3"></div>
       </figure>
       <figure style="margin-top:0">
-        <div class="lbl" style="margin-bottom:8px">Curtosis</div>
+        <div class="figh"><div class="lbl">Curtosis</div><button type="button" class="btn q" data-m="C4" aria-haspopup="dialog">¿Cómo se lee?</button></div>
         <div class="legend" aria-hidden="true"><span><i class="sw"></i>Curtosis clásica</span></div>
         <div class="chart" id="chC4" role="img" aria-label="Curtosis según la proporción de extremos"></div>
         <div class="read" id="cpC4"></div>
@@ -705,6 +734,7 @@ details.opt .formulas{margin-top:32px}
       <p><b>Entre 0 % y 30 %.</b> La SD sube de golpe, porque eleva las distancias al cuadrado. La MAD escalada sube poco, porque usa solo el valor central.</p>
       <p><b>Entre 30 % y 50 %.</b> La SD llega a su tope: la muestra se reparte casi mitad y mitad entre dos grupos, y la SD mide la distancia entre ellos. La MAD escalada sigue subiendo, porque la mediana se acerca al hueco entre los dos grupos. Así alcanza a la SD y puede superarla. El punto exacto del cruce depende de la distancia <i>d</i>: cuanto menor es <i>d</i>, antes se cruzan.</p>
       <p><b>Más de 50 %.</b> Los extremos son la mayoría. La mediana salta al grupo de extremos. La MAD escalada pasa a medir la dispersión de ese grupo, que es pequeña, y cae de golpe. La SD sigue alta. Las líneas se separan otra vez, en sentido contrario.</p>
+      <p><b>¿Y la media y la mediana?</b> Ocurre algo parecido. <span id="crossMM"></span> Con extremos a un solo lado, la media sube de forma pareja y la mediana salta cerca de 50 %, así que se cruzan. Con extremos a los dos lados, se compensan, y las dos quedan cerca de μ real.</p>
       <p><b>Qué no significa el cruce.</b> No significa que las dos medidas acierten. En un cruce, las dos están lejos de σ real. Por eso un cociente SD ÷ MAD cercano a 1 no prueba que los datos sean regulares.</p></div>
   </div>
 </section>
@@ -822,6 +852,13 @@ details.opt .formulas{margin-top:32px}
     </div>
   </div>
 </section>
+
+<dialog id="dlg" aria-labelledby="dlgT">
+  <div class="dlg-in">
+    <div class="dlg-top"><h3 id="dlgT"></h3><button type="button" class="dlg-x" id="dlgX">Cerrar</button></div>
+    <div id="dlgB"></div>
+  </div>
+</dialog>
 
 <footer>
   <div class="wrap">
@@ -1260,10 +1297,12 @@ function fourPanels(pre, X, rows, o){
   lineChart($(`#ch${pre}3`), {...base, yDom: pad(l3, h3, 0.12), series: [{cls: 'ink', pts: ser(r => r.skew)}, {cls: 'red', pts: ser(r => r.bowley)}], refs: [{y: 0, label: '0 = simétrica'}], cap: `#cp${pre}3`, capDefault: 'Mueva el puntero sobre el gráfico.', hover: i => hov(i, `Asimetría: ${nf(rows[i].skew)}. Bowley: ${nf(rows[i].bowley)}.`)});
   lineChart($(`#ch${pre}4`), {...base, yDom: pad(l4, h4, 0.12), series: [{cls: 'ink', pts: ser(r => r.kurt)}], refs: [{y: 0, label: '0 = campana normal'}], cap: `#cp${pre}4`, capDefault: 'Mueva el puntero sobre el gráfico.', hover: i => hov(i, `Curtosis: ${nf(rows[i].kurt)}.`)});
 }
+let LB = null, LC = null;
 function drawB(){
   const {clean} = cur, T = [], rows = [];
   for (let i = 0; i <= 120; i++) T.push(-20 + i / 3);
   T.forEach(t => rows.push(stats(clean.concat(S.mu + t * S.sigma))));
+  LB = {T, rows};
   const mk = []; if (S.side !== 'left') mk.push({x: S.d, label: 'd'}); if (S.side !== 'right') mk.push({x: -S.d, label: 'd'});
   fourPanels('B', T, rows, {xDom: [-20, 20], xTicks: [-20, -10, 0, 10, 20], xFmt: v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + 'σ', xLab: 'Posición del dato añadido', markers: mk, hdr: i => `Dato añadido a ${sgn(T[i], 1)}${SIG} de μ.`});
 }
@@ -1283,6 +1322,9 @@ function drawC(){
   const mk = [{x: 25, label: '25 %'}, {x: 50, label: '50 %'}]; if (S.k > 0) mk.push({x: 100 * S.k / n, label: 'k'});
   fourPanels('C', X, rows, {xDom: [0, 60], xTicks: [0, 10, 20, 30, 40, 50, 60], xFmt: v => v + ' %', xLab: 'Proporción de valores extremos', markers: mk, clip: true, hdr: i => `Extremos: ${nf(X[i], 0)} % (${Math.round(X[i] * n / 100)} de ${n}).`});
   $('#crossTxt').textContent = crossText(X, rows, S.sigma);
+  LC = {X, rows};
+  const mm = crossings(X, rows, 'mean', 'med');
+  $('#crossMM').textContent = mm.length ? `Con esta configuración, la mediana cruza a la media en ${mm.map(o => nf(o.x, 0) + ' %').join(' y en ')}. En el primer cruce, las dos valen cerca de ${nf(mm[0].v, 1)}, pero μ real es ${nf(S.mu, 0)}.` : 'Con esta configuración, la mediana no llega a cruzar a la media.';
 }
 
 /* ───────── Curtosis: tres tipos de colas ───────── */
@@ -1344,6 +1386,101 @@ function drawKTable(){
   const td = 'vertical-align:top';
   $('#kTbody').innerHTML = rows.map(([b, nm, ex]) => { const k = gnKurt(b), p = gnTail(b, 3); return `<tr><td>${nm}</td><td class="pr">${sgn(k)}</td><td class="pr">${p < 1e-6 ? '≈ 0 %' : nf(p * 100, 2) + ' %'}<br><span style="font-weight:400;color:var(--t2)">${oneIn(p)}</span></td><td style="${td}">${ex}</td></tr>`; }).join('');
 }
+
+/* ───────── Ventanas de ayuda para las curvas complejas ───────── */
+function crossings(X, rows, fa, fb, min = 5){
+  const out = [];
+  for (let i = 1; i < rows.length; i++){
+    const a = rows[i - 1][fb] - rows[i - 1][fa], b = rows[i][fb] - rows[i][fa];
+    if (a * b < 0){ const f = a / (a - b); out.push({x: X[i - 1] + f * (X[i] - X[i - 1]), v: rows[i - 1][fa] + f * (rows[i][fa] - rows[i - 1][fa])}); }
+  }
+  return out.filter(o => o.x >= min);
+}
+const near = (arr, rows, v) => { let bi = 0, bd = 1e9; arr.forEach((x, i) => { const d = Math.abs(x - v); if (d < bd){ bd = d; bi = i; } }); return rows[bi]; };
+const firstJump = (X, rows, key, f = 1.5) => { for (let i = 1; i < rows.length; i++) if (X[i] >= 5 && rows[i][key] > f * rows[0][key]) return X[i]; return null; };
+const P = t => `<p>${t}</p>`;
+const AXB = P('<b>Eje horizontal.</b> Dónde cae el dato nuevo. El 0 es el centro de los datos. «+10σ» es muy a la derecha. «−10σ» es muy a la izquierda. La letra σ es la dispersión normal de los datos limpios.') + P('<b>Eje vertical.</b> El valor que toma cada número cuando el dato nuevo cae en esa posición.');
+const AXC = P('<b>Eje horizontal.</b> El porcentaje de datos que son extremos. 0 % significa ninguno. 50 % significa la mitad. Las líneas verticales punteadas marcan 25 %, 50 % y el valor de <i>k</i> que usted fijó en el laboratorio.') + P('<b>Eje vertical.</b> El valor que toma cada número con ese porcentaje de extremos.');
+const INTB = P('Parta de una muestra limpia. Añada un solo dato nuevo. El gráfico repite ese experimento con 121 posiciones distintas del dato, desde muy a la izquierda hasta muy a la derecha.');
+const INTC = P('Parta de la muestra limpia. Sustituya una parte de los datos por valores extremos, a la distancia y del lado que usted eligió en el laboratorio. El gráfico repite el experimento desde 0 % hasta 60 % de extremos.');
+const SIGN = ' σ';
+const ZONE = {B: 'un dato nuevo', C: 'muchos extremos'};
+const MODALS = {
+  B1: () => { const {T, rows} = LB, a = near(T, rows, 0), b = near(T, rows, 20), c = near(T, rows, -20); return {
+    title: 'Cómo leer: el centro y un dato nuevo', intro: INTB, axes: AXB,
+    lines: [['', '<b>Línea negra.</b> La media.'], ['red', '<b>Línea roja.</b> La mediana.'], ['dot', `<b>Línea gris punteada.</b> El valor real del centro, ${nf(S.mu, 0)}. En la vida real no se conoce.`]],
+    now: P(`Con el dato nuevo en el centro, la media vale ${nf(a.mean)} y la mediana ${nf(a.med)}.`) + P(`Con el dato a +20${SIGN}, la media pasa a ${nf(b.mean)} (${sgn(b.mean - a.mean)}). La mediana pasa a ${nf(b.med)} (${sgn(b.med - a.med)}).`) + P(`Con el dato a −20${SIGN}, la media pasa a ${nf(c.mean)} (${sgn(c.mean - a.mean)}). La mediana pasa a ${nf(c.med)} (${sgn(c.med - a.med)}).`),
+    steps: ['Mire la línea negra. Sube y baja con el dato nuevo, en línea recta: lo sigue allá donde vaya.', 'Mire la línea roja. Es casi plana. Tiene un pequeño escalón cerca del centro: ocurre cuando el dato nuevo cruza el centro y la mediana pasa a un dato vecino.', 'Compare las dos. La media obedece a un solo dato. La mediana casi no le hace caso.'],
+    key: 'Un solo dato puede llevar la media a cualquier valor. La mediana solo se mueve hasta el dato vecino.'}; },
+  B2: () => { const {T, rows} = LB, a = near(T, rows, 0), b = near(T, rows, 20); return {
+    title: 'Cómo leer: la dispersión y un dato nuevo', intro: INTB, axes: AXB,
+    lines: [['', '<b>Línea negra.</b> La SD, la dispersión clásica.'], ['red', '<b>Línea roja continua.</b> La MAD escalada.'], ['red dash', '<b>Línea roja discontinua.</b> El IQR dividido por 1,349.'], ['dot', `<b>Línea gris punteada.</b> La dispersión real, σ = ${nf(S.sigma, 0)}.`]],
+    now: P(`Con el dato nuevo en el centro, la SD vale ${nf(a.sd)}, la MAD escalada ${nf(a.madS)} y el IQR ÷ 1,349 vale ${nf(a.iqrS)}.`) + P(`Con el dato a +20${SIGN}, la SD sube a ${nf(b.sd)}. La MAD escalada pasa a ${nf(b.madS)}. El IQR ÷ 1,349 pasa a ${nf(b.iqrS)}.`),
+    steps: ['Mire la línea negra. Forma una «V»: baja hasta el centro y sube a los lados.', 'Mire las líneas rojas. Son casi planas.', 'Compare. Cuanto más se abre la «V», más fácil es engañar a la SD. Las líneas rojas ignoran el dato lejano.'],
+    key: 'La SD no tiene tope: un dato lejano la sube cuanto se quiera. La MAD y el IQR sí tienen tope.'}; },
+  B3: () => { const {T, rows} = LB, a = near(T, rows, 0), b = near(T, rows, 20), c = near(T, rows, -20); return {
+    title: 'Cómo leer: la asimetría y un dato nuevo', intro: INTB, axes: AXB,
+    lines: [['', '<b>Línea negra.</b> La asimetría clásica.'], ['red', '<b>Línea roja.</b> La asimetría de Bowley, una versión robusta. Va de −1 a +1.'], ['dot', '<b>Línea gris punteada.</b> El cero: forma simétrica.']],
+    now: P(`Con el dato nuevo en el centro, la asimetría clásica vale ${nf(a.skew)} y la de Bowley ${nf(a.bowley)}.`) + P(`Con el dato a +20${SIGN}, la clásica pasa a ${nf(b.skew)} y la de Bowley a ${nf(b.bowley)}.`) + P(`Con el dato a −20${SIGN}, la clásica pasa a ${nf(c.skew)} y la de Bowley a ${nf(c.bowley)}.`),
+    steps: ['Recuerde el signo. Un valor positivo significa cola larga a la derecha. Uno negativo, cola larga a la izquierda. Cero significa simétrica.', 'Mire la línea negra. Cambia de signo según el lado donde cae el dato nuevo. Un solo dato lejano convierte la forma en muy asimétrica.', 'Mire la línea roja. Casi no se mueve.'],
+    key: 'Un solo dato puede cambiar mucho la asimetría clásica. La de Bowley casi no cambia.'}; },
+  B4: () => { const {T, rows} = LB, a = near(T, rows, 0), b = near(T, rows, 20), c = near(T, rows, -20); return {
+    title: 'Cómo leer: la curtosis y un dato nuevo', intro: INTB, axes: AXB,
+    lines: [['', '<b>Línea negra.</b> La curtosis clásica.'], ['dot', '<b>Línea gris punteada.</b> El cero: colas como las de la campana normal.']],
+    now: P(`Con el dato nuevo en el centro, la curtosis vale ${nf(a.kurt)} (forma ${kurtType(a.kurt)}).`) + P(`Con el dato a +20${SIGN}, vale ${nf(b.kurt)} (forma ${kurtType(b.kurt)}). Con el dato a −20${SIGN}, vale ${nf(c.kurt)} (forma ${kurtType(c.kurt)}).`),
+    steps: ['Recuerde el significado. Cero es una campana normal. Más de cero son colas pesadas. Menos de cero son colas ligeras.', 'Mire la línea: forma una «U». En el centro, el dato nuevo no cambia nada. A los lados, la línea sube mucho.', 'Un dato lejano, de cualquier lado, crea colas pesadas por sí solo.'],
+    key: 'La curtosis es el más frágil de los siete números. Un solo dato la dispara. No la interprete sin mirar los datos.'}; },
+  C1: () => { const {X, rows} = LC, r = v => near(X, rows, v), mm = crossings(X, rows, 'mean', 'med'); return {
+    title: 'Cómo leer: el centro y muchos extremos', intro: INTC, axes: AXC,
+    lines: [['', '<b>Línea negra.</b> La media.'], ['red', '<b>Línea roja.</b> La mediana.'], ['dot', `<b>Línea gris punteada.</b> El valor real del centro, ${nf(S.mu, 0)}.`]],
+    now: P(`Sin extremos, la media vale ${nf(r(0).mean)} y la mediana ${nf(r(0).med)}.`) + P(`Con 25 % de extremos, la media sube a ${nf(r(25).mean)} y la mediana a ${nf(r(25).med)}.`) + P(`Con 50 %, la media vale ${nf(r(50).mean)} y la mediana ${nf(r(50).med)}. Con 55 %, ${nf(r(55).mean)} y ${nf(r(55).med)}.`) + P(mm.length ? `Las dos líneas se cruzan en ${mm.map(o => nf(o.x, 0) + ' %').join(' y en ')}. En el primer cruce, las dos valen cerca de ${nf(mm[0].v, 1)}.` : 'Con esta configuración, las dos líneas no se cruzan.'),
+    steps: ['Mire la línea negra, la media. Sube de forma pareja: cada extremo nuevo la arrastra un poco más.', 'Mire la línea roja, la mediana. Sube despacio al principio. Cerca de 50 % da un salto y llega a la zona de los extremos.', 'Fíjese en el cruce. Es una coincidencia: en ese punto las dos líneas pasan por el mismo valor, pero las dos están lejos del valor real.'],
+    warn: 'Si en el laboratorio elige el lado «Ambos», los extremos se compensan. La media y la mediana quedan cerca del valor real, pero la SD sí se dispara. Que el centro no se mueva no significa que los datos estén limpios.',
+    key: 'La mediana resiste hasta casi la mitad de extremos. La media no resiste ninguno.'}; },
+  C2: () => { const {X, rows} = LC, r = v => near(X, rows, v), sm = crossings(X, rows, 'sd', 'madS'), ij = firstJump(X, rows, 'iqrS'); return {
+    title: 'Cómo leer: la dispersión y muchos extremos', intro: INTC, axes: AXC,
+    lines: [['', '<b>Línea negra.</b> La SD.'], ['red', '<b>Línea roja continua.</b> La MAD escalada.'], ['red dash', '<b>Línea roja discontinua.</b> El IQR dividido por 1,349.'], ['dot', `<b>Línea gris punteada.</b> La dispersión real, σ = ${nf(S.sigma, 0)}.`]],
+    now: [0, 25, 50, 55].map(v => P(`${v === 0 ? 'Sin extremos' : 'Con ' + v + ' % de extremos'}: SD ${nf(r(v).sd)}, MAD escalada ${nf(r(v).madS)}, IQR ÷ 1,349 ${nf(r(v).iqrS)}.`)).join('') + P((ij ? `El IQR salta en ${nf(ij, 0)} %. ` : 'El IQR no llega a saltar. ') + (sm.length ? `La MAD escalada cruza a la SD en ${sm.map(o => nf(o.x, 0) + ' %').join(' y en ')}.` : 'La MAD escalada no llega a cruzar a la SD.')),
+    steps: ['Mire la línea negra, la SD. Sube de golpe con los primeros extremos y después se aplana.', 'Mire la línea roja discontinua, el IQR. Casi no se mueve y salta cerca de 25 %.', 'Mire la línea roja continua, la MAD escalada. Sube despacio, salta cerca de 50 % y después cae.', 'Fíjese en el cruce de la SD y la MAD escalada. Es casual: en ese punto las dos están lejos del valor real. La explicación completa está debajo de los gráficos.'],
+    key: 'Cada número tiene su límite: el IQR resiste hasta 25 %, la MAD hasta 50 %, y la SD no resiste.'}; },
+  C3: () => { const {X, rows} = LC, r = v => near(X, rows, v); return {
+    title: 'Cómo leer: la asimetría y muchos extremos', intro: INTC, axes: AXC,
+    lines: [['', '<b>Línea negra.</b> La asimetría clásica.'], ['red', '<b>Línea roja.</b> La asimetría de Bowley, una versión robusta.'], ['dot', '<b>Línea gris punteada.</b> El cero: forma simétrica.']],
+    now: [0, 10, 25, 50, 55].map(v => P(`${v === 0 ? 'Sin extremos' : 'Con ' + v + ' % de extremos'}: asimetría clásica ${nf(r(v).skew)}, Bowley ${nf(r(v).bowley)}.`)).join(''),
+    steps: ['Recuerde el signo. Positivo es cola larga a la derecha. Negativo es cola larga a la izquierda.', 'Con pocos extremos, la asimetría clásica sube: aparece una cola larga hacia el lado de los extremos.', 'Después baja. Cerca de la mitad, la muestra forma dos grupos de tamaño parecido y ninguna cola domina.', 'Con más de 50 %, el signo puede cambiar. Los extremos son ahora la mayoría, y la cola larga es la de los datos limpios.'],
+    key: 'La asimetría clásica cambia de signo según la proporción de extremos. Léala con cuidado. La de Bowley se mueve mucho menos.'}; },
+  C4: () => { const {X, rows} = LC, r = v => near(X, rows, v); return {
+    title: 'Cómo leer: la curtosis y muchos extremos', intro: INTC, axes: AXC,
+    lines: [['', '<b>Línea negra.</b> La curtosis clásica.'], ['dot', '<b>Línea gris punteada.</b> El cero: colas como las de la campana normal.']],
+    now: [0, 5, 10, 25, 50].map(v => P(`${v === 0 ? 'Sin extremos' : 'Con ' + v + ' % de extremos'}: curtosis ${nf(r(v).kurt)} (forma ${kurtType(r(v).kurt)}).`)).join(''),
+    steps: ['Recuerde el significado. Más de cero son colas pesadas. Menos de cero son colas ligeras.', 'Con pocos extremos, la línea sube mucho: aparecen colas pesadas (forma leptocúrtica).', 'Con más extremos, la línea baja. La muestra se reparte en dos grupos de tamaño parecido.', 'Con dos grupos parecidos, la curtosis es negativa: forma platicúrtica, como en la sección 04.'],
+    key: 'La curtosis sube con pocos extremos y baja con muchos. No sirve para saber cuántos extremos hay.'}; }
+};
+const dlg = $('#dlg'); let opener = null;
+function openModal(key, btn){
+  const m = MODALS[key](), host = $('#ch' + key);
+  opener = btn;
+  $('#dlgT').textContent = m.title;
+  const sec = (t, h) => `<section class="mdl-s"><span class="lbl">${t}</span>${h}</section>`;
+  const lines = `<ul class="mdl-lines">${m.lines.map(([c, t]) => `<li><i class="sw ${c}"></i><span>${t}</span></li>`).join('')}</ul>`;
+  $('#dlgB').innerHTML = sec('Qué muestra el gráfico', m.intro) + sec('Qué significan los ejes', m.axes) + sec('Qué significan las líneas', lines) + '<div id="dlgChart" class="mdl-chart"></div>' +
+    sec('Con sus datos ahora', m.now) + sec('Cómo leerlo, paso a paso', `<ol class="mdl-steps">${m.steps.map(t => `<li><span>${t}</span></li>`).join('')}</ol>`) +
+    (m.warn ? `<div class="mdl-warn"><p><b>Ojo.</b> ${m.warn}</p></div>` : '') + `<div class="mdl-key"><span class="lbl" style="display:block;margin-bottom:8px">Idea clave</span><p>${m.key}</p></div>`;
+  const svg = host.querySelector('svg');
+  if (svg){
+    const c = svg.cloneNode(true);
+    c.querySelectorAll('[id]').forEach(e => { e.id = 'm_' + e.id; });
+    c.querySelectorAll('[clip-path]').forEach(e => e.setAttribute('clip-path', e.getAttribute('clip-path').replace('#', '#m_')));
+    c.removeAttribute('height'); c.setAttribute('width', '100%'); c.style.maxWidth = '100%'; c.style.height = 'auto'; c.setAttribute('aria-hidden', 'true');
+    $('#dlgChart').appendChild(c);
+  }
+  document.body.style.overflow = 'hidden';
+  dlg.showModal(); dlg.scrollTop = 0; $('#dlgX').focus();
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (b) openModal(b.dataset.m, b); });
+$('#dlgX').addEventListener('click', () => dlg.close());
+dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+dlg.addEventListener('close', () => { document.body.style.overflow = ''; if (opener) opener.focus(); });
 
 /* ───────── Ciclo de dibujo ───────── */
 let raf = 0, light = false, lastW = 0;
