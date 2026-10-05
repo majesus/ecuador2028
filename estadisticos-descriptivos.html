@@ -495,7 +495,7 @@ select{min-height:44px;max-width:100%;border:1px solid var(--text);background:va
       </div>
     </div>
 
-    <div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla con desplazamiento horizontal">
+    <div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla 1: los siete números">
       <table class="compact" style="min-width:720px">
         <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 1. Cálculo paso a paso con los once datos</caption>
         <thead><tr><th scope="col">Cliente</th><th scope="col" class="r">Dato</th><th scope="col" class="r">(dato − media)²</th><th scope="col" class="r">(dato − media)³</th><th scope="col" class="r">(dato − media)⁴</th><th scope="col" class="r">|dato − mediana|</th></tr></thead>
@@ -605,7 +605,7 @@ select{min-height:44px;max-width:100%;border:1px solid var(--text);background:va
       </div>
     </div>
 
-    <div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla con desplazamiento horizontal">
+    <div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla 2: efecto de un valor extremo">
       <table>
         <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 2. Qué cambia al añadir los valores extremos</caption>
         <thead>
@@ -700,7 +700,7 @@ select{min-height:44px;max-width:100%;border:1px solid var(--text);background:va
       </div>
     </div>
 
-    <div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla con desplazamiento horizontal">
+    <div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla 3: qué número elegir">
       <table class="rtab" style="min-width:640px">
         <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 3. Los tres tipos de curtosis, con cuatro ejemplos</caption>
         <thead><tr><th scope="col" class="l">Tipo</th><th scope="col" class="l">Curtosis en exceso</th><th scope="col" class="l">Datos a más de 3 SD</th><th scope="col" class="l">Ejemplo</th></tr></thead>
@@ -864,7 +864,7 @@ select{min-height:44px;max-width:100%;border:1px solid var(--text);background:va
         <p class="body" style="margin-top:16px">Ningún número es mejor en todos los casos. La tabla resume qué pregunta responde cada uno y cuánto resiste a los extremos.</p>
       </div>
     </div>
-    <div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla con desplazamiento horizontal" style="margin-top:0">
+    <div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla de ejemplo" style="margin-top:0">
       <table class="rtab">
         <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 4. Los siete números</caption>
         <thead><tr><th scope="col" class="l">Número</th><th scope="col" class="l">Pregunta que responde</th><th scope="col" class="l">Cómo se calcula, en palabras</th><th scope="col" class="l">Punto de ruptura</th></tr></thead>
@@ -983,7 +983,7 @@ select{min-height:44px;max-width:100%;border:1px solid var(--text);background:va
         <p class="hint" style="margin:0">Formato admitido: la primera fila contiene los títulos. El separador puede ser coma, punto y coma o tabulador. Los decimales pueden usar coma o punto. Evite los separadores de miles. Las fechas y los textos se tratan como categorías.</p>
       </div>
       <p id="csvInfo" aria-live="polite" style="margin-top:16px;color:var(--t2);font-size:15px"></p>
-      <details id="csvPrev" class="opt" hidden style="margin-top:8px"><summary>Ver las primeras filas</summary><div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla con desplazamiento horizontal"><table id="csvPrevT" class="compact" style="min-width:420px"></table></div></details>
+      <details id="csvPrev" class="opt" hidden style="margin-top:8px"><summary>Ver las primeras filas</summary><div class="tbl-wrap" tabindex="0" role="region" aria-label="Vista previa del archivo"><table id="csvPrevT" class="compact" style="min-width:420px"></table></div></details>
     </section>
     <section class="mdl-s" id="csvPick" hidden><span class="lbl">2 · Elija la variable</span>
       <div class="csvsel">
@@ -1930,17 +1930,17 @@ function csvNarrative(an, name, total){
 }
 function csvPercTable(an){
   const d = an.dg, labs = ['Mín.', 'P1', 'P5', 'P10', 'P25', 'P50', 'P75', 'P90', 'P95', 'P99', 'Máx.'], vals = [an.st.min, ...an.perc, an.st.max];
-  return `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla con desplazamiento horizontal" style="margin-top:8px"><table class="compact" style="min-width:640px"><thead><tr>${labs.map(l => `<th scope="col" class="r">${l}</th>`).join('')}</tr></thead><tbody><tr>${vals.map(v => `<td class="r" style="padding:12px 8px">${nf(v, d)}</td>`).join('')}</tr></tbody></table></div><p class="hint" style="max-width:70ch">P25 es Q1, P50 es la mediana y P75 es Q3. El percentil P90 es el valor que deja 90 % de los datos por debajo.</p>`;
+  return `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla de percentiles" style="margin-top:8px"><table class="compact" style="min-width:640px"><thead><tr>${labs.map(l => `<th scope="col" class="r">${l}</th>`).join('')}</tr></thead><tbody><tr>${vals.map(v => `<td class="r" style="padding:12px 8px">${nf(v, d)}</td>`).join('')}</tr></tbody></table></div><p class="hint" style="max-width:70ch">P25 es Q1, P50 es la mediana y P75 es Q3. El percentil P90 es el valor que deja 90 % de los datos por debajo.</p>`;
 }
 function csvWithWithout(an){
   const a = an.st, b = an.stIn, d = an.dg; if (!b) return '';
   const rows = [['Media', 'mean', d], ['Mediana', 'med', d], ['SD', 'sd', d], ['MAD escalada', 'madS', d], ['IQR', 'iqr', d], ['Asimetría', 'skew', 2], ['Curtosis', 'kurt', 2]];
-  return `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla con desplazamiento horizontal" style="margin-top:8px"><table class="compact" style="min-width:520px"><thead><tr><th scope="col">Número</th><th scope="col" class="r">Con todos los datos</th><th scope="col" class="r">Sin extremos (Tukey)</th><th scope="col" class="r">Cambio</th></tr></thead><tbody>${rows.map(([nm, k, dg]) => { const x = a[k], y = b[k], ch = Number.isFinite(x) && Number.isFinite(y) ? (k === 'skew' || k === 'kurt' ? sgn(y - x) + ' pts' : x !== 0 ? sgn((y / x - 1) * 100, 0) + ' %' : '—') : '—'; return `<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--border)">${nm}</th><td class="r" style="padding:12px 16px 12px 0">${nf(x, dg)}</td><td class="r" style="padding:12px 16px 12px 0">${nf(y, dg)}</td><td class="r" style="padding:12px 16px 12px 0">${ch}</td></tr>`; }).join('')}</tbody></table></div><p class="hint" style="max-width:70ch">Los números robustos (mediana, MAD, IQR) cambian poco al quitar los extremos. Los clásicos (media, SD, asimetría, curtosis) cambian mucho más.</p>`;
+  return `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla: con y sin extremos" style="margin-top:8px"><table class="compact" style="min-width:520px"><thead><tr><th scope="col">Número</th><th scope="col" class="r">Con todos los datos</th><th scope="col" class="r">Sin extremos (Tukey)</th><th scope="col" class="r">Cambio</th></tr></thead><tbody>${rows.map(([nm, k, dg]) => { const x = a[k], y = b[k], ch = Number.isFinite(x) && Number.isFinite(y) ? (k === 'skew' || k === 'kurt' ? sgn(y - x) + ' pts' : x !== 0 ? sgn((y / x - 1) * 100, 0) + ' %' : '—') : '—'; return `<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--border)">${nm}</th><td class="r" style="padding:12px 16px 12px 0">${nf(x, dg)}</td><td class="r" style="padding:12px 16px 12px 0">${nf(y, dg)}</td><td class="r" style="padding:12px 16px 12px 0">${ch}</td></tr>`; }).join('')}</tbody></table></div><p class="hint" style="max-width:70ch">Los números robustos (mediana, MAD, IQR) cambian poco al quitar los extremos. Los clásicos (media, SD, asimetría, curtosis) cambian mucho más.</p>`;
 }
 function csvFreq(an){
   const m = new Map(); for (const v of an.a) m.set(v, (m.get(v) || 0) + 1);
   const keys = [...m.keys()].sort((x, y) => x - y);
-  return `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla con desplazamiento horizontal" style="margin-top:8px"><table class="compact" style="min-width:420px"><thead><tr><th scope="col">Valor</th><th scope="col" class="r">Frecuencia</th><th scope="col" class="r">Porcentaje</th></tr></thead><tbody>${keys.map(k => `<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:10px 16px 10px 0;border-bottom:1px solid var(--border)">${nf(k, 0)}</th><td class="r" style="padding:10px 16px 10px 0">${nf(m.get(k), 0)}</td><td class="r" style="padding:10px 16px 10px 0">${nf(m.get(k) / an.n * 100, 1)} %</td></tr>`).join('')}</tbody></table></div>`;
+  return `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla de frecuencias" style="margin-top:8px"><table class="compact" style="min-width:420px"><thead><tr><th scope="col">Valor</th><th scope="col" class="r">Frecuencia</th><th scope="col" class="r">Porcentaje</th></tr></thead><tbody>${keys.map(k => `<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:10px 16px 10px 0;border-bottom:1px solid var(--border)">${nf(k, 0)}</th><td class="r" style="padding:10px 16px 10px 0">${nf(m.get(k), 0)}</td><td class="r" style="padding:10px 16px 10px 0">${nf(m.get(k) / an.n * 100, 1)} %</td></tr>`).join('')}</tbody></table></div>`;
 }
 function csvGroupsData(){
   const v = CSV.cols[CSV.sel], g = CSV.cols[CSV.grp], m = new Map();
@@ -1960,7 +1960,7 @@ function groupChart(host, gs, dom){
 function csvGroupTable(gs, d){
   const th = 'text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--border)', td = 'padding:12px 12px 12px 0';
   const rows = gs.map(x => { const s = x.an.st; return `<tr><th scope="row" style="${th}">${esc(x.name)}</th><td class="r" style="${td}">${nf(x.an.n, 0)}</td><td class="r" style="${td}">${nf(s.mean, d)}</td><td class="r" style="${td}">${nf(s.med, d)}</td><td class="r" style="${td}">${nf(s.sd, d)}</td><td class="r" style="${td}">${nf(s.madS, d)}</td><td class="r" style="${td}">${nf(s.iqr, d)}</td><td class="r" style="${td}">${nf(s.skew, 2)}</td><td class="r" style="${td}">${nf(s.kurt, 2)}</td></tr>`; }).join('');
-  return `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla con desplazamiento horizontal" style="margin-top:8px"><table class="compact" style="min-width:680px"><thead><tr><th scope="col">Grupo</th><th scope="col" class="r">n</th><th scope="col" class="r">Media</th><th scope="col" class="r">Mediana</th><th scope="col" class="r">SD</th><th scope="col" class="r">MAD esc.</th><th scope="col" class="r">IQR</th><th scope="col" class="r">Asim.</th><th scope="col" class="r">Curt.</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla de números por grupo" style="margin-top:8px"><table class="compact" style="min-width:680px"><thead><tr><th scope="col">Grupo</th><th scope="col" class="r">n</th><th scope="col" class="r">Media</th><th scope="col" class="r">Mediana</th><th scope="col" class="r">SD</th><th scope="col" class="r">MAD esc.</th><th scope="col" class="r">IQR</th><th scope="col" class="r">Asim.</th><th scope="col" class="r">Curt.</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function csvGroupText(gs, d){
   const best = k => gs.reduce((a, b) => b.an.st[k] > a.an.st[k] ? b : a), worst = k => gs.reduce((a, b) => b.an.st[k] < a.an.st[k] ? b : a);
@@ -1991,7 +1991,7 @@ function csvBoot(an, token){
     const nms = ['Media', 'Mediana', 'SD', 'MAD escalada', 'IQR', 'Asimetría', 'Curtosis'], dgs = [d, d, d, d, d, 2, 2], td = 'padding:12px 16px 12px 0';
     const rows = keys.map((k, i) => `<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--border)">${nms[i]}</th><td class="r" style="${td}">${nf(st[k], dgs[i])}</td><td class="r" style="${td}">${nf(ci[i][0], dgs[i])} a ${nf(ci[i][1], dgs[i])}</td></tr>`).join('');
     const incl = i => ci[i][0] <= 0 && ci[i][1] >= 0;
-    const html = `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla con desplazamiento horizontal" style="margin-top:8px"><table class="compact" style="min-width:460px"><thead><tr><th scope="col">Número</th><th scope="col" class="r">Estimación</th><th scope="col" class="r">Intervalo de confianza 95 %</th></tr></thead><tbody>${rows}</tbody></table></div>` +
+    const html = `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla de intervalos de confianza" style="margin-top:8px"><table class="compact" style="min-width:460px"><thead><tr><th scope="col">Número</th><th scope="col" class="r">Estimación</th><th scope="col" class="r">Intervalo de confianza 95 %</th></tr></thead><tbody>${rows}</tbody></table></div>` +
       `<p>El intervalo muestra cuánto cambiaría cada número con otra muestra parecida. ${incl(5) ? 'El intervalo de la asimetría incluye el 0: con estos datos no se puede afirmar que la forma sea asimétrica. ' : 'El intervalo de la asimetría no incluye el 0: la asimetría parece real. '}${incl(6) ? 'El intervalo de la curtosis incluye el 0: no se puede afirmar que las colas sean distintas de las de una campana normal.' : 'El intervalo de la curtosis no incluye el 0: las colas parecen distintas de las de una campana normal.'}</p><p class="hint" style="max-width:70ch">Los intervalos salen de 400 remuestreos con reemplazo (método bootstrap). Son aproximados: con pocos datos o con extremos, pueden ser poco fiables.</p>`;
     el.innerHTML = html; CSV.boot = {key, html};
   };
@@ -2155,7 +2155,12 @@ function typeset(){
   }
   if (!window.katex) $('#mathwarn').style.display = 'block';
   drawTex();
+  eqFocus();
 }
+function eqFocus(){
+  document.querySelectorAll('.eq, .live').forEach(e => { if (e.scrollWidth > e.clientWidth + 1){ e.tabIndex = 0; e.setAttribute('role', 'group'); e.setAttribute('aria-label', 'Contenido con desplazamiento horizontal'); } else { e.removeAttribute('tabindex'); e.removeAttribute('role'); e.removeAttribute('aria-label'); } });
+}
+addEventListener('resize', eqFocus);
 drawGallery(); drawKTable(); syncControls(); render(); typeset();
 window.addEventListener('load', () => { if (!window.katex) $('#mathwarn').style.display = 'block'; });
 });

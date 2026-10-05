@@ -368,7 +368,7 @@ details.opt .formulas{margin-top:32px}
       </div>
     </div>
 
-    <div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla con desplazamiento horizontal">
+    <div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla de resultados de la simulación">
       <table class="compact">
         <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 1. Cálculo paso a paso con los siete gastos</caption>
         <thead><tr><th scope="col">Cliente</th><th scope="col" class="r">Gasto</th><th scope="col" class="r">(gasto − media)²</th><th scope="col" class="r">|gasto − mediana|</th></tr></thead>
@@ -482,7 +482,7 @@ details.opt .formulas{margin-top:32px}
       </div>
     </div>
 
-    <div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla con desplazamiento horizontal">
+    <div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla comparativa de SD y MAD">
       <table>
         <caption class="cap" style="text-align:left;padding-bottom:16px">Tabla 2. Qué cambia al añadir los valores extremos</caption>
         <thead>
@@ -1174,7 +1174,12 @@ function typeset(){
   }
   if (!window.katex) $('#mathwarn').style.display = 'block';
   drawTex();
+  eqFocus();
 }
+function eqFocus(){
+  document.querySelectorAll('.eq, .live').forEach(e => { if (e.scrollWidth > e.clientWidth + 1){ e.tabIndex = 0; e.setAttribute('role', 'group'); e.setAttribute('aria-label', 'Contenido con desplazamiento horizontal'); } else { e.removeAttribute('tabindex'); e.removeAttribute('role'); e.removeAttribute('aria-label'); } });
+}
+addEventListener('resize', eqFocus);
 syncControls(); render(); typeset();
 window.addEventListener('load', () => { if (!window.katex) $('#mathwarn').style.display = 'block'; });
 });
