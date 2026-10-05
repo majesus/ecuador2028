@@ -348,6 +348,9 @@ select{min-height:44px;max-width:100%;border:1px solid var(--text);background:va
 .csvsel .lbl{display:block;margin-bottom:8px}
 .chk{display:flex;gap:12px;align-items:center;min-height:44px;font-size:14px;color:var(--t2);margin:8px 0;cursor:pointer}
 .chk input{width:20px;height:20px;accent-color:var(--accent)}
+.tabs{display:flex;flex-wrap:wrap;margin:16px 0 0;border-bottom:1px solid var(--text)}
+.tab-b{min-height:44px;padding:8px 20px;background:transparent;border:1px solid var(--text);border-bottom:0;margin-right:-1px;font:inherit;font-size:15px;color:var(--text);cursor:pointer;border-radius:0}
+.tab-b[aria-selected=true]{background:var(--text);color:var(--bg)}
 .cta{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-top:32px}
 .cta .hint{margin:0;max-width:52ch}
 </style>
@@ -1700,14 +1703,14 @@ function distChart(host, o){
 
 /* Fila de caja con bigotes de Tukey, extremos, media y puntos */
 function boxRow(an, sx, y, strip){
-  const st = an.st, s = an.s, n = an.n;
+  const st = an.st, s = an.s, n = an.n, vis = v => sx.lo === undefined || (v >= sx.lo && v <= sx.hi);
   let wl = Infinity, wh = -Infinity; for (let i = 0; i < n; i++){ const v = s[i]; if (v >= an.f1 && v <= an.f2){ if (v < wl) wl = v; if (v > wh) wh = v; } }
   if (!Number.isFinite(wl)){ wl = st.q1; wh = st.q3; }
   let g = `<path d="M${sx(wl)} ${y}H${sx(st.q1)}M${sx(st.q3)} ${y}H${sx(wh)}M${sx(wl)} ${y - 6}V${y + 6}M${sx(wh)} ${y - 6}V${y + 6}" stroke="var(--accent)" stroke-width="2" fill="none"/>`;
   g += `<rect x="${sx(st.q1)}" y="${y - 12}" width="${Math.max(2, sx(st.q3) - sx(st.q1))}" height="24" fill="var(--a10)" stroke="var(--accent)" stroke-width="2"/><line x1="${sx(st.med)}" x2="${sx(st.med)}" y1="${y - 12}" y2="${y + 12}" stroke="var(--accent)" stroke-width="3"/>`;
-  let shown = 0; for (let i = 0; i < n && shown < 300; i++){ const v = s[i]; if (v < an.f1 || v > an.f2){ g += `<circle cx="${sx(v)}" cy="${y}" r="3.2" fill="none" stroke="var(--accent)" stroke-width="1.5"/>`; shown++; } }
+  let shown = 0; for (let i = 0; i < n && shown < 300; i++){ const v = s[i]; if ((v < an.f1 || v > an.f2) && vis(v)){ g += `<circle cx="${sx(v)}" cy="${y}" r="3.2" fill="none" stroke="var(--accent)" stroke-width="1.5"/>`; shown++; } }
   g += `<path d="M${sx(st.mean)} ${y - 9}l6 9l-6 9l-6 -9z" fill="var(--text)"/>`;
-  if (strip){ const stride = Math.max(1, Math.floor(n / 300)); for (let i = 0; i < n; i += stride) g += `<circle cx="${sx(s[(i * 7919) % n])}" cy="${y + 22 + jit(i) * 20}" r="2.2" fill="var(--t2)" opacity=".5"/>`; }
+  if (strip){ const stride = Math.max(1, Math.floor(n / 300)); for (let i = 0; i < n; i += stride){ const v = s[(i * 7919) % n]; if (vis(v)) g += `<circle cx="${sx(v)}" cy="${y + 22 + jit(i) * 20}" r="2.2" fill="var(--t2)" opacity=".5"/>`; } }
   return g;
 }
 function csvDomain(an, zoom){
@@ -1717,20 +1720,10 @@ function csvDomain(an, zoom){
 }
 function boxChart(host, an, zoom){
   const [lo, hi] = csvDomain(an, zoom), W = host.clientWidth || 320, H = 170, ml = 14, mr = 14, axY = H - 28, sx = v => ml + (clamp(v, lo, hi) - lo) / (hi - lo) * (W - ml - mr);
+  sx.lo = lo; sx.hi = hi;
   const ticks = niceTicks(lo, hi, W < 480 ? 4 : 8), dd = decs(ticks); let g = '';
   ticks.forEach(v => { g += `<line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="8" y2="${axY}"/><text class="tk" x="${sx(v)}" y="${axY + 17}" text-anchor="middle">${nf(v, dd)}</text>`; });
   g += `<line class="axis" x1="${ml}" x2="${W - mr}" y1="${axY}" y2="${axY}"/>` + boxRow(an, sx, 52, true);
-  host.innerHTML = svgWrap(W, H, g);
-}
-function groupChart(host, gs, zoomAll){
-  let lo = Infinity, hi = -Infinity; gs.forEach(x => { lo = Math.min(lo, x.an.st.min); hi = Math.max(hi, x.an.st.max); });
-  if (zoomAll){ const q1 = Math.min(...gs.map(x => x.an.st.q1)), q3 = Math.max(...gs.map(x => x.an.st.q3)), r = q3 - q1; if (r > 0){ lo = Math.max(lo, q1 - 3 * r); hi = Math.min(hi, q3 + 3 * r); } }
-  const p = (hi - lo) * 0.04 || 1; lo -= p; hi += p;
-  const W = host.clientWidth || 320, rowH = 86, top = 6, H = top + gs.length * rowH + 34, ml = 14, mr = 14, axY = H - 28, sx = v => ml + (clamp(v, lo, hi) - lo) / (hi - lo) * (W - ml - mr);
-  const ticks = niceTicks(lo, hi, W < 480 ? 4 : 8), dd = decs(ticks); let g = '';
-  ticks.forEach(v => { g += `<line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="${top}" y2="${axY}"/><text class="tk" x="${sx(v)}" y="${axY + 17}" text-anchor="middle">${nf(v, dd)}</text>`; });
-  g += `<line class="axis" x1="${ml}" x2="${W - mr}" y1="${axY}" y2="${axY}"/>`;
-  gs.forEach((x, i) => { const y = top + i * rowH + 36; g += `<text class="txt" x="${ml}" y="${top + i * rowH + 12}" style="font-weight:500">${esc(x.name.length > 40 ? x.name.slice(0, 38) + '…' : x.name)} · n = ${nf(x.an.n, 0)}</text>` + boxRow(x.an, sx, y, true); });
   host.innerHTML = svgWrap(W, H, g);
 }
 function qqChart(host, an){
@@ -1903,18 +1896,35 @@ function csvGroupsData(){
   for (let i = 0; i < v.strs.length; i++){ const gs = g.strs[i]; if (MISSING.has(gs.toLowerCase())) continue; const x = parseNum(v.strs[i]); if (!Number.isFinite(x)) continue; if (!m.has(gs)) m.set(gs, []); m.get(gs).push(x); }
   return [...m.entries()].filter(([, a]) => a.length >= 3).sort((p, q) => q[1].length - p[1].length).slice(0, 8).map(([name, a]) => ({name, an: analyzeVar(a)}));
 }
-function csvGroupHTML(gs, d){
+function groupChart(host, gs, dom){
+  const lo = dom[0], hi = dom[1];
+  const W = host.clientWidth || 320, rowH = 86, top = 6, H = top + gs.length * rowH + 34, ml = 14, mr = 14, axY = H - 28, sx = v => ml + (clamp(v, lo, hi) - lo) / (hi - lo) * (W - ml - mr);
+  sx.lo = lo; sx.hi = hi;
+  const ticks = niceTicks(lo, hi, W < 480 ? 4 : 8), dd = decs(ticks); let g = '';
+  ticks.forEach(v => { g += `<line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="${top}" y2="${axY}"/><text class="tk" x="${sx(v)}" y="${axY + 17}" text-anchor="middle">${nf(v, dd)}</text>`; });
+  g += `<line class="axis" x1="${ml}" x2="${W - mr}" y1="${axY}" y2="${axY}"/>`;
+  gs.forEach((x, i) => { const y = top + i * rowH + 36; g += `<text class="txt" x="${ml}" y="${top + i * rowH + 12}" style="font-weight:500">${esc(x.name.length > 40 ? x.name.slice(0, 38) + '…' : x.name)} · n = ${nf(x.an.n, 0)}</text>` + boxRow(x.an, sx, y, true); });
+  host.innerHTML = svgWrap(W, H, g);
+}
+function csvGroupTable(gs, d){
   const th = 'text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--border)', td = 'padding:12px 12px 12px 0';
   const rows = gs.map(x => { const s = x.an.st; return `<tr><th scope="row" style="${th}">${esc(x.name)}</th><td class="r" style="${td}">${nf(x.an.n, 0)}</td><td class="r" style="${td}">${nf(s.mean, d)}</td><td class="r" style="${td}">${nf(s.med, d)}</td><td class="r" style="${td}">${nf(s.sd, d)}</td><td class="r" style="${td}">${nf(s.madS, d)}</td><td class="r" style="${td}">${nf(s.iqr, d)}</td><td class="r" style="${td}">${nf(s.skew, 2)}</td><td class="r" style="${td}">${nf(s.kurt, 2)}</td></tr>`; }).join('');
-  const best = k => gs.reduce((a, b) => b.an.st[k] > a.an.st[k] ? b : a), hm = best('med'), hn = best('mean'), hs = best('madS'), lm = gs.reduce((a, b) => b.an.st.med < a.an.st.med ? b : a);
-  const ord = k => gs.slice().sort((p, q) => q.an.st[k] - p.an.st[k]).map(x => x.name).join('|');
-  let txt = `<p>El grupo con la mediana más alta es <b>${esc(hm.name)}</b> (${nf(hm.an.st.med, d)}). El de la mediana más baja es <b>${esc(lm.name)}</b> (${nf(lm.an.st.med, d)}). El de mayor dispersión robusta (MAD escalada) es <b>${esc(hs.name)}</b> (${nf(hs.an.st.madS, d)}).</p>`;
-  txt += ord('mean') === ord('med') ? '<p>La media y la mediana ordenan los grupos de la misma manera.</p>' : `<p>La media y la mediana ordenan los grupos de forma distinta. El grupo con la media más alta es <b>${esc(hn.name)}</b> (${nf(hn.an.st.mean, d)}). Esa diferencia suele indicar valores extremos o formas distintas entre grupos.</p>`;
-  txt += '<p class="hint" style="max-width:70ch">Esta comparación es descriptiva. No prueba que las diferencias sean reales en la población. Se muestran hasta 8 grupos, los de mayor tamaño, con al menos 3 datos cada uno.</p>';
-  return `<div class="tbl-wrap" style="margin-top:8px"><table class="compact" style="min-width:680px"><thead><tr><th scope="col">Grupo</th><th scope="col" class="r">n</th><th scope="col" class="r">Media</th><th scope="col" class="r">Mediana</th><th scope="col" class="r">SD</th><th scope="col" class="r">MAD esc.</th><th scope="col" class="r">IQR</th><th scope="col" class="r">Asim.</th><th scope="col" class="r">Curt.</th></tr></thead><tbody>${rows}</tbody></table></div>${txt}`;
+  return `<div class="tbl-wrap" style="margin-top:8px"><table class="compact" style="min-width:680px"><thead><tr><th scope="col">Grupo</th><th scope="col" class="r">n</th><th scope="col" class="r">Media</th><th scope="col" class="r">Mediana</th><th scope="col" class="r">SD</th><th scope="col" class="r">MAD esc.</th><th scope="col" class="r">IQR</th><th scope="col" class="r">Asim.</th><th scope="col" class="r">Curt.</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function csvGroupText(gs, d){
+  const best = k => gs.reduce((a, b) => b.an.st[k] > a.an.st[k] ? b : a), worst = k => gs.reduce((a, b) => b.an.st[k] < a.an.st[k] ? b : a);
+  const hm = best('med'), lm = worst('med'), hn = best('mean'), hs = best('madS'), ord = k => gs.slice().sort((p, q) => q.an.st[k] - p.an.st[k]).map(x => x.name).join('|');
+  let t = `<p><b>Centro.</b> El grupo con la mediana más alta es <b>${esc(hm.name)}</b> (${nf(hm.an.st.med, d)}). El de la mediana más baja es <b>${esc(lm.name)}</b> (${nf(lm.an.st.med, d)}).${lm.an.st.med > 0 ? ` La mediana más alta equivale a ${nf(hm.an.st.med / lm.an.st.med, 1)} veces la más baja.` : ''}</p>`;
+  t += ord('mean') === ord('med') ? '<p>La media y la mediana ordenan los grupos de la misma manera.</p>' : `<p>La media y la mediana ordenan los grupos de forma distinta. El grupo con la media más alta es <b>${esc(hn.name)}</b> (${nf(hn.an.st.mean, d)}). Esa diferencia suele indicar valores extremos o formas distintas entre grupos.</p>`;
+  t += `<p><b>Dispersión.</b> El grupo con mayor dispersión robusta (MAD escalada) es <b>${esc(hs.name)}</b> (${nf(hs.an.st.madS, d)}).</p>`;
+  t += '<p><b>Forma de cada grupo.</b></p>' + gs.map(x => { const s = x.an.st, o = x.an.lows.length + x.an.highs.length; return `<p><b>${esc(x.name)}</b> (n = ${nf(x.an.n, 0)}). ${skewTxt(s.skew)}. ${kurtTxt(s.kurt)}. ${o ? `Tiene ${nf(o, 0)} valores extremos según la regla de Tukey.` : 'No tiene valores extremos según la regla de Tukey.'}</p>`; }).join('');
+  t += '<p class="hint" style="max-width:70ch">Esta comparación es descriptiva. No prueba que las diferencias sean reales en la población. Se muestran hasta 8 grupos, los de mayor tamaño, con al menos 3 datos cada uno. Los grupos pequeños dan asimetrías y curtosis poco fiables.</p>';
+  return t;
 }
 function csvBoot(an, token){
   const el = $('#csvBoot'); if (!el) return;
+  const key = CSV.sel + '|' + an.n + '|' + an.st.mean;
+  if (CSV.boot && CSV.boot.key === key){ el.innerHTML = CSV.boot.html; return; }
   if (an.n < 10){ el.innerHTML = '<p class="hint">Con menos de 10 datos no se calculan intervalos de confianza.</p>'; return; }
   if (an.n > 20000){ el.innerHTML = '<p class="hint">Con más de 20 000 datos, los intervalos son muy estrechos y no se calculan.</p>'; return; }
   const B = 400, r = rng(12345), keys = ['mean', 'med', 'sd', 'madS', 'iqr', 'skew', 'kurt'], res = keys.map(() => []), buf = new Float64Array(an.n);
@@ -1930,51 +1940,79 @@ function csvBoot(an, token){
     const nms = ['Media', 'Mediana', 'SD', 'MAD escalada', 'IQR', 'Asimetría', 'Curtosis'], dgs = [d, d, d, d, d, 2, 2], td = 'padding:12px 16px 12px 0';
     const rows = keys.map((k, i) => `<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--border)">${nms[i]}</th><td class="r" style="${td}">${nf(st[k], dgs[i])}</td><td class="r" style="${td}">${nf(ci[i][0], dgs[i])} a ${nf(ci[i][1], dgs[i])}</td></tr>`).join('');
     const incl = i => ci[i][0] <= 0 && ci[i][1] >= 0;
-    el.innerHTML = `<div class="tbl-wrap" style="margin-top:8px"><table class="compact" style="min-width:460px"><thead><tr><th scope="col">Número</th><th scope="col" class="r">Estimación</th><th scope="col" class="r">Intervalo de confianza 95 %</th></tr></thead><tbody>${rows}</tbody></table></div>` +
+    const html = `<div class="tbl-wrap" style="margin-top:8px"><table class="compact" style="min-width:460px"><thead><tr><th scope="col">Número</th><th scope="col" class="r">Estimación</th><th scope="col" class="r">Intervalo de confianza 95 %</th></tr></thead><tbody>${rows}</tbody></table></div>` +
       `<p>El intervalo muestra cuánto cambiaría cada número con otra muestra parecida. ${incl(5) ? 'El intervalo de la asimetría incluye el 0: con estos datos no se puede afirmar que la forma sea asimétrica. ' : 'El intervalo de la asimetría no incluye el 0: la asimetría parece real. '}${incl(6) ? 'El intervalo de la curtosis incluye el 0: no se puede afirmar que las colas sean distintas de las de una campana normal.' : 'El intervalo de la curtosis no incluye el 0: las colas parecen distintas de las de una campana normal.'}</p><p class="hint" style="max-width:70ch">Los intervalos salen de 400 remuestreos con reemplazo (método bootstrap). Son aproximados: con pocos datos o con extremos, pueden ser poco fiables.</p>`;
+    el.innerHTML = html; CSV.boot = {key, html};
   };
   setTimeout(step, 0);
 }
 function csvDrawCharts(){
-  const an = CSV.an; if (!an || !$('#csvDist')) return;
+  const an = CSV.an; if (!an) return;
   const dom = CSV.zoom && an.st.iqr > 0 ? csvDomain(an, true) : null;
-  const zn = $('#csvZoomNote'); if (zn) zn.textContent = dom ? `Hay ${nf(an.a.filter(v => v < dom[0] || v > dom[1]).length, 0)} datos fuera de la zona visible. Sus valores van de ${nf(an.st.min, an.dg)} a ${nf(an.st.max, an.dg)}.` : '';
-  if (an.st.sd > 0){
-    distChart($('#csvDist'), {data: an.a, st: an.st, hist: true, discrete: an.discrete, dom: an.discrete ? null : dom, dg: an.dg, h: 300});
-    boxChart($('#csvBox'), an, CSV.zoom);
-    if (!an.discrete) qqChart($('#csvQQ'), an);
+  const zn = $('#csvZoomNote'); if (zn){ const hid = dom ? an.a.filter(v => v < dom[0] || v > dom[1]) : []; zn.textContent = hid.length ? `Hay ${nf(hid.length, 0)} datos fuera de la zona visible. Sus valores van de ${nf(Math.min(...hid), an.dg)} a ${nf(Math.max(...hid), an.dg)}.` : ''; }
+  if (CSV.view === 'grp' && CSV.grp >= 0){
+    const gd = dom || csvDomain(an, false);
+    CSV.gs.forEach((x, i) => { const h = $('#csvG' + i); if (!h) return; if (x.an.st.sd > 0) distChart(h, {data: x.an.a, st: x.an.st, hist: true, discrete: an.discrete, dom: gd, dg: an.dg, h: 220}); else h.innerHTML = '<p class="hint">Todos los datos de este grupo son iguales.</p>'; });
+    const gh = $('#csvGrpChart'); if (gh) groupChart(gh, CSV.gs, gd);
+    return;
   }
-  const gh = $('#csvGrpChart'); if (gh && CSV.grp >= 0) groupChart(gh, CSV.gs, CSV.zoom);
+  if (!$('#csvDist')) return;
+  distChart($('#csvDist'), {data: an.a, st: an.st, hist: true, discrete: an.discrete, dom: an.discrete ? null : dom, dg: an.dg, h: 300});
+  boxChart($('#csvBox'), an, CSV.zoom);
+  if (!an.discrete) qqChart($('#csvQQ'), an);
 }
-function renderCsv(){
+function csvAllView(an, col, zoomBox, hasGrp){
+  const st = an.st, d = an.dg, sfx = hasGrp ? ' · muestra completa' : '';
+  let h = hasGrp ? `<div class="mdl-warn" style="margin:16px 0 0"><p><b>Ojo.</b> Esta vista mezcla todos los grupos. La media y la mediana de los gráficos son las de todos los datos juntos, no las de cada grupo. Para ver cada grupo por separado, abra la pestaña «Por ${esc(CSV.cols[CSV.grp].name)}».</p></div>` : '';
+  h += csvSec('Lectura en lenguaje sencillo' + sfx, csvNarrative(an, col.name, CSV.body));
+  h += csvSec('Los siete números' + sfx, csvCards(st, d));
+  h += csvSec((an.discrete ? 'Distribución de los valores' : 'Forma: curva y curtosis') + sfx,
+    `<div class="how" style="margin:0 0 16px"><p>${an.discrete ? 'Cada barra muestra el porcentaje de datos con ese valor.' : 'Las barras grises cuentan los datos por zonas. La <b class="k-ink">curva negra continua</b> es la forma suavizada de sus datos. La <b class="k-ink">curva negra discontinua</b> es una campana normal con la misma media y la misma SD, y sirve de referencia.'} ${an.discrete ? '' : 'Si la curva de sus datos tiene las colas más altas que la campana, la curtosis es positiva. Si no llega a las colas, es negativa.'}</p></div>` + zoomBox +
+    `<div class="chart" id="csvDist" role="img" aria-label="Histograma y curva de los datos"></div>` +
+    `<div class="gtitle"><span class="lbl">Asimetría en la escala</span><output>${nf(st.skew)}</output></div>${gaugeHTML(st.skew, NaN, -3, 3, 'Cola izquierda larga', 'Cola derecha larga')}` +
+    `<div class="gtitle"><span class="lbl">Curtosis en la escala</span><output>${nf(st.kurt)} · ${kurtType(st.kurt)}</output></div>${gaugeHTML(st.kurt, NaN, -2, 10, 'Platicúrtica · colas ligeras', 'Leptocúrtica · colas pesadas')}` +
+    (an.discrete ? csvFreq(an) : ''));
+  h += csvSec('Caja y valores extremos' + sfx, `<div class="how" style="margin:0 0 16px"><p>La <b class="k-red">caja roja</b> cubre la mitad central de los datos y su anchura es el IQR. La <b class="k-red">raya roja gruesa</b> es la mediana. El <b class="k-ink">rombo negro</b> es la media. Los <b class="k-red">círculos rojos</b> son valores extremos según la regla de Tukey. Los puntos grises son datos.</p></div><div class="chart" id="csvBox" role="img" aria-label="Diagrama de caja"></div>`);
+  if (!an.discrete) h += csvSec('Gráfico Q–Q: ¿se parece a una campana normal?' + sfx, `<div class="how" style="margin:0 0 16px"><p>Cada punto compara un dato con el valor que tendría en una campana normal. La <b class="k-red">línea roja</b> marca la normalidad perfecta. Si los puntos la siguen, la forma es normal. Si la cola derecha sube por encima de la línea, hay datos más altos de lo normal. Si los dos extremos se separan de la línea, las colas son pesadas.</p></div><div class="chart" id="csvQQ" role="img" aria-label="Gráfico Q-Q normal"></div>`);
+  h += csvSec('Percentiles' + sfx, csvPercTable(an));
+  if (an.stIn) h += csvSec('Con y sin valores extremos' + sfx, csvWithWithout(an));
+  h += csvSec('Incertidumbre: intervalos de confianza' + sfx, '<div id="csvBoot"></div>');
+  return h;
+}
+function csvGroupView(an, col, zoomBox){
+  const d = an.dg, gname = CSV.cols[CSV.grp].name, gs = CSV.gs;
+  if (gs.length < 2) return csvSec(`Comparación por «${esc(gname)}»`, '<p>No hay al menos dos grupos con 3 datos o más.</p>');
+  let h = csvSec('Cómo leer esta vista', `<div class="how" style="margin:0"><p>Cada grupo tiene su propio gráfico, con su propia media y su propia mediana. Todos usan la misma escala horizontal para poder compararlos. En cada gráfico, la <b class="k-ink">línea negra</b> es la media del grupo y la <b class="k-red">línea roja discontinua</b> es su mediana. La <b class="k-ink">curva negra continua</b> es la forma de los datos del grupo. La <b class="k-ink">curva negra discontinua</b> es una campana normal con la media y la SD del grupo.</p><p>La pestaña «Muestra completa» mezcla todos los grupos. Allí la media y la mediana son las de todos los datos juntos.</p></div>`);
+  h += csvSec('Forma de cada grupo', zoomBox + gs.map((x, i) => `<div style="margin-top:16px"><div class="lbl" style="margin-bottom:4px;color:var(--text)">${esc(x.name)} · n = ${nf(x.an.n, 0)} · asimetría ${nf(x.an.st.skew)} · curtosis ${nf(x.an.st.kurt)} (${kurtType(x.an.st.kurt)})</div><div class="chart" id="csvG${i}" role="img" aria-label="Forma del grupo ${esc(x.name)}"></div></div>`).join(''));
+  h += csvSec('Cajas por grupo', `<div class="how" style="margin:0 0 16px"><p>Cada fila muestra un grupo. Compare las cajas: si están en posiciones distintas, los grupos difieren en su centro. Si tienen anchuras distintas, difieren en su dispersión. El <b class="k-ink">rombo negro</b> es la media y la <b class="k-red">raya roja gruesa</b> es la mediana de cada grupo.</p></div><div class="chart" id="csvGrpChart" role="img" aria-label="Cajas por grupo"></div>`);
+  h += csvSec('Los números de cada grupo', csvGroupTable(gs, d));
+  h += csvSec('Lectura por grupos', csvGroupText(gs, d));
+  return h;
+}
+function renderCsv(focusTab){
   const out = $('#csvOut'); CSV.token++;
   if (CSV.sel < 0){ out.innerHTML = ''; return; }
   const col = CSV.cols[CSV.sel];
   if (col.vals.length < 3){ out.innerHTML = '<p>Hay muy pocos valores numéricos en esta variable.</p>'; return; }
   const an = analyzeVar(col.vals); CSV.an = an; const st = an.st, d = an.dg;
   if (!(st.sd > 0)){ out.innerHTML = csvSec('Resultado', `<p>Todos los valores de «${esc(col.name)}» son iguales (${nf(st.mean, d)}). No hay dispersión que analizar.</p>`); return; }
+  const hasGrp = CSV.grp >= 0; if (!hasGrp) CSV.view = 'all';
+  CSV.gs = hasGrp ? csvGroupsData() : [];
   const farN = an.a.reduce((c, v) => c + (v < st.q1 - 3 * st.iqr || v > st.q3 + 3 * st.iqr ? 1 : 0), 0), far = st.iqr > 0 && farN > 0;
   if (!CSV.zoomSet) CSV.zoom = far && farN / an.n < 0.1;
-  let h = csvSec('Lectura en lenguaje sencillo', csvNarrative(an, col.name, CSV.body));
-  h += csvSec('Los siete números', csvCards(st, d));
-  h += csvSec(an.discrete ? 'Distribución de los valores' : 'Forma: curva y curtosis',
-    `<div class="how" style="margin:0 0 16px"><p>${an.discrete ? 'Cada barra muestra el porcentaje de datos con ese valor.' : 'Las barras grises cuentan los datos por zonas. La <b class="k-ink">curva negra continua</b> es la forma suavizada de sus datos. La <b class="k-ink">curva negra discontinua</b> es una campana normal con la misma media y la misma SD, y sirve de referencia.'} ${an.discrete ? '' : 'Si la curva de sus datos tiene las colas más altas que la campana, la curtosis es positiva. Si no llega a las colas, es negativa.'}</p></div>` +
-    (far ? `<label class="chk"><input type="checkbox" id="csvZoom" ${CSV.zoom ? 'checked' : ''}> Ampliar la zona central (oculta los valores muy lejanos)</label><p class="hint" id="csvZoomNote" style="margin:0 0 8px"></p>` : '') +
-    `<div class="chart" id="csvDist" role="img" aria-label="Histograma y curva de los datos"></div>` +
-    `<div class="gtitle"><span class="lbl">Asimetría en la escala</span><output>${nf(st.skew)}</output></div>${gaugeHTML(st.skew, NaN, -3, 3, 'Cola izquierda larga', 'Cola derecha larga')}` +
-    `<div class="gtitle"><span class="lbl">Curtosis en la escala</span><output>${nf(st.kurt)} · ${kurtType(st.kurt)}</output></div>${gaugeHTML(st.kurt, NaN, -2, 10, 'Platicúrtica · colas ligeras', 'Leptocúrtica · colas pesadas')}` +
-    (an.discrete ? csvFreq(an) : ''));
-  h += csvSec('Caja y valores extremos', `<div class="how" style="margin:0 0 16px"><p>La <b class="k-red">caja roja</b> cubre la mitad central de los datos y su anchura es el IQR. La <b class="k-red">raya roja gruesa</b> es la mediana. El <b class="k-ink">rombo negro</b> es la media. Los <b class="k-red">círculos rojos</b> son valores extremos según la regla de Tukey. Los puntos grises son datos.</p></div><div class="chart" id="csvBox" role="img" aria-label="Diagrama de caja"></div>`);
-  if (!an.discrete) h += csvSec('Gráfico Q–Q: ¿se parece a una campana normal?', `<div class="how" style="margin:0 0 16px"><p>Cada punto compara un dato con el valor que tendría en una campana normal. La <b class="k-red">línea roja</b> marca la normalidad perfecta. Si los puntos la siguen, la forma es normal. Si la cola derecha sube por encima de la línea, hay datos más altos de lo normal. Si los dos extremos se separan de la línea, las colas son pesadas.</p></div><div class="chart" id="csvQQ" role="img" aria-label="Gráfico Q-Q normal"></div>`);
-  h += csvSec('Percentiles', csvPercTable(an));
-  if (an.stIn) h += csvSec('Con y sin valores extremos', csvWithWithout(an));
-  h += csvSec('Incertidumbre: intervalos de confianza', '<div id="csvBoot"></div>');
-  if (CSV.grp >= 0){ CSV.gs = csvGroupsData(); h += csvSec(`Comparación por «${esc(CSV.cols[CSV.grp].name)}»`, CSV.gs.length >= 2 ? `<div class="how" style="margin:0 0 16px"><p>Cada fila muestra un grupo con el mismo gráfico de caja de arriba. Compare las cajas: si están en posiciones distintas, los grupos difieren en su centro. Si tienen anchuras distintas, difieren en su dispersión.</p></div><div class="chart" id="csvGrpChart" role="img" aria-label="Cajas por grupo"></div>${csvGroupHTML(CSV.gs, d)}` : '<p>No hay al menos dos grupos con 3 datos o más.</p>'); }
-  h += `<div class="btns" style="max-width:420px"><button type="button" class="btn" id="csvSave">Descargar este análisis (.txt)</button></div>`;
-  out.innerHTML = h;
+  const zoomBox = far ? `<label class="chk"><input type="checkbox" id="csvZoom" ${CSV.zoom ? 'checked' : ''}> Ampliar la zona central (oculta los valores muy lejanos)</label><p class="hint" id="csvZoomNote" style="margin:0 0 8px"></p>` : '';
+  let tabs = '';
+  if (hasGrp) tabs = `<div class="tabs" role="tablist" aria-label="Qué analizar">${[['all', 'Muestra completa'], ['grp', 'Por ' + esc(CSV.cols[CSV.grp].name)]].map(([v, t]) => `<button type="button" role="tab" class="tab-b" data-view="${v}" aria-selected="${CSV.view === v}" tabindex="${CSV.view === v ? 0 : -1}">${t}</button>`).join('')}</div>`;
+  const body = CSV.view === 'grp' && hasGrp ? csvGroupView(an, col, zoomBox) : csvAllView(an, col, zoomBox, hasGrp);
+  out.innerHTML = tabs + `<div role="tabpanel">${body}</div><div class="btns" style="max-width:420px"><button type="button" class="btn" id="csvSave">Descargar este análisis (.txt)</button></div>`;
   const z = $('#csvZoom'); if (z) z.addEventListener('change', () => { CSV.zoom = z.checked; CSV.zoomSet = true; csvDrawCharts(); });
-  const sv = $('#csvSave'); if (sv) sv.addEventListener('click', () => { const blob = new Blob([`Análisis de «${col.name}»\n\n` + out.innerText], {type: 'text/plain;charset=utf-8'}), a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'analisis_' + col.name.replace(/[^\w]+/g, '_') + '.txt'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); });
-  csvDrawCharts(); csvBoot(an, CSV.token);
+  out.querySelectorAll('[data-view]').forEach(b => {
+    b.addEventListener('click', () => { CSV.view = b.dataset.view; renderCsv(true); });
+    b.addEventListener('keydown', e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft'){ e.preventDefault(); CSV.view = CSV.view === 'all' ? 'grp' : 'all'; renderCsv(true); } });
+  });
+  if (focusTab){ const t = out.querySelector('[role=tab][aria-selected=true]'); if (t) t.focus(); }
+  const sv = $('#csvSave'); if (sv) sv.addEventListener('click', () => { const vista = CSV.view === 'grp' && hasGrp ? `por «${CSV.cols[CSV.grp].name}»` : 'muestra completa'; const blob = new Blob([`Análisis de «${col.name}» (${vista})\n\n` + out.innerText], {type: 'text/plain;charset=utf-8'}), a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'analisis_' + col.name.replace(/[^\w]+/g, '_') + '.txt'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); });
+  csvDrawCharts(); if (!(CSV.view === 'grp' && hasGrp)) csvBoot(an, CSV.token);
 }
 function csvPopulate(){
   const m = CSV.model; CSV.cols = m.cols; CSV.body = m.body; const nums = m.cols.map((c, j) => [c, j]).filter(([c]) => c.num);
@@ -1987,9 +2025,9 @@ function csvPopulate(){
   const first = nums.find(([c]) => !c.idLike) || nums[0]; CSV.sel = first[1]; sel.value = CSV.sel; CSV.grp = -1;
   const refresh = () => { grp.innerHTML = '<option value="-1">Sin grupos</option>' + m.cols.map((c, j) => [c, j]).filter(([c, j]) => j !== CSV.sel && c.uniq >= 2 && c.uniq <= 12 && c.nonMissing >= 5).map(([c, j]) => `<option value="${j}">${esc(c.name)} (${c.uniq} grupos)</option>`).join(''); grp.value = '-1'; CSV.grp = -1; };
   refresh();
-  sel.onchange = () => { CSV.sel = +sel.value; CSV.zoomSet = false; refresh(); renderCsv(); };
-  grp.onchange = () => { CSV.grp = +grp.value; renderCsv(); };
-  $('#csvPick').hidden = false; CSV.zoomSet = false; renderCsv();
+  sel.onchange = () => { CSV.sel = +sel.value; CSV.zoomSet = false; CSV.view = 'all'; refresh(); renderCsv(); };
+  grp.onchange = () => { CSV.grp = +grp.value; CSV.view = CSV.grp >= 0 ? 'grp' : 'all'; renderCsv(); };
+  $('#csvPick').hidden = false; CSV.zoomSet = false; CSV.view = 'all'; CSV.boot = null; renderCsv();
 }
 async function csvLoad(file){
   try {
