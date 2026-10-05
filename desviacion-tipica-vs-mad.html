@@ -252,6 +252,9 @@ details[open].opt summary{background:var(--text);color:var(--bg)}
 details[open].opt summary::after{content:'  −'}
 details.opt .formulas{margin-top:32px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.k-ink{font-weight:600;color:var(--text)}
+.k-red{font-weight:600;color:var(--accent-t)}
+.k-gray{font-weight:600;color:var(--t2)}
 </style>
 </head>
 
@@ -428,7 +431,7 @@ details.opt .formulas{margin-top:32px}
         </div>
 
         <div class="how" style="margin-top:32px"><span class="lbl">Cómo leer la figura 1</span>
-          <p>Cada punto es un dato. Un anillo marca un valor extremo. La línea negra marca la media. La línea roja discontinua marca la mediana.</p>
+          <p>Cada punto es un dato. Un anillo marca un valor extremo. La <b class="k-ink">línea negra</b> marca la media. La <b class="k-red">línea roja discontinua</b> marca la mediana.</p>
           <p>Las dos barras de arriba muestran cuánta dispersión mide cada método. Si la barra negra es mucho más ancha que la roja, los extremos inflan la desviación típica. El corchete gris del eje marca el valor real que se usó para crear los datos. En la vida real ese valor no se conoce.</p></div>
         <figure style="margin-top:0">
           <div class="legend" aria-hidden="true">

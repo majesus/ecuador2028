@@ -330,6 +330,26 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
 .mdl-key p{color:var(--text);font-size:16px}
 .mdl-warn{border-left:2px solid var(--text);padding:8px 0 8px 16px;margin-top:16px}
 .mdl-warn p{font-size:14px}
+
+.k-ink{font-weight:600;color:var(--text)}
+.k-red{font-weight:600;color:var(--accent-t)}
+.k-gray{font-weight:600;color:var(--t2)}
+dialog.big{width:min(1100px,calc(100% - 32px))}
+.csv-drop{border:1px dashed var(--text);padding:24px;margin-top:8px}
+.csv-drop.over{background:var(--a10)}
+.csv-drop p{color:var(--t2);font-size:15px}
+.csv-btns{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+.csv-file{position:relative;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.csv-file input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.csv-file:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+select{min-height:44px;max-width:100%;border:1px solid var(--text);background:var(--bg);color:var(--text);border-radius:0;font:inherit;font-size:15px;padding:8px 12px}
+.csvsel{display:grid;gap:16px}.csvsel>div{min-width:0}.csvsel select{width:100%}.mdl-s{min-width:0}#csvOut,#csvOut>*{min-width:0}
+@media(min-width:768px){.csvsel{grid-template-columns:1fr 1fr}}
+.csvsel .lbl{display:block;margin-bottom:8px}
+.chk{display:flex;gap:12px;align-items:center;min-height:44px;font-size:14px;color:var(--t2);margin:8px 0;cursor:pointer}
+.chk input{width:20px;height:20px;accent-color:var(--accent)}
+.cta{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-top:32px}
+.cta .hint{margin:0;max-width:52ch}
 </style>
 </head>
 
@@ -355,6 +375,8 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
       <div><span class="sq red" aria-hidden="true"></span><p><b>Rojo · números robustos</b>Mediana, MAD e IQR. Los datos lejanos casi no pesan en ellos.</p></div>
     </div>
     <div class="take" style="margin-top:48px;max-width:60ch"><span class="lbl">La idea en una frase</span><p>Los siete números responden a tres preguntas: dónde está el centro, cuánto se dispersan los datos y qué forma tienen. Un solo dato extremo engaña a algunos números. Otros lo resisten.</p></div>
+
+    <div class="cta"><button type="button" class="btn main" data-csv>Analice su propio CSV</button><p class="hint">¿Tiene datos propios? Cargue un CSV y obtenga el análisis completo, con gráficos y comentarios en lenguaje sencillo. El archivo no sale de su equipo.</p></div>
 
     <div class="three" style="margin-top:32px">
       <div><span class="lbl">Pregunta 1 · Centro</span><h3 style="margin-top:8px">¿Cuál es un valor típico?</h3><p>Dos números: la <b>media</b> y la <b>mediana</b>.</p></div>
@@ -395,7 +417,7 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
     </div>
 
     <div class="how" style="margin-top:0"><span class="lbl">Cómo leer la figura A</span>
-      <p>Cada punto es un cliente. La línea negra marca la media. La línea roja discontinua marca la mediana. La caja roja cubre la mitad central de los datos: su anchura es el IQR.</p>
+      <p>Cada punto es un cliente. La <b class="k-ink">línea negra</b> marca la media. La <b class="k-red">línea roja discontinua</b> marca la mediana. La caja roja cubre la mitad central de los datos: su anchura es el IQR.</p>
       <p>Las dos barras de abajo muestran la dispersión que mide la SD y la que mide la MAD. El eje cambia de escala cuando se pulsa el botón.</p></div>
     <figure style="margin-top:0">
       <div class="legend" aria-hidden="true">
@@ -411,7 +433,19 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
     </figure>
 
     <div class="groups" id="exGroups" role="group" aria-label="Resultados del ejemplo"></div>
-    <div class="take" id="exTake" aria-live="polite"></div>
+    <div class="how" style="margin-top:32px"><span class="lbl">Cómo leer la figura B</span>
+      <p>La <b class="k-ink">curva negra continua</b> es la forma de los datos, suavizada. La <b class="k-ink">curva negra discontinua</b> es una campana normal con la misma media y la misma SD, y sirve de referencia.</p>
+      <p>Si la curva de los datos tiene las colas más altas que la campana, la curtosis es positiva (leptocúrtica). Si no llega a las colas, la curtosis es negativa (platicúrtica). Los dos medidores de abajo sitúan la asimetría y la curtosis en su escala. El cuadrado macizo es la muestra actual y el hueco es la original.</p></div>
+    <figure style="margin-top:0">
+      <div class="legend" aria-hidden="true"><span><i class="sw"></i>Curva de los datos</span><span><i class="sw dash"></i>Campana normal (misma media y SD)</span><span><i class="sw"></i>Media</span><span><i class="sw red dash"></i>Mediana</span></div>
+      <div class="chart" id="exCurve" role="img" aria-label="Curva de la forma de los once gastos"></div>
+      <figcaption>Figura B. Forma de los once gastos. Las motas grises del fondo son los datos.</figcaption>
+    </figure>
+    <div class="gtitle"><span class="lbl">Asimetría en la escala</span><output id="ex-sk"></output></div>
+    <div id="exGSkew"></div>
+    <div class="gtitle"><span class="lbl">Curtosis en la escala</span><output id="ex-ku"></output></div>
+    <div id="exGKurt"></div>
+    <div class="take" id="exTake" aria-live="polite" style="margin-top:32px"></div>
 
     <div class="exgrid" style="grid-template-columns:1fr">
       <div class="grid" style="row-gap:32px">
@@ -516,11 +550,14 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
 
         <div class="how" style="margin-top:32px"><span class="lbl">Cómo leer la figura 1</span>
           <p>Las barras grises cuentan cuántos datos caen en cada zona: es el histograma. Debajo, la caja roja muestra el IQR y las barras muestran la SD y la MAD. Los puntos del final son los datos. Arrastre uno para moverlo.</p>
-          <p>La línea negra es la media. La línea roja discontinua es la mediana. Si están lejos una de otra, la forma es asimétrica o hay extremos. Un anillo marca un valor extremo.</p></div>
+          <p>La <b class="k-ink">línea negra</b> es la media. La <b class="k-red">línea roja discontinua</b> es la mediana. Si están lejos una de otra, la forma es asimétrica o hay extremos. Un anillo marca un valor extremo.</p>
+          <p>La <b class="k-ink">curva negra continua</b> es la forma suavizada de los datos. La <b class="k-ink">curva negra discontinua</b> es la campana normal con la misma media y la misma SD. Si la curva de los datos tiene colas más altas que la campana, la curtosis es positiva. Con extremos, la campana de referencia se ensancha, porque la SD crece.</p></div>
         <figure style="margin-top:0">
           <div class="legend" aria-hidden="true">
             <span><i class="sw"></i>Media</span>
             <span><i class="sw red dash"></i>Mediana</span>
+            <span><i class="sw"></i>Curva de los datos</span>
+            <span><i class="sw dash"></i>Campana normal</span>
             <span><i class="sw band red" style="height:0;border-top:2px solid var(--accent);background:none"></i>Caja: IQR</span>
             <span><i class="sw band"></i>Media ± SD</span>
             <span><i class="sw band red"></i>Mediana ± MAD</span>
@@ -532,6 +569,7 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
         </figure>
 
         <div class="reading" aria-live="polite" id="reading"></div>
+        <div class="cta"><button type="button" class="btn main" data-csv>Analice su propio CSV</button><p class="hint">Use la misma forma de leer estos números con sus datos reales.</p></div>
       </div>
     </div>
 
@@ -560,7 +598,7 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
       </div>
     </div>
     <div class="how" style="margin-top:0"><span class="lbl">Cómo leer las tarjetas</span>
-      <p>Cada gráfico es un histograma. La línea negra marca la media. La línea roja marca la mediana.</p>
+      <p>Cada gráfico es un histograma. La <b class="k-ink">línea negra</b> marca la media. La <b class="k-red">línea roja</b> marca la mediana.</p>
       <p><b>Asimetría.</b> Cero significa simétrica. Positiva significa cola larga a la derecha. Negativa significa cola larga a la izquierda. <b>Curtosis.</b> Cero significa colas como las de la campana normal. Positiva significa más datos lejanos. Negativa significa menos datos lejanos.</p></div>
     <div class="gal" id="gallery"></div>
     <div class="take" style="margin-top:32px"><span class="lbl">Una confusión frecuente</span><p>La curtosis no mide si la cima es puntiaguda. Mide sobre todo cuántos datos caen lejos del centro, es decir, el peso de las colas. Una forma plana y una forma con dos grupos tienen curtosis negativa porque casi no tienen datos lejanos.</p></div>
@@ -661,6 +699,27 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
       </div>
     </div>
 
+    <div class="sec-line" style="border-top:1px solid var(--text);margin-top:64px;padding-top:32px">
+      <h3 style="font-size:clamp(1.375rem,3vw,1.75rem);font-weight:300;letter-spacing:-.02em;line-height:1.25;text-wrap:balance">¿Por qué una meseta y dos grupos separados son los dos platicúrticos?</h3>
+      <p class="body" style="margin-top:16px">Parece raro. La meseta tiene la cima plana. Los dos grupos tienen dos cimas, y cada grupo, mirado solo, parece una campana normal. La respuesta está en cómo se calcula la curtosis: no mira la cima, mira las colas.</p>
+    </div>
+    <div class="grid" style="margin-top:32px">
+      <div class="c12 l5 min0">
+        <ol class="steps">
+          <li><span><b>La regla de cálculo.</b> Se mide cada dato en SD desde la media. Esa distancia se llama <i>z</i>. Se eleva <i>z</i> a la cuarta potencia, se promedia y se resta 3. Ese es el valor de la curtosis.</span></li>
+          <li><span><b>Quién pesa.</b> La cuarta potencia castiga la distancia. Un dato a 1 SD pesa 1. Uno a 2 SD pesa 16. Uno a 3 SD pesa 81. En una campana normal, el peso medio vale 3, porque hay algunos datos lejanos con mucho peso.</span></li>
+          <li><span><b>Meseta.</b> Ningún dato pasa de 1,7 SD de la media. No hay pesos grandes, y el peso medio baja a 1,8. La curtosis vale −1,2.</span></li>
+          <li><span><b>Dos grupos separados.</b> La media global cae en el hueco entre los grupos. Todos los datos están a cerca de 1 SD de ella, unos a un lado y otros al otro. Todos pesan cerca de 1, y la curtosis se acerca a −2.</span></li>
+          <li><span><b>Cada grupo por separado.</b> Cada grupo se mide desde su propia media. Es una campana, y su curtosis es cercana a 0 (mesocúrtica). La muestra completa, en cambio, se mide desde la media global.</span></li>
+        </ol>
+      </div>
+      <div class="c12 l7 min0">
+        <div class="figh"><div class="lbl">Distancia de cada dato a la media</div><button type="button" class="btn q" data-m="K4" aria-haspopup="dialog">¿Cómo se lee?</button></div>
+        <div class="chart" id="chK4" role="img" aria-label="Distancia de cada dato a la media en cuatro formas"></div>
+        <figcaption>Figura 2d. Cada punto es un dato. Su posición es la distancia a la media, en SD. La zona rosa marca las colas, donde cada dato pesa 16 o más.</figcaption>
+      </div>
+    </div>
+    <div class="take" style="margin-top:24px"><span class="lbl">Idea clave</span><p>Platicúrtica no significa «cima plana». Significa «sin datos muy lejanos». Una meseta y dos grupos separados tienen eso en común: ningún dato queda mucho más lejos de la media que los demás.</p></div>
     <div class="take" style="margin-top:24px"><span class="lbl">Conclusión</span><p>La curtosis no mide si la cima es puntiaguda, aunque los nombres griegos describan ese aspecto. Hoy se lee como el peso de las colas: cuántos datos caen lejos del centro. Con muchos datos lejanos, la forma es leptocúrtica. Con pocos, es platicúrtica.</p></div>
   </div>
 </section>
@@ -877,6 +936,33 @@ dialog::backdrop{background:rgba(12,10,9,.62)}
   </div>
 </section>
 
+<dialog id="csvDlg" class="big" aria-labelledby="csvT">
+  <div class="dlg-in">
+    <div class="dlg-top"><h3 id="csvT">Analice su propio CSV</h3><button type="button" class="dlg-x" id="csvX">Cerrar</button></div>
+    <section class="mdl-s"><span class="lbl">Privacidad</span><p>El archivo no sale de su equipo. El análisis ocurre en este navegador. No se envía nada a ningún servidor.</p></section>
+    <section class="mdl-s"><span class="lbl">1 · Cargue los datos</span>
+      <div class="csv-drop" id="csvDrop">
+        <p>Arrastre aquí un archivo CSV o elija uno de su equipo. Puede analizar cualquier columna numérica.</p>
+        <div class="csv-btns">
+          <label class="btn main csv-file">Elegir archivo<input type="file" id="csvFile" accept=".csv,.tsv,.txt,text/csv,text/plain"></label>
+          <button type="button" class="btn" id="csvDemo">Probar con datos de ejemplo</button>
+          <button type="button" class="btn" id="csvDl">Descargar el CSV de ejemplo</button>
+        </div>
+        <p class="hint" style="margin:0">Formato admitido: la primera fila contiene los títulos. El separador puede ser coma, punto y coma o tabulador. Los decimales pueden usar coma o punto. Si usa coma como separador de miles, escriba los decimales con punto.</p>
+      </div>
+      <p id="csvInfo" aria-live="polite" style="margin-top:16px;color:var(--t2);font-size:15px"></p>
+      <details id="csvPrev" class="opt" hidden style="margin-top:8px"><summary>Ver las primeras filas</summary><div class="tbl-wrap"><table id="csvPrevT" class="compact" style="min-width:420px"></table></div></details>
+    </section>
+    <section class="mdl-s" id="csvPick" hidden><span class="lbl">2 · Elija la variable</span>
+      <div class="csvsel">
+        <div><label class="lbl" for="csvVar">Variable numérica a analizar</label><select id="csvVar"></select></div>
+        <div><label class="lbl" for="csvGrp">Comparar por grupos (opcional)</label><select id="csvGrp"></select></div>
+      </div>
+    </section>
+    <div id="csvOut" aria-live="polite"></div>
+  </div>
+</dialog>
+
 <dialog id="dlg" aria-labelledby="dlgT">
   <div class="dlg-in">
     <div class="dlg-top"><h3 id="dlgT"></h3><button type="button" class="dlg-x" id="dlgX">Cerrar</button></div>
@@ -955,7 +1041,7 @@ function stats(a){
   const sd = n > 1 ? Math.sqrt(ss / (n - 1)) : 0;
   const ad = Float64Array.from(a, v => Math.abs(v - med)).sort(), mad = quant(ad, 0.5);
   const iqr = q3 - q1;
-  return {n, mean, med, q1, q3, iqr, iqrS: iqr / KI, sd, mad, madS: K * mad, m2, m3, m4, ss,
+  return {n, mean, med, q1, q3, iqr, iqrS: iqr / KI, sd, mad, madS: K * mad, m2, m3, m4, ss, min: s[0], max: s[n - 1],
     skew: m2 > 1e-12 ? m3 / Math.pow(m2, 1.5) : NaN, kurt: m2 > 1e-12 ? m4 / (m2 * m2) - 3 : NaN,
     bowley: iqr > 1e-12 ? (q3 + q1 - 2 * med) / iqr : NaN};
 }
@@ -1021,12 +1107,18 @@ function drawA(){
   ticks.forEach(v => { g += `<line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="22" y2="${axY}"/><text class="tk" x="${sx(v)}" y="${axY + 18}" text-anchor="middle">${nf(v, dd)}</text>`; });
   g += `<line class="axis" x1="${ml}" x2="${W - mr}" y1="${axY}" y2="${axY}"/>`;
   // Histograma
-  const hb = histBins(data, dom[0], dom[1], st.iqr), hTop = 30, hBase = 162, mx = Math.max(...hb.c, 1);
+  const hb = histBins(data, dom[0], dom[1], st.iqr), hTop = 30, hBase = 162, nD = data.length, cnt = hb.w * nD;
+  const xsK = Array.from({length: 121}, (_, i) => dom[0] + (dom[1] - dom[0]) * i / 120), hK = silverman(st.sd, st.iqr, nD);
+  const kd = kdeCurve(data, xsK, hK).map(v => v * cnt), nd = st.sd > 0 ? xsK.map(x => normPdf(x, st.mean, st.sd) * cnt) : null;
+  const mx = Math.max(...hb.c, ...kd, ...(nd || [0]), 1);
   hb.c.forEach((c, b) => {
     if (!c) return;
     const x1 = sx(dom[0] + b * hb.w), x2 = sx(dom[0] + (b + 1) * hb.w), h = (hBase - hTop) * c / mx;
     g += `<rect x="${x1 + 0.5}" y="${hBase - h}" width="${Math.max(1, x2 - x1 - 1)}" height="${h}" fill="var(--t4)"/>`;
   });
+  const curve = arr => 'M' + arr.map((v, i) => sx(xsK[i]).toFixed(1) + ' ' + (hBase - (hBase - hTop) * v / mx).toFixed(1)).join('L');
+  if (nd) g += `<path d="${curve(nd)}" fill="none" stroke="var(--text)" stroke-width="1.5" stroke-dasharray="6 4" opacity=".75"/>`;
+  g += `<path d="${curve(kd)}" fill="none" stroke="var(--text)" stroke-width="2.2"/>`;
   g += `<line x1="${ml}" x2="${W - mr}" y1="${hBase}" y2="${hBase}" stroke="var(--t3)" stroke-width="1"/>`;
   // Caja (IQR) con bigotes de Tukey
   const by = 196, fence1 = st.q1 - 1.5 * st.iqr, fence2 = st.q3 + 1.5 * st.iqr;
@@ -1207,6 +1299,10 @@ function drawEx(){
   host.setAttribute('aria-label', `Once gastos de clientes. Media ${nf(st.mean)}. Mediana ${nf(st.med)}. SD ${nf(st.sd)}. MAD escalada ${nf(st.madS)}. IQR ${nf(st.iqr)}. Asimetría ${nf(st.skew)}. Curtosis ${nf(st.kurt)}.`);
 
   $('#exGroups').innerHTML = groupsHTML(st, b0, 'Original:');
+  distChart($('#exCurve'), {data: a, st, hist: false, h: 280});
+  $('#ex-sk').textContent = nf(st.skew); $('#ex-ku').textContent = `${nf(st.kurt)} · ${kurtType(st.kurt)}`;
+  $('#exGSkew').innerHTML = gaugeHTML(st.skew, b0.skew, -3, 3, 'Cola izquierda larga', 'Cola derecha larga');
+  $('#exGKurt').innerHTML = gaugeHTML(st.kurt, b0.kurt, -2, 10, 'Platicúrtica · colas ligeras', 'Leptocúrtica · colas pesadas');
   $('#exBtn').setAttribute('aria-pressed', exOn);
   $('#exBtn').textContent = exOn ? 'Volver al gasto original (12 €)' : 'Cambiar la última espera a 45';
   $('#exState').textContent = exOn ? 'El cliente 11 gasta 45 €.' : 'Los once gastos son parecidos.';
@@ -1443,58 +1539,66 @@ const ZONE = {B: 'un dato nuevo', C: 'muchos extremos'};
 const MODALS = {
   B1: () => { const {T, rows} = LB, a = near(T, rows, 0), b = near(T, rows, 20), c = near(T, rows, -20); return {
     title: 'Cómo leer: el centro y un dato nuevo', intro: INTB, axes: AXB,
-    lines: [['', '<b>Línea negra.</b> La media.'], ['red', '<b>Línea roja.</b> La mediana.'], ['dot', `<b>Línea gris punteada.</b> El valor real del centro, ${nf(S.mu, 0)}. En la vida real no se conoce.`]],
+    lines: [['', '<b class="k-ink">Línea negra.</b> La media.'], ['red', '<b class="k-red">Línea roja.</b> La mediana.'], ['dot', `<b class="k-gray">Línea gris punteada.</b> El valor real del centro, ${nf(S.mu, 0)}. En la vida real no se conoce.`]],
     now: P(`Con el dato nuevo en el centro, la media vale ${nf(a.mean)} y la mediana ${nf(a.med)}.`) + P(`Con el dato a +20${SIGN}, la media pasa a ${nf(b.mean)} (${sgn(b.mean - a.mean)}). La mediana pasa a ${nf(b.med)} (${sgn(b.med - a.med)}).`) + P(`Con el dato a −20${SIGN}, la media pasa a ${nf(c.mean)} (${sgn(c.mean - a.mean)}). La mediana pasa a ${nf(c.med)} (${sgn(c.med - a.med)}).`),
-    steps: ['Mire la línea negra. Sube y baja con el dato nuevo, en línea recta: lo sigue allá donde vaya.', 'Mire la línea roja. Es casi plana. Tiene un pequeño escalón cerca del centro: ocurre cuando el dato nuevo cruza el centro y la mediana pasa a un dato vecino.', 'Compare las dos. La media obedece a un solo dato. La mediana casi no le hace caso.'],
+    steps: ['Mire la <b class="k-ink">línea negra</b>. Sube y baja con el dato nuevo, en línea recta: lo sigue allá donde vaya.', 'Mire la <b class="k-red">línea roja</b>. Es casi plana. Tiene un pequeño escalón cerca del centro: ocurre cuando el dato nuevo cruza el centro y la mediana pasa a un dato vecino.', 'Compare las dos. La media obedece a un solo dato. La mediana casi no le hace caso.'],
     key: 'Un solo dato puede llevar la media a cualquier valor. La mediana solo se mueve hasta el dato vecino.'}; },
   B2: () => { const {T, rows} = LB, a = near(T, rows, 0), b = near(T, rows, 20); return {
     title: 'Cómo leer: la dispersión y un dato nuevo', intro: INTB, axes: AXB,
-    lines: [['', '<b>Línea negra.</b> La SD, la dispersión clásica.'], ['red', '<b>Línea roja continua.</b> La MAD escalada.'], ['red dash', '<b>Línea roja discontinua.</b> El IQR dividido por 1,349.'], ['dot', `<b>Línea gris punteada.</b> La dispersión real, σ = ${nf(S.sigma, 0)}.`]],
+    lines: [['', '<b class="k-ink">Línea negra.</b> La SD, la dispersión clásica.'], ['red', '<b class="k-red">Línea roja continua.</b> La MAD escalada.'], ['red dash', '<b class="k-red">Línea roja discontinua.</b> El IQR dividido por 1,349.'], ['dot', `<b class="k-gray">Línea gris punteada.</b> La dispersión real, σ = ${nf(S.sigma, 0)}.`]],
     now: P(`Con el dato nuevo en el centro, la SD vale ${nf(a.sd)}, la MAD escalada ${nf(a.madS)} y el IQR ÷ 1,349 vale ${nf(a.iqrS)}.`) + P(`Con el dato a +20${SIGN}, la SD sube a ${nf(b.sd)}. La MAD escalada pasa a ${nf(b.madS)}. El IQR ÷ 1,349 pasa a ${nf(b.iqrS)}.`),
-    steps: ['Mire la línea negra. Forma una «V»: baja hasta el centro y sube a los lados.', 'Mire las líneas rojas. Son casi planas.', 'Compare. Cuanto más se abre la «V», más fácil es engañar a la SD. Las líneas rojas ignoran el dato lejano.'],
+    steps: ['Mire la <b class="k-ink">línea negra</b>. Forma una «V»: baja hasta el centro y sube a los lados.', 'Mire las <b class="k-red">líneas rojas</b>. Son casi planas.', 'Compare. Cuanto más se abre la «V», más fácil es engañar a la SD. Las <b class="k-red">líneas rojas</b> ignoran el dato lejano.'],
     key: 'La SD no tiene tope: un dato lejano la sube cuanto se quiera. La MAD y el IQR sí tienen tope.'}; },
   B3: () => { const {T, rows} = LB, a = near(T, rows, 0), b = near(T, rows, 20), c = near(T, rows, -20); return {
     title: 'Cómo leer: la asimetría y un dato nuevo', intro: INTB, axes: AXB,
-    lines: [['', '<b>Línea negra.</b> La asimetría clásica.'], ['red', '<b>Línea roja.</b> La asimetría de Bowley, una versión robusta. Va de −1 a +1.'], ['dot', '<b>Línea gris punteada.</b> El cero: forma simétrica.']],
+    lines: [['', '<b class="k-ink">Línea negra.</b> La asimetría clásica.'], ['red', '<b class="k-red">Línea roja.</b> La asimetría de Bowley, una versión robusta. Va de −1 a +1.'], ['dot', '<b class="k-gray">Línea gris punteada.</b> El cero: forma simétrica.']],
     now: P(`Con el dato nuevo en el centro, la asimetría clásica vale ${nf(a.skew)} y la de Bowley ${nf(a.bowley)}.`) + P(`Con el dato a +20${SIGN}, la clásica pasa a ${nf(b.skew)} y la de Bowley a ${nf(b.bowley)}.`) + P(`Con el dato a −20${SIGN}, la clásica pasa a ${nf(c.skew)} y la de Bowley a ${nf(c.bowley)}.`),
-    steps: ['Recuerde el signo. Un valor positivo significa cola larga a la derecha. Uno negativo, cola larga a la izquierda. Cero significa simétrica.', 'Mire la línea negra. Cambia de signo según el lado donde cae el dato nuevo. Un solo dato lejano convierte la forma en muy asimétrica.', 'Mire la línea roja. Casi no se mueve.'],
+    steps: ['Recuerde el signo. Un valor positivo significa cola larga a la derecha. Uno negativo, cola larga a la izquierda. Cero significa simétrica.', 'Mire la <b class="k-ink">línea negra</b>. Cambia de signo según el lado donde cae el dato nuevo. Un solo dato lejano convierte la forma en muy asimétrica.', 'Mire la <b class="k-red">línea roja</b>. Casi no se mueve.'],
     key: 'Un solo dato puede cambiar mucho la asimetría clásica. La de Bowley casi no cambia.'}; },
   B4: () => { const {T, rows} = LB, a = near(T, rows, 0), b = near(T, rows, 20), c = near(T, rows, -20); return {
     title: 'Cómo leer: la curtosis y un dato nuevo', intro: INTB, axes: AXB,
-    lines: [['', '<b>Línea negra.</b> La curtosis clásica.'], ['dot', '<b>Línea gris punteada.</b> El cero: colas como las de la campana normal.']],
+    lines: [['', '<b class="k-ink">Línea negra.</b> La curtosis clásica.'], ['dot', '<b class="k-gray">Línea gris punteada.</b> El cero: colas como las de la campana normal.']],
     now: P(`Con el dato nuevo en el centro, la curtosis vale ${nf(a.kurt)} (forma ${kurtType(a.kurt)}).`) + P(`Con el dato a +20${SIGN}, vale ${nf(b.kurt)} (forma ${kurtType(b.kurt)}). Con el dato a −20${SIGN}, vale ${nf(c.kurt)} (forma ${kurtType(c.kurt)}).`),
     steps: ['Recuerde el significado. Cero es una campana normal. Más de cero son colas pesadas. Menos de cero son colas ligeras.', 'Mire la línea: forma una «U». En el centro, el dato nuevo no cambia nada. A los lados, la línea sube mucho.', 'Un dato lejano, de cualquier lado, crea colas pesadas por sí solo.'],
     key: 'La curtosis es el más frágil de los siete números. Un solo dato la dispara. No la interprete sin mirar los datos.'}; },
   C1: () => { const {X, rows} = LC, r = v => near(X, rows, v), mm = crossings(X, rows, 'mean', 'med'); return {
     title: 'Cómo leer: el centro y muchos extremos', intro: INTC, axes: AXC,
-    lines: [['', '<b>Línea negra.</b> La media.'], ['red', '<b>Línea roja.</b> La mediana.'], ['dot', `<b>Línea gris punteada.</b> El valor real del centro, ${nf(S.mu, 0)}.`]],
+    lines: [['', '<b class="k-ink">Línea negra.</b> La media.'], ['red', '<b class="k-red">Línea roja.</b> La mediana.'], ['dot', `<b class="k-gray">Línea gris punteada.</b> El valor real del centro, ${nf(S.mu, 0)}.`]],
     now: P(`Sin extremos, la media vale ${nf(r(0).mean)} y la mediana ${nf(r(0).med)}.`) + P(`Con 25 % de extremos, la media sube a ${nf(r(25).mean)} y la mediana a ${nf(r(25).med)}.`) + P(`Con 50 %, la media vale ${nf(r(50).mean)} y la mediana ${nf(r(50).med)}. Con 55 %, ${nf(r(55).mean)} y ${nf(r(55).med)}.`) + P(mm.length ? `Las dos líneas se cruzan en ${mm.map(o => nf(o.x, 0) + ' %').join(' y en ')}. En el primer cruce, las dos valen cerca de ${nf(mm[0].v, 1)}.` : 'Con esta configuración, las dos líneas no se cruzan.'),
-    steps: ['Mire la línea negra, la media. Sube de forma pareja: cada extremo nuevo la arrastra un poco más.', 'Mire la línea roja, la mediana. Sube despacio al principio. Cerca de 50 % da un salto y llega a la zona de los extremos.', 'Fíjese en el cruce. Es una coincidencia: en ese punto las dos líneas pasan por el mismo valor, pero las dos están lejos del valor real.'],
+    steps: ['Mire la <b class="k-ink">línea negra</b>, la media. Sube de forma pareja: cada extremo nuevo la arrastra un poco más.', 'Mire la <b class="k-red">línea roja</b>, la mediana. Sube despacio al principio. Cerca de 50 % da un salto y llega a la zona de los extremos.', 'Fíjese en el cruce. Es una coincidencia: en ese punto las dos líneas pasan por el mismo valor, pero las dos están lejos del valor real.'],
     warn: 'Si en el laboratorio elige el lado «Ambos», los extremos se compensan. La media y la mediana quedan cerca del valor real, pero la SD sí se dispara. Que el centro no se mueva no significa que los datos estén limpios.',
     key: 'La mediana resiste hasta casi la mitad de extremos. La media no resiste ninguno.'}; },
   C2: () => { const {X, rows} = LC, r = v => near(X, rows, v), sm = crossings(X, rows, 'sd', 'madS'), ij = firstJump(X, rows, 'iqrS'); return {
     title: 'Cómo leer: la dispersión y muchos extremos', intro: INTC, axes: AXC,
-    lines: [['', '<b>Línea negra.</b> La SD.'], ['red', '<b>Línea roja continua.</b> La MAD escalada.'], ['red dash', '<b>Línea roja discontinua.</b> El IQR dividido por 1,349.'], ['dot', `<b>Línea gris punteada.</b> La dispersión real, σ = ${nf(S.sigma, 0)}.`]],
+    lines: [['', '<b class="k-ink">Línea negra.</b> La SD.'], ['red', '<b class="k-red">Línea roja continua.</b> La MAD escalada.'], ['red dash', '<b class="k-red">Línea roja discontinua.</b> El IQR dividido por 1,349.'], ['dot', `<b class="k-gray">Línea gris punteada.</b> La dispersión real, σ = ${nf(S.sigma, 0)}.`]],
     now: [0, 25, 50, 55].map(v => P(`${v === 0 ? 'Sin extremos' : 'Con ' + v + ' % de extremos'}: SD ${nf(r(v).sd)}, MAD escalada ${nf(r(v).madS)}, IQR ÷ 1,349 ${nf(r(v).iqrS)}.`)).join('') + P((ij ? `El IQR salta en ${nf(ij, 0)} %. ` : 'El IQR no llega a saltar. ') + (sm.length ? `La MAD escalada cruza a la SD en ${sm.map(o => nf(o.x, 0) + ' %').join(' y en ')}.` : 'La MAD escalada no llega a cruzar a la SD.')),
-    steps: ['Mire la línea negra, la SD. Sube de golpe con los primeros extremos y después se aplana.', 'Mire la línea roja discontinua, el IQR. Casi no se mueve y salta cerca de 25 %.', 'Mire la línea roja continua, la MAD escalada. Sube despacio, salta cerca de 50 % y después cae.', 'Fíjese en el cruce de la SD y la MAD escalada. Es casual: en ese punto las dos están lejos del valor real. La explicación completa está debajo de los gráficos.'],
+    steps: ['Mire la <b class="k-ink">línea negra</b>, la SD. Sube de golpe con los primeros extremos y después se aplana.', 'Mire la <b class="k-red">línea roja discontinua</b>, el IQR. Casi no se mueve y salta cerca de 25 %.', 'Mire la <b class="k-red">línea roja continua</b>, la MAD escalada. Sube despacio, salta cerca de 50 % y después cae.', 'Fíjese en el cruce de la SD y la MAD escalada. Es casual: en ese punto las dos están lejos del valor real. La explicación completa está debajo de los gráficos.'],
     key: 'Cada número tiene su límite: el IQR resiste hasta 25 %, la MAD hasta 50 %, y la SD no resiste.'}; },
   C3: () => { const {X, rows} = LC, r = v => near(X, rows, v); return {
     title: 'Cómo leer: la asimetría y muchos extremos', intro: INTC, axes: AXC,
-    lines: [['', '<b>Línea negra.</b> La asimetría clásica.'], ['red', '<b>Línea roja.</b> La asimetría de Bowley, una versión robusta.'], ['dot', '<b>Línea gris punteada.</b> El cero: forma simétrica.']],
+    lines: [['', '<b class="k-ink">Línea negra.</b> La asimetría clásica.'], ['red', '<b class="k-red">Línea roja.</b> La asimetría de Bowley, una versión robusta.'], ['dot', '<b class="k-gray">Línea gris punteada.</b> El cero: forma simétrica.']],
     now: [0, 10, 25, 50, 55].map(v => P(`${v === 0 ? 'Sin extremos' : 'Con ' + v + ' % de extremos'}: asimetría clásica ${nf(r(v).skew)}, Bowley ${nf(r(v).bowley)}.`)).join(''),
     steps: ['Recuerde el signo. Positivo es cola larga a la derecha. Negativo es cola larga a la izquierda.', 'Con pocos extremos, la asimetría clásica sube: aparece una cola larga hacia el lado de los extremos.', 'Después baja. Cerca de la mitad, la muestra forma dos grupos de tamaño parecido y ninguna cola domina.', 'Con más de 50 %, el signo puede cambiar. Los extremos son ahora la mayoría, y la cola larga es la de los datos limpios.'],
     key: 'La asimetría clásica cambia de signo según la proporción de extremos. Léala con cuidado. La de Bowley se mueve mucho menos.'}; },
+  K4: () => { const r = kzRows(); return {
+    title: 'Cómo leer: por qué la curtosis mira las colas',
+    intro: P('El gráfico toma cuatro formas de datos. Para cada una, mide la distancia de cada dato a la media, en SD. Después calcula el peso medio de esas distancias elevadas a la cuarta potencia. La curtosis es ese peso medio menos 3.'),
+    axes: P('<b>Eje horizontal.</b> La distancia de cada dato a la media, en SD. Un dato a 1 SD queda en el 1. Un dato a 3 SD queda en el 3.') + P('<b>Eje vertical.</b> No tiene significado: los puntos se reparten hacia arriba y hacia abajo solo para que no se tapen.'),
+    lines: [['pt', '<b>Cada punto.</b> Un dato.'], ['band red', '<b>Zona rosa.</b> Las colas: más de 2 SD. Allí cada dato pesa 16 o más.']],
+    now: r.map(x => P(`<b>${x.nm}.</b> Peso medio ${nf(x.e4)}. Curtosis ${sgn(x.k)}. El dato más lejano está a ${nf(x.zmax)} SD.`)).join(''),
+    steps: ['Mire la primera fila, la campana normal. Hay puntos a más de 2 y 3 SD. Pesan mucho, y por eso el peso medio vale cerca de 3.', 'Mire la segunda fila, la meseta. Ningún punto pasa de 1,7 SD. El peso medio baja a 1,8.', 'Mire la tercera fila, los dos grupos juntos. Todos los puntos quedan cerca de 1 SD. Pesan cerca de 1, y la curtosis se acerca a −2.', 'Mire la cuarta fila, un solo grupo. Se mide desde su propia media y vuelve a parecer una campana, con curtosis cercana a 0.'],
+    key: 'La curtosis no mide la cima. Mide si hay datos mucho más lejanos que los demás. Sin datos muy lejanos, la forma es platicúrtica, tenga una meseta o dos grupos.'}; },
   K3: () => { const g = x => KMIX.big[x - 1][1], h = x => KMIX.sml[x - 1][1]; return {
     title: 'Cómo leer: la curtosis según el porcentaje de extremos',
     intro: P('Imagine una muestra formada por dos grupos: los datos limpios y un grupo de extremos a una distancia d. El gráfico calcula la curtosis que tendría esa muestra, desde 1 % hasta 99 % de extremos. Es un cálculo teórico, sin azar.'),
     axes: P('<b>Eje horizontal.</b> El porcentaje de datos que son extremos. Las marcas señalan 21 %, 50 % y 79 %.') + P('<b>Eje vertical.</b> La curtosis. Cero es una campana normal. Más de cero son colas pesadas. Menos de cero son colas ligeras. El mínimo posible es −2.'),
-    lines: [['', '<b>Línea continua.</b> Con d = 30 σ: grupos muy separados. Es el trazo límite.'], ['dash', '<b>Línea discontinua.</b> Con d = 2 σ: grupos casi mezclados.'], ['dot', '<b>Línea gris punteada.</b> El cero y el mínimo posible.']],
+    lines: [['', '<b class="k-ink">Línea continua.</b> Con d = 30 σ: grupos muy separados. Es el trazo límite.'], ['dash', '<b class="k-ink">Línea discontinua.</b> Con d = 2 σ: grupos casi mezclados.'], ['dot', '<b class="k-gray">Línea gris punteada.</b> El cero y el mínimo posible.']],
     now: P(`Con 2 % de extremos, la curtosis vale ${nf(g(2))} si d = 30 σ, y ${nf(h(2))} si d = 2 σ.`) + P(`Con 21 %: ${nf(g(21))} y ${nf(h(21))}.`) + P(`Con 50 %: ${nf(g(50))} y ${nf(h(50))}.`) + P(`Con 79 %: ${nf(g(79))} y ${nf(h(79))}.`),
     steps: ['Mire la línea continua de izquierda a derecha. Empieza muy alta: pocos datos muy lejanos dominan la dispersión.', 'Baja y cruza el 0 cerca de 21 %. Los extremos ya no son una rareza.', 'Llega a su mínimo, −2, en 50 %. Hay dos grupos iguales y todos los datos están a la misma distancia del centro.', 'Sube otra vez desde 79 %: ahora los datos limpios son la rareza.', 'Compare con la línea discontinua. Con d pequeña, la curva es mucho más plana: los dos grupos se mezclan y el efecto se atenúa.'],
     key: 'La curtosis no cuenta cuántos extremos hay. Mide si la dispersión la aportan pocos datos muy lejanos (positiva) o todos por igual (negativa).'}; },
   C4: () => { const {X, rows} = LC, r = v => near(X, rows, v); return {
     title: 'Cómo leer: la curtosis y muchos extremos', intro: INTC, axes: AXC,
-    lines: [['', '<b>Línea negra.</b> La curtosis clásica.'], ['dot', '<b>Línea gris punteada.</b> El cero: colas como las de la campana normal.']],
+    lines: [['', '<b class="k-ink">Línea negra.</b> La curtosis clásica.'], ['dot', '<b class="k-gray">Línea gris punteada.</b> El cero: colas como las de la campana normal.']],
     now: [0, 5, 10, 25, 50].map(v => P(`${v === 0 ? 'Sin extremos' : 'Con ' + v + ' % de extremos'}: curtosis ${nf(r(v).kurt)} (forma ${kurtType(r(v).kurt)}).`)).join(''),
     steps: ['Recuerde el significado. Más de cero son colas pesadas. Menos de cero son colas ligeras.', 'Con pocos extremos, la línea sube mucho: unos pocos datos muy lejanos aportan casi toda la dispersión (forma leptocúrtica).', 'Con más extremos, la línea baja. Los extremos dejan de ser una rareza. Con una d grande, la curtosis cruza el 0 cerca de 21 %.', 'Cerca de 50 %, hay dos grupos del mismo tamaño y todos los datos están a la misma distancia del centro. La curtosis llega a su mínimo posible, −2 (forma platicúrtica).'],
     warn: 'La distancia d decide la fuerza del efecto. Con una d grande, la línea sigue el trazo límite. Con una d pequeña, los dos grupos se mezclan y la línea queda más plana. La sección 04 lo explica con un gráfico teórico.',
@@ -1526,6 +1630,389 @@ $('#dlgX').addEventListener('click', () => dlg.close());
 dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
 dlg.addEventListener('close', () => { document.body.style.overflow = ''; if (opener) opener.focus(); });
 
+/* ───────── Utilidades de curvas, Q–Q y cajas ───────── */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+function qnorm(p){
+  const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00],
+    b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01],
+    c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00],
+    d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00], pl = 0.02425;
+  let q, r;
+  if (p < pl){ q = Math.sqrt(-2 * Math.log(p)); return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  if (p > 1 - pl){ q = Math.sqrt(-2 * Math.log(1 - p)); return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  q = p - 0.5; r = q * q;
+  return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+}
+function silverman(sd, iqr, n){ const s = Math.min(sd, iqr / KI), sc = s > 0 ? s : sd, h = 0.9 * sc * Math.pow(n, -0.2); return h > 0 ? h : 1; }
+function kdeCurve(vals, xs, h){
+  const n = vals.length, c = 1 / (n * h * Math.sqrt(2 * Math.PI));
+  return xs.map(x => { let s = 0; for (let i = 0; i < n; i++){ const z = (x - vals[i]) / h; if (z > -8 && z < 8) s += Math.exp(-0.5 * z * z); } return c * s; });
+}
+const normPdf = (x, m, s) => Math.exp(-0.5 * Math.pow((x - m) / s, 2)) / (s * Math.sqrt(2 * Math.PI));
+const jit = i => (i * 0.6180339887498949 + 0.17) % 1;
+const svgWrap = (W, H, inner) => `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${inner}</svg>`;
+
+/* Curva de la forma: histograma opcional, curva de los datos y campana normal de referencia */
+function distChart(host, o){
+  const d = o.data, st = o.st, n = d.length, W = host.clientWidth || 320, H = o.h || 290, ml = 14, mr = 14, top = 38, axY = H - 40;
+  const h = silverman(st.sd, st.iqr, n);
+  let lo, hi;
+  if (o.dom){ lo = o.dom[0]; hi = o.dom[1]; }
+  else { lo = Math.min(st.min - 2 * h, st.sd > 0 ? st.mean - 3.5 * st.sd : st.min - 1); hi = Math.max(st.max + 2 * h, st.sd > 0 ? st.mean + 3.5 * st.sd : st.max + 1); }
+  if (!(hi > lo)){ lo -= 1; hi += 1; }
+  if (!o.dom && st.min >= 0) lo = Math.max(lo, -0.03 * (hi - lo));
+  const sx = v => ml + (v - lo) / (hi - lo) * (W - ml - mr);
+  const ticks = niceTicks(lo, hi, W < 480 ? 4 : 8), dd = decs(ticks);
+  let g = '';
+  ticks.forEach(v => { g += `<line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="${top - 8}" y2="${axY}"/><text class="tk" x="${sx(v)}" y="${axY + 17}" text-anchor="middle">${nf(v, dd)}</text>`; });
+  g += `<line class="axis" x1="${ml}" x2="${W - mr}" y1="${axY}" y2="${axY}"/>`;
+  let body = '';
+  if (o.discrete){
+    const m = new Map(); for (const v of d) m.set(v, (m.get(v) || 0) + 1);
+    const keys = [...m.keys()].sort((a, b) => a - b), ymax = Math.max(...m.values()) / n;
+    const step = keys.length > 1 ? Math.min(...keys.slice(1).map((k, i) => k - keys[i])) : 1;
+    const bw = Math.max(6, Math.min(56, (sx(lo + step) - sx(lo)) * 0.6)), sy = p => axY - p / (ymax * 1.15) * (axY - top);
+    keys.forEach(k => { const p = m.get(k) / n, y = sy(p); body += `<rect x="${sx(k) - bw / 2}" y="${y}" width="${bw}" height="${axY - y}" fill="var(--t4)" stroke="var(--t3)"/><text class="tk" x="${sx(k)}" y="${y - 5}" text-anchor="middle" style="fill:var(--text)">${nf(p * 100, 0)} %</text>`; });
+  } else {
+    const K2 = 180, xs = Array.from({length: K2 + 1}, (_, i) => lo + (hi - lo) * i / K2), sub = n > 3000 ? Array.from({length: 3000}, (_, i) => d[Math.floor(i * n / 3000)]) : d;
+    const kd = kdeCurve(sub, xs, h), nd = st.sd > 0 ? xs.map(x => normPdf(x, st.mean, st.sd)) : null;
+    let dens = null, bw = 0;
+    if (o.hist){
+      const nb = clamp(Math.round(Math.sqrt(n)), 8, 40), c = new Array(nb).fill(0); bw = (hi - lo) / nb;
+      for (const v of d) if (v >= lo && v <= hi) c[Math.min(nb - 1, Math.floor((v - lo) / bw))]++;
+      dens = c.map(x => x / (n * bw));
+    }
+    const ymax = Math.max(...kd, ...(nd || [0]), ...(dens || [0])) * 1.08, sy = v => axY - v / ymax * (axY - top);
+    if (dens) dens.forEach((v, b) => { if (v <= 0) return; const x1 = sx(lo + b * bw), x2 = sx(lo + (b + 1) * bw); body += `<rect x="${x1 + 0.5}" y="${sy(v)}" width="${Math.max(1, x2 - x1 - 1)}" height="${axY - sy(v)}" fill="var(--t4)"/>`; });
+    const path = arr => 'M' + arr.map((v, i) => sx(xs[i]).toFixed(1) + ' ' + sy(v).toFixed(1)).join('L');
+    if (nd) body += `<path d="${path(nd)}" fill="none" stroke="var(--text)" stroke-width="1.6" stroke-dasharray="6 4" opacity=".8"/>`;
+    body += `<path d="${path(kd)}" fill="none" stroke="var(--text)" stroke-width="2.4"/>`;
+  }
+  const xm = sx(st.mean), xd = sx(st.med), right = st.med >= st.mean;
+  body += `<line x1="${xm}" x2="${xm}" y1="${top - 8}" y2="${axY}" stroke="var(--text)" stroke-width="1.5"/><line x1="${xd}" x2="${xd}" y1="${top - 8}" y2="${axY}" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+  body += `<text class="txt" x="${xm + (right ? -5 : 5)}" y="16" text-anchor="${right ? 'end' : 'start'}">Media ${nf(st.mean, o.dg ?? 2)}</text><text class="txt red" x="${xd + (right ? 5 : -5)}" y="16" text-anchor="${right ? 'start' : 'end'}">Mediana ${nf(st.med, o.dg ?? 2)}</text>`;
+  if (!o.discrete){
+    const stride = Math.max(1, Math.floor(n / 400));
+    for (let i = 0; i < n; i += stride) body += `<circle cx="${sx(d[i])}" cy="${axY - 6 - jit(i) * 14}" r="2.8" fill="var(--t2)" opacity=".6"/>`;
+  }
+  host.innerHTML = svgWrap(W, H, g + body);
+}
+
+/* Fila de caja con bigotes de Tukey, extremos, media y puntos */
+function boxRow(an, sx, y, strip){
+  const st = an.st, s = an.s, n = an.n;
+  let wl = Infinity, wh = -Infinity; for (let i = 0; i < n; i++){ const v = s[i]; if (v >= an.f1 && v <= an.f2){ if (v < wl) wl = v; if (v > wh) wh = v; } }
+  if (!Number.isFinite(wl)){ wl = st.q1; wh = st.q3; }
+  let g = `<path d="M${sx(wl)} ${y}H${sx(st.q1)}M${sx(st.q3)} ${y}H${sx(wh)}M${sx(wl)} ${y - 6}V${y + 6}M${sx(wh)} ${y - 6}V${y + 6}" stroke="var(--accent)" stroke-width="2" fill="none"/>`;
+  g += `<rect x="${sx(st.q1)}" y="${y - 12}" width="${Math.max(2, sx(st.q3) - sx(st.q1))}" height="24" fill="var(--a10)" stroke="var(--accent)" stroke-width="2"/><line x1="${sx(st.med)}" x2="${sx(st.med)}" y1="${y - 12}" y2="${y + 12}" stroke="var(--accent)" stroke-width="3"/>`;
+  let shown = 0; for (let i = 0; i < n && shown < 300; i++){ const v = s[i]; if (v < an.f1 || v > an.f2){ g += `<circle cx="${sx(v)}" cy="${y}" r="3.2" fill="none" stroke="var(--accent)" stroke-width="1.5"/>`; shown++; } }
+  g += `<path d="M${sx(st.mean)} ${y - 9}l6 9l-6 9l-6 -9z" fill="var(--text)"/>`;
+  if (strip){ const stride = Math.max(1, Math.floor(n / 300)); for (let i = 0; i < n; i += stride) g += `<circle cx="${sx(s[(i * 7919) % n])}" cy="${y + 22 + jit(i) * 20}" r="2.2" fill="var(--t2)" opacity=".5"/>`; }
+  return g;
+}
+function csvDomain(an, zoom){
+  const st = an.st; let lo = st.min, hi = st.max;
+  if (zoom && st.iqr > 0){ lo = Math.max(lo, st.q1 - 3 * st.iqr); hi = Math.min(hi, st.q3 + 3 * st.iqr); }
+  const p = (hi - lo) * 0.04 || 1; return [lo - p, hi + p];
+}
+function boxChart(host, an, zoom){
+  const [lo, hi] = csvDomain(an, zoom), W = host.clientWidth || 320, H = 170, ml = 14, mr = 14, axY = H - 28, sx = v => ml + (clamp(v, lo, hi) - lo) / (hi - lo) * (W - ml - mr);
+  const ticks = niceTicks(lo, hi, W < 480 ? 4 : 8), dd = decs(ticks); let g = '';
+  ticks.forEach(v => { g += `<line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="8" y2="${axY}"/><text class="tk" x="${sx(v)}" y="${axY + 17}" text-anchor="middle">${nf(v, dd)}</text>`; });
+  g += `<line class="axis" x1="${ml}" x2="${W - mr}" y1="${axY}" y2="${axY}"/>` + boxRow(an, sx, 52, true);
+  host.innerHTML = svgWrap(W, H, g);
+}
+function groupChart(host, gs, zoomAll){
+  let lo = Infinity, hi = -Infinity; gs.forEach(x => { lo = Math.min(lo, x.an.st.min); hi = Math.max(hi, x.an.st.max); });
+  if (zoomAll){ const q1 = Math.min(...gs.map(x => x.an.st.q1)), q3 = Math.max(...gs.map(x => x.an.st.q3)), r = q3 - q1; if (r > 0){ lo = Math.max(lo, q1 - 3 * r); hi = Math.min(hi, q3 + 3 * r); } }
+  const p = (hi - lo) * 0.04 || 1; lo -= p; hi += p;
+  const W = host.clientWidth || 320, rowH = 86, top = 6, H = top + gs.length * rowH + 34, ml = 14, mr = 14, axY = H - 28, sx = v => ml + (clamp(v, lo, hi) - lo) / (hi - lo) * (W - ml - mr);
+  const ticks = niceTicks(lo, hi, W < 480 ? 4 : 8), dd = decs(ticks); let g = '';
+  ticks.forEach(v => { g += `<line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="${top}" y2="${axY}"/><text class="tk" x="${sx(v)}" y="${axY + 17}" text-anchor="middle">${nf(v, dd)}</text>`; });
+  g += `<line class="axis" x1="${ml}" x2="${W - mr}" y1="${axY}" y2="${axY}"/>`;
+  gs.forEach((x, i) => { const y = top + i * rowH + 36; g += `<text class="txt" x="${ml}" y="${top + i * rowH + 12}" style="font-weight:500">${esc(x.name.length > 40 ? x.name.slice(0, 38) + '…' : x.name)} · n = ${nf(x.an.n, 0)}</text>` + boxRow(x.an, sx, y, true); });
+  host.innerHTML = svgWrap(W, H, g);
+}
+function qqChart(host, an){
+  const s = an.s, n = an.n, st = an.st, W = host.clientWidth || 320, H = 320, ml = 52, mr = 14, mt = 14, mb = 40, m = Math.min(n, 200);
+  const pts = Array.from({length: m}, (_, k) => { const p = (k + 0.5) / m; return [qnorm(p), quant(s, p)]; });
+  let ymin = Math.min(...pts.map(q => q[1])), ymax = Math.max(...pts.map(q => q[1])); const yp = (ymax - ymin) * 0.06 || 1; ymin -= yp; ymax += yp;
+  const sx = v => ml + (v + 3.4) / 6.8 * (W - ml - mr), sy = v => H - mb - (v - ymin) / (ymax - ymin) * (H - mt - mb);
+  const yt = niceTicks(ymin, ymax, 5), yd = decs(yt); let g = '';
+  yt.forEach(v => { g += `<line class="gl" x1="${ml}" x2="${W - mr}" y1="${sy(v)}" y2="${sy(v)}"/><text class="tk" x="${ml - 8}" y="${sy(v) + 4}" text-anchor="end">${nf(v, yd)}</text>`; });
+  [-3, -2, -1, 0, 1, 2, 3].forEach(v => { g += `<line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="${mt}" y2="${H - mb}" opacity=".5"/><text class="tk" x="${sx(v)}" y="${H - mb + 17}" text-anchor="middle">${v}</text>`; });
+  g += `<line class="axis" x1="${ml}" x2="${W - mr}" y1="${H - mb}" y2="${H - mb}"/><text class="ax-lab" x="${W - mr}" y="${H - 4}" text-anchor="end">Posición esperada en una campana normal, en SD</text><text class="ax-lab" x="${ml}" y="10">Valor observado</text>`;
+  const z1 = qnorm(0.25), z3 = qnorm(0.75);
+  if (st.iqr > 0){ const sl = (st.q3 - st.q1) / (z3 - z1), ic = st.q1 - sl * z1; g += `<path d="M${sx(-3.4)} ${sy(ic + sl * -3.4)}L${sx(3.4)} ${sy(ic + sl * 3.4)}" stroke="var(--accent)" stroke-width="2" fill="none"/>`; }
+  pts.forEach(q => { g += `<circle cx="${sx(q[0])}" cy="${sy(q[1])}" r="3" fill="var(--text)" opacity=".7"/>`; });
+  host.innerHTML = svgWrap(W, H, g);
+}
+
+/* ───────── Figura 2d: por qué una meseta y dos grupos son platicúrticos ───────── */
+function kzRows(){
+  const n = 160, f = g => Array.from({length: n}, (_, i) => g((i + 0.5) / n)), two = [];
+  for (let i = 0; i < n / 2; i++){ const z = qnorm((i + 0.5) / (n / 2)); two.push(-1.5 + 0.5 * z, 1.5 + 0.5 * z); }
+  return [['Campana normal', f(qnorm)], ['Meseta (forma uniforme)', f(p => (2 * p - 1) * Math.sqrt(3))], ['Dos grupos separados, juntos', two], ['Un solo grupo, aparte', f(p => 1.5 + 0.5 * qnorm(p))]].map(([nm, arr]) => {
+    const m = arr.reduce((s, x) => s + x, 0) / arr.length, sd = Math.sqrt(arr.reduce((s, x) => s + (x - m) * (x - m), 0) / arr.length);
+    const z = arr.map(x => Math.abs((x - m) / sd)), e4 = z.reduce((s, x) => s + Math.pow(x, 4), 0) / z.length;
+    return {nm, z, e4, k: e4 - 3, zmax: Math.max(...z)};
+  });
+}
+function drawKZ(){
+  const host = $('#chK4'), rows = kzRows(), W = host.clientWidth || 320, rowH = 88, top = 28, H = top + rows.length * rowH + 40, ml = 14, mr = 14, X1 = 3.6;
+  const sx = v => ml + v / X1 * (W - ml - mr), axY = top + rows.length * rowH;
+  let g = `<rect x="${sx(2)}" y="${top - 8}" width="${sx(X1) - sx(2)}" height="${rows.length * rowH + 8}" fill="var(--a10)"/><text class="mk-t" x="${sx(2) + 6}" y="${top + 4}">zona de colas: cada dato pesa 16 o más</text>`;
+  [0, 1, 2, 3].forEach(v => { g += `<line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="${top - 8}" y2="${axY}"/><text class="tk" x="${sx(v)}" y="${axY + 17}" text-anchor="middle">${v} SD</text>`; });
+  g += `<line class="axis" x1="${ml}" x2="${W - mr}" y1="${axY}" y2="${axY}"/><text class="ax-lab" x="${W - mr}" y="${H - 4}" text-anchor="end">Distancia de cada dato a la media, en SD</text>`;
+  rows.forEach((r, i) => {
+    const y0 = top + i * rowH + 10;
+    g += `<text class="txt" x="${ml}" y="${y0 + 8}" style="font-weight:500">${r.nm}</text><text class="txt muted" x="${ml}" y="${y0 + 23}">Promedio de z⁴ = ${nf(r.e4)} · curtosis = ${sgn(r.k)}</text>`;
+    r.z.forEach((z, j) => { g += `<circle cx="${sx(z)}" cy="${y0 + 46 + (jit(j) - 0.5) * 28}" r="2.6" fill="var(--text)" opacity=".5"/>`; });
+  });
+  host.innerHTML = svgWrap(W, H, g);
+  host.setAttribute('aria-label', rows.map(r => `${r.nm}: promedio de z a la cuarta ${nf(r.e4)}, curtosis ${nf(r.k)}`).join('. '));
+}
+
+/* ───────── Análisis de un CSV propio ───────── */
+const CSV = {name: '', cols: [], body: 0, delim: ',', sel: -1, grp: -1, zoom: false, token: 0, an: null};
+const MISSING = new Set(['', 'na', 'n/a', 'nan', 'null', 'none', '-', '.', '#n/a', 's/d', 'nd']);
+function parseNum(raw){
+  let s = String(raw).trim(); if (!s) return NaN;
+  s = s.replace(/[ \s€$£%]/g, '').replace('−', '-');
+  if (!/^[+-]?[\d.,]+(e[+-]?\d+)?$/i.test(s)) return NaN;
+  const dot = s.includes('.'), com = s.includes(',');
+  if (dot && com){ s = s.lastIndexOf(',') > s.lastIndexOf('.') ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, ''); }
+  else if (com){ s = s.split(',').length > 2 ? s.replace(/,/g, '') : s.replace(',', '.'); }
+  else if (dot && s.split('.').length > 2){ s = s.replace(/\./g, ''); }
+  const v = Number(s); return Number.isFinite(v) ? v : NaN;
+}
+function detectDelim(text){
+  const first = text.split(/\r?\n/).find(l => l.trim()) || ''; let best = ',', bc = -1;
+  for (const d of [';', '\t', ',', '|']){ let c = 0, q = false; for (const ch of first){ if (ch === '"') q = !q; else if (!q && ch === d) c++; } if (c > bc){ bc = c; best = d; } }
+  return best;
+}
+function parseRows(text, delim){
+  const rows = []; let row = [], cur = '', q = false, i = 0; const N = text.length;
+  while (i < N){
+    const ch = text[i];
+    if (q){ if (ch === '"'){ if (text[i + 1] === '"'){ cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"' && cur === '') q = true;
+    else if (ch === delim){ row.push(cur); cur = ''; }
+    else if (ch === '\n' || ch === '\r'){ if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.length > 1 || row[0].trim() !== '') rows.push(row); row = []; if (rows.length > 200000) break; }
+    else cur += ch;
+    i++;
+  }
+  if (cur !== '' || row.length){ row.push(cur); if (row.length > 1 || row[0].trim() !== '') rows.push(row); }
+  return rows;
+}
+function buildModel(text, name){
+  const delim = detectDelim(text), rows = parseRows(text, delim);
+  if (rows.length < 2) throw new Error('El archivo necesita una fila de títulos y al menos una fila de datos.');
+  const width = Math.max(...rows.slice(0, 200).map(r => r.length));
+  const isNumOrMissing = c => MISSING.has(c.trim().toLowerCase()) || Number.isFinite(parseNum(c));
+  const hasHeader = !rows[0].every(isNumOrMissing);
+  const used = new Set(), headers = Array.from({length: width}, (_, j) => { let h = hasHeader ? String(rows[0][j] ?? '').trim() : ''; if (!h) h = 'columna ' + (j + 1); let u = h, k = 2; while (used.has(u)) u = h + ' (' + (k++) + ')'; used.add(u); return u; });
+  const body = hasHeader ? rows.slice(1) : rows, cols = [];
+  for (let j = 0; j < width; j++){
+    const strs = body.map(r => String(r[j] ?? '').trim()), vals = [], uniq = new Set(); let nonMissing = 0;
+    for (const s of strs){ if (MISSING.has(s.toLowerCase())) continue; nonMissing++; if (uniq.size <= 5000) uniq.add(s); const v = parseNum(s); if (Number.isFinite(v)) vals.push(v); }
+    const num = nonMissing >= 3 && vals.length / nonMissing >= 0.9;
+    cols.push({name: headers[j], strs, nonMissing, uniq: uniq.size, num, vals: num ? vals : [], nBad: num ? nonMissing - vals.length : 0, idLike: num && uniq.size === nonMissing && nonMissing > 5 && vals.every(Number.isInteger)});
+  }
+  return {name, delim, body: body.length, cols, hasHeader};
+}
+async function csvRead(file){
+  const buf = await file.arrayBuffer(); let text = new TextDecoder('utf-8').decode(buf);
+  if (text.includes('�')) text = new TextDecoder('windows-1252').decode(buf);
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  return text;
+}
+function sampleCSV(){
+  const r = rng(2026), u = () => r(), nz = () => { let a = 0; while (!a) a = u(); return Math.sqrt(-2 * Math.log(a)) * Math.cos(2 * Math.PI * u()); };
+  const seg = [['Ocasional', 0.5, 3.1, 1.5, 10, [0.30, 0.10, 0.10, 0.15, 0.35]], ['Habitual', 0.35, 3.6, 4, 14, [0.10, 0.08, 0.12, 0.30, 0.40]], ['Fiel', 0.15, 4.1, 9, 18, [0.03, 0.04, 0.08, 0.25, 0.60]]];
+  const pois = l => { const L = Math.exp(-l); let k = 0, p = 1; do { k++; p *= u(); } while (p > L); return k - 1; };
+  const comma = (v, d) => v.toFixed(d).replace('.', ',');
+  const lines = ['cliente;segmento;gasto_eur;visitas_mes;minutos_en_tienda;satisfaccion'];
+  for (let i = 1; i <= 240; i++){
+    let x = u(), s = seg[x < 0.5 ? 0 : x < 0.85 ? 1 : 2], g = Math.exp(s[2] + 0.45 * nz());
+    if (i % 53 === 7 || i % 97 === 11) g = 350 + u() * 450;
+    const mins = 6 + (-Math.log(Math.max(u(), 1e-9))) * s[4], sp = u(); let c = 0, sat = 5; for (let k = 0; k < 5; k++){ c += s[5][k]; if (sp <= c){ sat = k + 1; break; } }
+    lines.push([i, s[0], i % 40 === 3 ? '' : comma(g, 2), pois(s[3]), i % 47 === 5 ? 'NA' : comma(mins, 1), sat].join(';'));
+  }
+  return lines.join('\n');
+}
+
+/* Análisis de una variable */
+function analyzeVar(vals){
+  const a = Float64Array.from(vals), s = Float64Array.from(a).sort(), n = a.length, st = stats(a);
+  const f1 = st.q1 - 1.5 * st.iqr, f2 = st.q3 + 1.5 * st.iqr, uniq = new Set(a).size, allInt = a.every(Number.isInteger);
+  const lows = s.filter(v => v < f1), highs = s.filter(v => v > f2), inl = s.filter(v => v >= f1 && v <= f2);
+  let c2 = 0, c3 = 0; if (st.sd > 0) for (const v of a){ const z = Math.abs(v - st.mean) / st.sd; if (z > 2) c2++; if (z > 3) c3++; }
+  const jb = n / 6 * (Math.pow(st.skew || 0, 2) + Math.pow(st.kurt || 0, 2) / 4);
+  const sc = Math.max(Math.abs(st.mean), st.sd), dg = sc >= 1000 ? 0 : sc >= 100 ? 1 : 2;
+  return {a, s, n, st, f1, f2, uniq, allInt, discrete: allInt && uniq <= 10 && uniq >= 2, lows, highs, stIn: (lows.length + highs.length) > 0 && inl.length >= 3 ? stats(inl) : null,
+    frac2: c2 / n, frac3: c3 / n, jb, pJB: Math.exp(-jb / 2), perc: [1, 5, 10, 25, 50, 75, 90, 95, 99].map(p => quant(s, p / 100)), dg,
+    cv: st.mean !== 0 ? st.sd / Math.abs(st.mean) : NaN};
+}
+const csvKinds = (st, dg) => [['Media', st.mean, 'ink', 'El promedio'], ['Mediana', st.med, 'red', 'El dato del medio'], ['SD', st.sd, 'ink', 'Dispersión clásica'], ['MAD escalada', st.madS, 'red', 'Dispersión robusta'], ['IQR', st.iqr, 'red', 'Anchura de la mitad central'], ['Asimetría', st.skew, 'ink', 'Hacia dónde se alarga la cola'], ['Curtosis', st.kurt, 'ink', 'Peso de las colas · ' + kurtType(st.kurt)]];
+function csvCards(st, dg){
+  const k = csvKinds(st, dg), card = (i, d) => `<div class="card ${k[i][2]}"><div class="lbl"><span class="mark"></span>${k[i][0]}</div><div class="def">${k[i][3]}</div><div class="v">${nf(k[i][1], d)}</div></div>`;
+  return `<div class="groups"><div class="grp"><span class="cap">Centro</span><div class="cards">${card(0, dg)}${card(1, dg)}</div></div><div class="grp g3"><span class="cap">Dispersión</span><div class="cards">${card(2, dg)}${card(3, dg)}${card(4, dg)}</div></div><div class="grp"><span class="cap">Forma</span><div class="cards">${card(5, 2)}${card(6, 2)}</div></div></div>`;
+}
+const csvSec = (t, h) => `<section class="mdl-s"><span class="lbl">${t}</span>${h}</section>`;
+function csvNarrative(an, name, total){
+  const st = an.st, n = an.n, nm = `«${esc(name)}»`, d = an.dg, miss = total - n, outs = an.lows.length + an.highs.length, out = [];
+  out.push(`<p><b>Los datos.</b> La variable ${nm} tiene ${nf(n, 0)} valores válidos de ${nf(total, 0)} filas.${miss > 0 ? ` Faltan o no son numéricos ${nf(miss, 0)} valores. El análisis los ignora.` : ''}${n < 30 ? ' Con tan pocos datos, todas las medidas son poco fiables.' : n < 100 ? ' Con menos de 100 datos, la asimetría y la curtosis cambian mucho de una muestra a otra.' : ''}</p>`);
+  if (an.discrete) out.push(`<p><b>Tipo de variable.</b> Tiene solo ${an.uniq} valores distintos, todos enteros. Parece una escala (por ejemplo, de 1 a 5) o un recuento. La media y la SD sirven como resumen aproximado. La tabla de frecuencias cuenta mejor la historia.</p>`);
+  const gap = st.mean - st.med, rel = st.sd > 0 ? gap / st.sd : 0;
+  out.push(`<p><b>Centro.</b> La media es ${nf(st.mean, d)} y la mediana ${nf(st.med, d)}. ${Math.abs(rel) < 0.1 ? 'Casi coinciden: los datos se reparten de forma bastante pareja a los dos lados.' : rel > 0 ? `La media queda ${nf(Math.abs(gap), d)} por encima de la mediana (${nf(Math.abs(rel) * 100, 0)} % de una SD). Es la señal típica de una cola larga a la derecha o de valores extremos altos.` : `La media queda ${nf(Math.abs(gap), d)} por debajo de la mediana (${nf(Math.abs(rel) * 100, 0)} % de una SD). Es la señal típica de una cola larga a la izquierda o de valores extremos bajos.`}</p>`);
+  const r1 = st.madS > 0 ? st.sd / st.madS : NaN;
+  out.push(`<p><b>Dispersión.</b> La SD es ${nf(st.sd, d)}, la MAD escalada ${nf(st.madS, d)} y el IQR ÷ 1,349 vale ${nf(st.iqrS, d)}. ${!Number.isFinite(r1) ? 'La MAD vale 0: más de la mitad de los datos son iguales.' : r1 > 1.5 ? 'La SD es mucho mayor que las medidas robustas: unos pocos datos lejanos la inflan.' : r1 < 0.8 ? 'La SD es menor que las medidas robustas. Es típico de formas planas o de dos grupos.' : 'Las tres medidas dan valores parecidos: la dispersión es regular.'}${an.st.min >= 0 && st.mean > 0 ? ` El coeficiente de variación es ${nf(an.cv * 100, 0)} %: la SD equivale a ese porcentaje de la media.` : ''}</p>`);
+  out.push(`<p><b>Forma.</b> ${skewTxt(st.skew)}. ${kurtTxt(st.kurt)}. Fuera de ±2 SD cae ${nf(an.frac2 * 100, 1)} % de los datos (en una campana normal, 4,6 %). Fuera de ±3 SD cae ${nf(an.frac3 * 100, 1)} % (en una campana normal, 0,3 %).</p>`);
+  if (!outs) out.push('<p><b>Extremos.</b> Según la regla de Tukey (más de 1,5 veces el IQR por fuera de la caja), no hay valores extremos.</p>');
+  else {
+    const b = an.stIn; let tail = '';
+    if (b) tail = ` Sin ellos, los números cambian así. ${chg('La', 'media', st.mean, b.mean, false, d)} ${chg('La', 'mediana', st.med, b.med, false, d)} ${chg('La', 'SD', st.sd, b.sd, false, d)} ${chg('La', 'asimetría', st.skew, b.skew)} ${chg('La', 'curtosis', st.kurt, b.kurt)}`;
+    out.push(`<p><b>Extremos.</b> Según la regla de Tukey (más de 1,5 veces el IQR por fuera de la caja), hay ${nf(outs, 0)} valores extremos (${nf(outs / n * 100, 1)} % de los datos): ${nf(an.highs.length, 0)} altos y ${nf(an.lows.length, 0)} bajos. ${an.highs.length ? `El mayor vale ${nf(st.max, d)}. ` : ''}${an.lows.length ? `El menor vale ${nf(st.min, d)}. ` : ''}${tail} Examine la causa de cada uno antes de borrarlo: puede ser un error de registro o un cliente real muy importante.</p>`);
+  }
+  out.push(`<p><b>Normalidad (orientativo).</b> La prueba de Jarque–Bera da p ${an.pJB < 0.001 ? '< 0,001' : '= ' + nf(an.pJB, 3)}. ${an.pJB < 0.05 ? 'Hay indicios de que la forma se aleja de una campana normal.' : 'No hay indicios claros de que la forma se aleje de una campana normal.'} Con n grande, esta prueba detecta diferencias pequeñas sin importancia práctica. Con n pequeño, casi no detecta nada. Use el gráfico Q–Q para juzgar.</p>`);
+  let rec;
+  if (an.discrete) rec = 'Informe la tabla de frecuencias y la mediana. Use la media y la SD solo como resumen aproximado.';
+  else if (Math.abs(st.skew) < 0.5 && Math.abs(st.kurt) < 1 && outs / n < 0.01) rec = 'La forma es bastante regular. Informe media y SD, y añada la mediana como contraste.';
+  else rec = 'La forma no es regular. Informe mediana e IQR (o MAD), muestre el histograma y ofrezca media y SD solo como contraste.';
+  if (st.min >= 0 && st.skew > 1 && !an.discrete) rec += ' Con importes positivos y cola larga a la derecha, a veces se analiza el logaritmo de la variable. Decida según su pregunta de investigación.';
+  out.push(`<p><b>Qué informar.</b> ${rec}</p>`);
+  return out.join('');
+}
+function csvPercTable(an){
+  const d = an.dg, labs = ['Mín.', 'P1', 'P5', 'P10', 'P25', 'P50', 'P75', 'P90', 'P95', 'P99', 'Máx.'], vals = [an.st.min, ...an.perc, an.st.max];
+  return `<div class="tbl-wrap" style="margin-top:8px"><table class="compact" style="min-width:640px"><thead><tr>${labs.map(l => `<th scope="col" class="r">${l}</th>`).join('')}</tr></thead><tbody><tr>${vals.map(v => `<td class="r" style="padding:12px 8px">${nf(v, d)}</td>`).join('')}</tr></tbody></table></div><p class="hint" style="max-width:70ch">P25 es Q1, P50 es la mediana y P75 es Q3. El percentil P90 es el valor que deja 90 % de los datos por debajo.</p>`;
+}
+function csvWithWithout(an){
+  const a = an.st, b = an.stIn, d = an.dg; if (!b) return '';
+  const rows = [['Media', 'mean', d], ['Mediana', 'med', d], ['SD', 'sd', d], ['MAD escalada', 'madS', d], ['IQR', 'iqr', d], ['Asimetría', 'skew', 2], ['Curtosis', 'kurt', 2]];
+  return `<div class="tbl-wrap" style="margin-top:8px"><table class="compact" style="min-width:520px"><thead><tr><th scope="col">Número</th><th scope="col" class="r">Con todos los datos</th><th scope="col" class="r">Sin extremos (Tukey)</th><th scope="col" class="r">Cambio</th></tr></thead><tbody>${rows.map(([nm, k, dg]) => { const x = a[k], y = b[k], ch = Number.isFinite(x) && Number.isFinite(y) ? (k === 'skew' || k === 'kurt' ? sgn(y - x) + ' pts' : x !== 0 ? sgn((y / x - 1) * 100, 0) + ' %' : '—') : '—'; return `<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--border)">${nm}</th><td class="r" style="padding:12px 16px 12px 0">${nf(x, dg)}</td><td class="r" style="padding:12px 16px 12px 0">${nf(y, dg)}</td><td class="r" style="padding:12px 16px 12px 0">${ch}</td></tr>`; }).join('')}</tbody></table></div><p class="hint" style="max-width:70ch">Los números robustos (mediana, MAD, IQR) cambian poco al quitar los extremos. Los clásicos (media, SD, asimetría, curtosis) cambian mucho más.</p>`;
+}
+function csvFreq(an){
+  const m = new Map(); for (const v of an.a) m.set(v, (m.get(v) || 0) + 1);
+  const keys = [...m.keys()].sort((x, y) => x - y);
+  return `<div class="tbl-wrap" style="margin-top:8px"><table class="compact" style="min-width:420px"><thead><tr><th scope="col">Valor</th><th scope="col" class="r">Frecuencia</th><th scope="col" class="r">Porcentaje</th></tr></thead><tbody>${keys.map(k => `<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:10px 16px 10px 0;border-bottom:1px solid var(--border)">${nf(k, 0)}</th><td class="r" style="padding:10px 16px 10px 0">${nf(m.get(k), 0)}</td><td class="r" style="padding:10px 16px 10px 0">${nf(m.get(k) / an.n * 100, 1)} %</td></tr>`).join('')}</tbody></table></div>`;
+}
+function csvGroupsData(){
+  const v = CSV.cols[CSV.sel], g = CSV.cols[CSV.grp], m = new Map();
+  for (let i = 0; i < v.strs.length; i++){ const gs = g.strs[i]; if (MISSING.has(gs.toLowerCase())) continue; const x = parseNum(v.strs[i]); if (!Number.isFinite(x)) continue; if (!m.has(gs)) m.set(gs, []); m.get(gs).push(x); }
+  return [...m.entries()].filter(([, a]) => a.length >= 3).sort((p, q) => q[1].length - p[1].length).slice(0, 8).map(([name, a]) => ({name, an: analyzeVar(a)}));
+}
+function csvGroupHTML(gs, d){
+  const th = 'text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--border)', td = 'padding:12px 12px 12px 0';
+  const rows = gs.map(x => { const s = x.an.st; return `<tr><th scope="row" style="${th}">${esc(x.name)}</th><td class="r" style="${td}">${nf(x.an.n, 0)}</td><td class="r" style="${td}">${nf(s.mean, d)}</td><td class="r" style="${td}">${nf(s.med, d)}</td><td class="r" style="${td}">${nf(s.sd, d)}</td><td class="r" style="${td}">${nf(s.madS, d)}</td><td class="r" style="${td}">${nf(s.iqr, d)}</td><td class="r" style="${td}">${nf(s.skew, 2)}</td><td class="r" style="${td}">${nf(s.kurt, 2)}</td></tr>`; }).join('');
+  const best = k => gs.reduce((a, b) => b.an.st[k] > a.an.st[k] ? b : a), hm = best('med'), hn = best('mean'), hs = best('madS'), lm = gs.reduce((a, b) => b.an.st.med < a.an.st.med ? b : a);
+  const ord = k => gs.slice().sort((p, q) => q.an.st[k] - p.an.st[k]).map(x => x.name).join('|');
+  let txt = `<p>El grupo con la mediana más alta es <b>${esc(hm.name)}</b> (${nf(hm.an.st.med, d)}). El de la mediana más baja es <b>${esc(lm.name)}</b> (${nf(lm.an.st.med, d)}). El de mayor dispersión robusta (MAD escalada) es <b>${esc(hs.name)}</b> (${nf(hs.an.st.madS, d)}).</p>`;
+  txt += ord('mean') === ord('med') ? '<p>La media y la mediana ordenan los grupos de la misma manera.</p>' : `<p>La media y la mediana ordenan los grupos de forma distinta. El grupo con la media más alta es <b>${esc(hn.name)}</b> (${nf(hn.an.st.mean, d)}). Esa diferencia suele indicar valores extremos o formas distintas entre grupos.</p>`;
+  txt += '<p class="hint" style="max-width:70ch">Esta comparación es descriptiva. No prueba que las diferencias sean reales en la población. Se muestran hasta 8 grupos, los de mayor tamaño, con al menos 3 datos cada uno.</p>';
+  return `<div class="tbl-wrap" style="margin-top:8px"><table class="compact" style="min-width:680px"><thead><tr><th scope="col">Grupo</th><th scope="col" class="r">n</th><th scope="col" class="r">Media</th><th scope="col" class="r">Mediana</th><th scope="col" class="r">SD</th><th scope="col" class="r">MAD esc.</th><th scope="col" class="r">IQR</th><th scope="col" class="r">Asim.</th><th scope="col" class="r">Curt.</th></tr></thead><tbody>${rows}</tbody></table></div>${txt}`;
+}
+function csvBoot(an, token){
+  const el = $('#csvBoot'); if (!el) return;
+  if (an.n < 10){ el.innerHTML = '<p class="hint">Con menos de 10 datos no se calculan intervalos de confianza.</p>'; return; }
+  if (an.n > 20000){ el.innerHTML = '<p class="hint">Con más de 20 000 datos, los intervalos son muy estrechos y no se calculan.</p>'; return; }
+  const B = 400, r = rng(12345), keys = ['mean', 'med', 'sd', 'madS', 'iqr', 'skew', 'kurt'], res = keys.map(() => []), buf = new Float64Array(an.n);
+  let done = 0; el.innerHTML = '<p class="hint prog">Calculando los intervalos…</p>';
+  const step = () => {
+    if (token !== CSV.token || !el.isConnected) return;
+    const end = Math.min(B, done + 16);
+    for (; done < end; done++){ for (let i = 0; i < an.n; i++) buf[i] = an.a[(r() * an.n) | 0]; const s = stats(buf); keys.forEach((k, j) => res[j].push(s[k])); }
+    if (done < B){ const p = el.querySelector('.prog'); if (p) p.textContent = `Calculando los intervalos… ${Math.round(done / B * 100)} %`; setTimeout(step, 0); } else finish();
+  };
+  const finish = () => {
+    const ci = res.map(a => { const s = Float64Array.from(a.filter(Number.isFinite)).sort(); return s.length ? [quant(s, 0.025), quant(s, 0.975)] : [NaN, NaN]; }), d = an.dg, st = an.st;
+    const nms = ['Media', 'Mediana', 'SD', 'MAD escalada', 'IQR', 'Asimetría', 'Curtosis'], dgs = [d, d, d, d, d, 2, 2], td = 'padding:12px 16px 12px 0';
+    const rows = keys.map((k, i) => `<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--border)">${nms[i]}</th><td class="r" style="${td}">${nf(st[k], dgs[i])}</td><td class="r" style="${td}">${nf(ci[i][0], dgs[i])} a ${nf(ci[i][1], dgs[i])}</td></tr>`).join('');
+    const incl = i => ci[i][0] <= 0 && ci[i][1] >= 0;
+    el.innerHTML = `<div class="tbl-wrap" style="margin-top:8px"><table class="compact" style="min-width:460px"><thead><tr><th scope="col">Número</th><th scope="col" class="r">Estimación</th><th scope="col" class="r">Intervalo de confianza 95 %</th></tr></thead><tbody>${rows}</tbody></table></div>` +
+      `<p>El intervalo muestra cuánto cambiaría cada número con otra muestra parecida. ${incl(5) ? 'El intervalo de la asimetría incluye el 0: con estos datos no se puede afirmar que la forma sea asimétrica. ' : 'El intervalo de la asimetría no incluye el 0: la asimetría parece real. '}${incl(6) ? 'El intervalo de la curtosis incluye el 0: no se puede afirmar que las colas sean distintas de las de una campana normal.' : 'El intervalo de la curtosis no incluye el 0: las colas parecen distintas de las de una campana normal.'}</p><p class="hint" style="max-width:70ch">Los intervalos salen de 400 remuestreos con reemplazo (método bootstrap). Son aproximados: con pocos datos o con extremos, pueden ser poco fiables.</p>`;
+  };
+  setTimeout(step, 0);
+}
+function csvDrawCharts(){
+  const an = CSV.an; if (!an || !$('#csvDist')) return;
+  const dom = CSV.zoom && an.st.iqr > 0 ? csvDomain(an, true) : null;
+  const zn = $('#csvZoomNote'); if (zn) zn.textContent = dom ? `Hay ${nf(an.a.filter(v => v < dom[0] || v > dom[1]).length, 0)} datos fuera de la zona visible. Sus valores van de ${nf(an.st.min, an.dg)} a ${nf(an.st.max, an.dg)}.` : '';
+  if (an.st.sd > 0){
+    distChart($('#csvDist'), {data: an.a, st: an.st, hist: true, discrete: an.discrete, dom: an.discrete ? null : dom, dg: an.dg, h: 300});
+    boxChart($('#csvBox'), an, CSV.zoom);
+    if (!an.discrete) qqChart($('#csvQQ'), an);
+  }
+  const gh = $('#csvGrpChart'); if (gh && CSV.grp >= 0) groupChart(gh, CSV.gs, CSV.zoom);
+}
+function renderCsv(){
+  const out = $('#csvOut'); CSV.token++;
+  if (CSV.sel < 0){ out.innerHTML = ''; return; }
+  const col = CSV.cols[CSV.sel];
+  if (col.vals.length < 3){ out.innerHTML = '<p>Hay muy pocos valores numéricos en esta variable.</p>'; return; }
+  const an = analyzeVar(col.vals); CSV.an = an; const st = an.st, d = an.dg;
+  if (!(st.sd > 0)){ out.innerHTML = csvSec('Resultado', `<p>Todos los valores de «${esc(col.name)}» son iguales (${nf(st.mean, d)}). No hay dispersión que analizar.</p>`); return; }
+  const farN = an.a.reduce((c, v) => c + (v < st.q1 - 3 * st.iqr || v > st.q3 + 3 * st.iqr ? 1 : 0), 0), far = st.iqr > 0 && farN > 0;
+  if (!CSV.zoomSet) CSV.zoom = far && farN / an.n < 0.1;
+  let h = csvSec('Lectura en lenguaje sencillo', csvNarrative(an, col.name, CSV.body));
+  h += csvSec('Los siete números', csvCards(st, d));
+  h += csvSec(an.discrete ? 'Distribución de los valores' : 'Forma: curva y curtosis',
+    `<div class="how" style="margin:0 0 16px"><p>${an.discrete ? 'Cada barra muestra el porcentaje de datos con ese valor.' : 'Las barras grises cuentan los datos por zonas. La <b class="k-ink">curva negra continua</b> es la forma suavizada de sus datos. La <b class="k-ink">curva negra discontinua</b> es una campana normal con la misma media y la misma SD, y sirve de referencia.'} ${an.discrete ? '' : 'Si la curva de sus datos tiene las colas más altas que la campana, la curtosis es positiva. Si no llega a las colas, es negativa.'}</p></div>` +
+    (far ? `<label class="chk"><input type="checkbox" id="csvZoom" ${CSV.zoom ? 'checked' : ''}> Ampliar la zona central (oculta los valores muy lejanos)</label><p class="hint" id="csvZoomNote" style="margin:0 0 8px"></p>` : '') +
+    `<div class="chart" id="csvDist" role="img" aria-label="Histograma y curva de los datos"></div>` +
+    `<div class="gtitle"><span class="lbl">Asimetría en la escala</span><output>${nf(st.skew)}</output></div>${gaugeHTML(st.skew, NaN, -3, 3, 'Cola izquierda larga', 'Cola derecha larga')}` +
+    `<div class="gtitle"><span class="lbl">Curtosis en la escala</span><output>${nf(st.kurt)} · ${kurtType(st.kurt)}</output></div>${gaugeHTML(st.kurt, NaN, -2, 10, 'Platicúrtica · colas ligeras', 'Leptocúrtica · colas pesadas')}` +
+    (an.discrete ? csvFreq(an) : ''));
+  h += csvSec('Caja y valores extremos', `<div class="how" style="margin:0 0 16px"><p>La <b class="k-red">caja roja</b> cubre la mitad central de los datos y su anchura es el IQR. La <b class="k-red">raya roja gruesa</b> es la mediana. El <b class="k-ink">rombo negro</b> es la media. Los <b class="k-red">círculos rojos</b> son valores extremos según la regla de Tukey. Los puntos grises son datos.</p></div><div class="chart" id="csvBox" role="img" aria-label="Diagrama de caja"></div>`);
+  if (!an.discrete) h += csvSec('Gráfico Q–Q: ¿se parece a una campana normal?', `<div class="how" style="margin:0 0 16px"><p>Cada punto compara un dato con el valor que tendría en una campana normal. La <b class="k-red">línea roja</b> marca la normalidad perfecta. Si los puntos la siguen, la forma es normal. Si la cola derecha sube por encima de la línea, hay datos más altos de lo normal. Si los dos extremos se separan de la línea, las colas son pesadas.</p></div><div class="chart" id="csvQQ" role="img" aria-label="Gráfico Q-Q normal"></div>`);
+  h += csvSec('Percentiles', csvPercTable(an));
+  if (an.stIn) h += csvSec('Con y sin valores extremos', csvWithWithout(an));
+  h += csvSec('Incertidumbre: intervalos de confianza', '<div id="csvBoot"></div>');
+  if (CSV.grp >= 0){ CSV.gs = csvGroupsData(); h += csvSec(`Comparación por «${esc(CSV.cols[CSV.grp].name)}»`, CSV.gs.length >= 2 ? `<div class="how" style="margin:0 0 16px"><p>Cada fila muestra un grupo con el mismo gráfico de caja de arriba. Compare las cajas: si están en posiciones distintas, los grupos difieren en su centro. Si tienen anchuras distintas, difieren en su dispersión.</p></div><div class="chart" id="csvGrpChart" role="img" aria-label="Cajas por grupo"></div>${csvGroupHTML(CSV.gs, d)}` : '<p>No hay al menos dos grupos con 3 datos o más.</p>'); }
+  h += `<div class="btns" style="max-width:420px"><button type="button" class="btn" id="csvSave">Descargar este análisis (.txt)</button></div>`;
+  out.innerHTML = h;
+  const z = $('#csvZoom'); if (z) z.addEventListener('change', () => { CSV.zoom = z.checked; CSV.zoomSet = true; csvDrawCharts(); });
+  const sv = $('#csvSave'); if (sv) sv.addEventListener('click', () => { const blob = new Blob([`Análisis de «${col.name}»\n\n` + out.innerText], {type: 'text/plain;charset=utf-8'}), a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'analisis_' + col.name.replace(/[^\w]+/g, '_') + '.txt'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); });
+  csvDrawCharts(); csvBoot(an, CSV.token);
+}
+function csvPopulate(){
+  const m = CSV.model; CSV.cols = m.cols; CSV.body = m.body; const nums = m.cols.map((c, j) => [c, j]).filter(([c]) => c.num);
+  $('#csvInfo').textContent = `${m.name} · ${nf(m.body, 0)} filas · ${m.cols.length} columnas · separador «${m.delim === '\t' ? 'tabulador' : m.delim}» · ${nums.length} numéricas.`;
+  const pv = $('#csvPrevT'); pv.innerHTML = `<thead><tr>${m.cols.map(c => `<th scope="col">${esc(c.name)}</th>`).join('')}</tr></thead><tbody>${Array.from({length: Math.min(5, m.body)}, (_, i) => `<tr>${m.cols.map(c => `<td style="padding:8px 12px 8px 0;font-size:13px">${esc(c.strs[i])}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  $('#csvPrev').hidden = false;
+  if (!nums.length){ $('#csvPick').hidden = true; $('#csvOut').innerHTML = '<p>No se encontró ninguna columna numérica. Compruebe el separador y el formato de los números.</p>'; return; }
+  const sel = $('#csvVar'), grp = $('#csvGrp');
+  sel.innerHTML = nums.map(([c, j]) => `<option value="${j}">${esc(c.name)} (${nf(c.vals.length, 0)} valores${c.nBad ? ', ' + c.nBad + ' no numéricos' : ''}${c.idLike ? '; parece un identificador' : ''})</option>`).join('');
+  const first = nums.find(([c]) => !c.idLike) || nums[0]; CSV.sel = first[1]; sel.value = CSV.sel; CSV.grp = -1;
+  const refresh = () => { grp.innerHTML = '<option value="-1">Sin grupos</option>' + m.cols.map((c, j) => [c, j]).filter(([c, j]) => j !== CSV.sel && c.uniq >= 2 && c.uniq <= 12 && c.nonMissing >= 5).map(([c, j]) => `<option value="${j}">${esc(c.name)} (${c.uniq} grupos)</option>`).join(''); grp.value = '-1'; CSV.grp = -1; };
+  refresh();
+  sel.onchange = () => { CSV.sel = +sel.value; CSV.zoomSet = false; refresh(); renderCsv(); };
+  grp.onchange = () => { CSV.grp = +grp.value; renderCsv(); };
+  $('#csvPick').hidden = false; CSV.zoomSet = false; renderCsv();
+}
+async function csvLoad(file){
+  try {
+    if (file.size > 30 * 1024 * 1024) throw new Error('El archivo supera 30 MB.');
+    const text = await csvRead(file); CSV.model = buildModel(text, file.name); csvPopulate();
+  } catch (e) { $('#csvInfo').textContent = 'No se pudo leer el archivo: ' + e.message; $('#csvPick').hidden = true; $('#csvOut').innerHTML = ''; }
+}
+function csvLoadText(text, name){ try { CSV.model = buildModel(text, name); csvPopulate(); } catch (e) { $('#csvInfo').textContent = 'No se pudo leer el archivo: ' + e.message; } }
+const csvDlg = $('#csvDlg'); let csvOpener = null;
+function openCsv(btn){ csvOpener = btn; document.body.style.overflow = 'hidden'; csvDlg.showModal(); csvDlg.scrollTop = 0; $('#csvX').focus(); }
+document.addEventListener('click', e => { const b = e.target.closest('[data-csv]'); if (b) openCsv(b); });
+$('#csvX').addEventListener('click', () => csvDlg.close());
+csvDlg.addEventListener('click', e => { if (e.target === csvDlg) csvDlg.close(); });
+csvDlg.addEventListener('close', () => { document.body.style.overflow = ''; CSV.token++; if (csvOpener) csvOpener.focus(); });
+$('#csvFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) csvLoad(f); e.target.value = ''; });
+$('#csvDemo').addEventListener('click', () => csvLoadText(sampleCSV(), 'datos_de_ejemplo.csv'));
+$('#csvDl').addEventListener('click', () => { const blob = new Blob(['﻿' + sampleCSV()], {type: 'text/csv;charset=utf-8'}), a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'datos_de_ejemplo.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); });
+const csvDrop = $('#csvDrop');
+['dragenter', 'dragover'].forEach(t => csvDrop.addEventListener(t, e => { e.preventDefault(); csvDrop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(t => csvDrop.addEventListener(t, e => { e.preventDefault(); csvDrop.classList.remove('over'); }));
+csvDrop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) csvLoad(f); });
+{ let t = 0; new ResizeObserver(() => { clearTimeout(t); t = setTimeout(() => { if (csvDlg.open) csvDrawCharts(); }, 120); }).observe($('#csvOut')); }
+
 /* ───────── Ciclo de dibujo ───────── */
 let raf = 0, light = false, lastW = 0;
 function schedule(isDrag){ light = !!isDrag; if (!raf) raf = requestAnimationFrame(render); }
@@ -1552,7 +2039,7 @@ g_2&=\frac{m_4}{m_2^{2}}-3=\frac{${t(a.m4)}}{${t(a.m2 * a.m2)}}-3=${t(a.kurt)}
 function render(){
   raf = 0; compute(); drawReadouts(); drawA(); drawEx();
   drawReading(); drawTable(); drawTex();
-  if (!light){ drawKMix(); drawKurt(); drawKTri(); drawB(); drawC(); }
+  if (!light){ drawKMix(); drawKZ(); drawKurt(); drawKTri(); drawB(); drawC(); }
 }
 
 /* ───────── Eventos ───────── */
