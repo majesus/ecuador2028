@@ -698,7 +698,14 @@ details.opt .formulas{margin-top:32px}
       </figure>
     </div>
     <p class="hint" style="max-width:70ch;margin-top:16px">Figuras 4a a 4d. Las líneas que salen del gráfico continúan fuera de la escala.</p>
-    <div class="take"><span class="lbl">Conclusión</span><p>Entre 0 % y 25 % de extremos, la mediana, la MAD y el IQR resisten. Entre 25 % y 50 %, el IQR falla, mientras que la mediana y la MAD resisten mejor, aunque suben algo. Pasado 50 %, los extremos son la mayoría y los números pasan a describirlos a ellos: por eso la MAD vuelve a bajar. En ese caso, revise cómo se recogieron los datos.</p></div>
+    <div class="take"><span class="lbl">Conclusión</span><p>Entre 0 % y 25 % de extremos, la mediana, la MAD y el IQR suben poco, mientras que la SD sube mucho. Entre 25 % y 50 %, el IQR falla, mientras que la mediana y la MAD resisten mejor, aunque suben algo. Pasado 50 %, los extremos son la mayoría y los números pasan a describirlos a ellos: por eso la MAD vuelve a bajar. En ese caso, revise cómo se recogieron los datos.</p></div>
+    <div class="how" id="crossBox" style="margin-top:24px"><span class="lbl">¿Por qué se cruzan la SD y la MAD?</span>
+      <p id="crossTxt"></p>
+      <p><b>Con 0 % de extremos.</b> Con datos normales, la SD y la MAD escalada coinciden, porque el factor 1,4826 se calculó para esa forma. Con otras formas se separan: una cola larga sube la SD y una forma plana sube la MAD escalada.</p>
+      <p><b>Entre 0 % y 30 %.</b> La SD sube de golpe, porque eleva las distancias al cuadrado. La MAD escalada sube poco, porque usa solo el valor central.</p>
+      <p><b>Entre 30 % y 50 %.</b> La SD llega a su tope: la muestra se reparte casi mitad y mitad entre dos grupos, y la SD mide la distancia entre ellos. La MAD escalada sigue subiendo, porque la mediana se acerca al hueco entre los dos grupos. Así alcanza a la SD y puede superarla. El punto exacto del cruce depende de la distancia <i>d</i>: cuanto menor es <i>d</i>, antes se cruzan.</p>
+      <p><b>Más de 50 %.</b> Los extremos son la mayoría. La mediana salta al grupo de extremos. La MAD escalada pasa a medir la dispersión de ese grupo, que es pequeña, y cae de golpe. La SD sigue alta. Las líneas se separan otra vez, en sentido contrario.</p>
+      <p><b>Qué no significa el cruce.</b> No significa que las dos medidas acierten. En un cruce, las dos están lejos de σ real. Por eso un cociente SD ÷ MAD cercano a 1 no prueba que los datos sean regulares.</p></div>
   </div>
 </section>
 
@@ -734,7 +741,7 @@ details.opt .formulas{margin-top:32px}
       <div><h3>Posibles errores o casos raros</h3><p>Use mediana, MAD e IQR. Calcule también media y SD. Si difieren mucho de los robustos, examine los datos.</p></div>
       <div><h3>Datos con cola larga</h3><p>Use la mediana mejor que la media para describir el valor típico. Informe también de la asimetría. Mire el histograma antes de resumir.</p></div>
     </div>
-    <div class="take" style="margin-top:32px"><span class="lbl">Regla práctica</span><p>Calcule siempre un número clásico y su pareja robusta: media con mediana, SD con MAD o con IQR. Si coinciden, los datos son regulares. Si difieren mucho, hay extremos o una forma asimétrica. No es una prueba, es una señal para mirar los datos.</p><p>La asimetría y la curtosis necesitan muchos datos. Con pocos datos cambian mucho de una muestra a otra. No las use sin el histograma.</p></div>
+    <div class="take" style="margin-top:32px"><span class="lbl">Regla práctica</span><p>Calcule siempre un número clásico y su pareja robusta: media con mediana, SD con MAD o con IQR. Si coinciden, los datos son compatibles con una forma regular. Si difieren mucho, hay extremos o una forma asimétrica. No es una prueba, es una señal para mirar los datos. Con casi la mitad de extremos, la SD y la MAD también pueden coincidir por casualidad (vea la sección 06).</p><p>La asimetría y la curtosis necesitan muchos datos. Con pocos datos cambian mucho de una muestra a otra. No las use sin el histograma.</p></div>
   </div>
 </section>
 
@@ -1260,11 +1267,22 @@ function drawB(){
   const mk = []; if (S.side !== 'left') mk.push({x: S.d, label: 'd'}); if (S.side !== 'right') mk.push({x: -S.d, label: 'd'});
   fourPanels('B', T, rows, {xDom: [-20, 20], xTicks: [-20, -10, 0, 10, 20], xFmt: v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + 'σ', xLab: 'Posición del dato añadido', markers: mk, hdr: i => `Dato añadido a ${sgn(T[i], 1)}${SIG} de μ.`});
 }
+function crossText(X, rows, sigma){
+  let out = [];
+  for (let i = 1; i < rows.length; i++){
+    const a = rows[i - 1].madS - rows[i - 1].sd, b = rows[i].madS - rows[i].sd;
+    if (a * b < 0){ const f = a / (a - b); out.push({x: X[i - 1] + f * (X[i] - X[i - 1]), v: rows[i - 1].sd + f * (rows[i].sd - rows[i - 1].sd)}); }
+  }
+  out = out.filter(o => o.x >= 5);
+  if (!out.length) return 'Con esta configuración, la MAD escalada no llega a cruzar la SD. Cambie la distancia o la proporción de extremos para verlo.';
+  return `Con esta configuración, la MAD escalada cruza a la SD en ${out.map(o => nf(o.x, 0) + ' %').join(' y en ')}. En el primer cruce, las dos valen cerca de ${nf(out[0].v, 1)}, pero σ real es ${nf(sigma, 0)}.`;
+}
 function drawC(){
   const n = S.n, km = Math.ceil(0.6 * n), X = [], rows = [];
   for (let k = 0; k <= km; k++){ X.push(100 * k / n); rows.push(stats(buildSample(n, k).data)); }
   const mk = [{x: 25, label: '25 %'}, {x: 50, label: '50 %'}]; if (S.k > 0) mk.push({x: 100 * S.k / n, label: 'k'});
   fourPanels('C', X, rows, {xDom: [0, 60], xTicks: [0, 10, 20, 30, 40, 50, 60], xFmt: v => v + ' %', xLab: 'Proporción de valores extremos', markers: mk, clip: true, hdr: i => `Extremos: ${nf(X[i], 0)} % (${Math.round(X[i] * n / 100)} de ${n}).`});
+  $('#crossTxt').textContent = crossText(X, rows, S.sigma);
 }
 
 /* ───────── Curtosis: tres tipos de colas ───────── */

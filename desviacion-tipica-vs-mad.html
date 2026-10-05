@@ -423,7 +423,7 @@ details.opt .formulas{margin-top:32px}
           <div class="card red"><div class="lbl"><span class="mark"></span>Mediana</div><div class="def">El dato del medio</div><div class="v" id="v-med"></div><div class="s" id="s-med"></div></div>
           <div class="card ink"><div class="lbl"><span class="mark"></span>Desv. típica <i>s</i></div><div class="def">Dispersión clásica</div><div class="v" id="v-sd"></div><div class="s" id="s-sd"></div></div>
           <div class="card red"><div class="lbl"><span class="mark"></span>MAD escalada</div><div class="def">Dispersión robusta</div><div class="v" id="v-mad"></div><div class="s" id="s-mad"></div></div>
-          <div class="card neutral"><div class="lbl"><span class="mark"></span><i>s</i> / MAD esc.</div><div class="def">Compara las dos dispersiones</div><div class="v" id="v-ratio"></div><div class="s">Cerca de 1 si los datos son regulares</div></div>
+          <div class="card neutral"><div class="lbl"><span class="mark"></span><i>s</i> / MAD esc.</div><div class="def">Compara las dos dispersiones</div><div class="v" id="v-ratio"></div><div class="s">Cerca de 1 en datos normales</div></div>
         </div>
 
         <div class="how" style="margin-top:32px"><span class="lbl">Cómo leer la figura 1</span>
@@ -530,6 +530,13 @@ details.opt .formulas{margin-top:32px}
       </figure>
     </div>
     <div class="take"><span class="lbl">Conclusión</span><p>La mediana y la MAD escalada resisten hasta cerca de la mitad de datos extremos. Pasada la mitad, los extremos son la mayoría y ninguna medida sirve. En ese caso, revise cómo se recogieron los datos.</p></div>
+    <div class="how" id="crossBox" style="margin-top:24px"><span class="lbl">¿Por qué se cruzan la desviación típica y la MAD?</span>
+      <p id="crossTxt"></p>
+      <p><b>Con 0 % de extremos.</b> Con datos normales, la desviación típica y la MAD escalada coinciden, porque el factor 1,4826 se calculó para esa forma. Con otras formas se separan: una cola larga sube la desviación típica y una forma plana sube la MAD escalada.</p>
+      <p><b>Entre 0 % y 30 %.</b> La desviación típica sube de golpe, porque eleva las distancias al cuadrado. La MAD escalada sube poco, porque usa solo el valor central.</p>
+      <p><b>Entre 30 % y 50 %.</b> La desviación típica llega a su tope: la muestra se reparte casi mitad y mitad entre dos grupos, y la desviación típica mide la distancia entre ellos. La MAD escalada sigue subiendo, porque la mediana se acerca al hueco entre los dos grupos. Así alcanza a la desviación típica y puede superarla. El punto exacto del cruce depende de la distancia <i>d</i>: cuanto menor es <i>d</i>, antes se cruzan.</p>
+      <p><b>Más de 50 %.</b> Los extremos son la mayoría. La mediana salta al grupo de extremos. La MAD escalada pasa a medir la dispersión de ese grupo, que es pequeña, y cae de golpe. La desviación típica sigue alta. Las líneas se separan otra vez, en sentido contrario.</p>
+      <p><b>Qué no significa el cruce.</b> No significa que las dos medidas acierten. En un cruce, las dos están lejos de σ real. Por eso un cociente <i>s</i> / MAD escalada cercano a 1 no prueba que los datos sean regulares.</p></div>
   </div>
 </section>
 
@@ -576,7 +583,7 @@ details.opt .formulas{margin-top:32px}
       <div><h3>Posibles errores o casos raros</h3><p>Use la mediana y la MAD escalada. Los extremos casi no las alteran. Calcule también la media y la desviación típica. Si difieren mucho, examine los datos.</p></div>
       <div><h3>Más de la mitad de datos dudosos</h3><p>Ninguna medida resiste. Revise cómo se recogieron los datos antes de calcular nada.</p></div>
     </div>
-    <div class="take" style="margin-top:32px"><span class="lbl">Regla práctica</span><p>Calcule las dos dispersiones. Divida la desviación típica entre la MAD escalada. Un resultado cerca de 1 indica datos regulares. Un resultado mucho mayor sugiere valores extremos. No lo prueba.</p><p>Un valor extremo no siempre es un error. Puede ser el dato más importante, por ejemplo un cliente excepcional. Examine su causa antes de borrarlo.</p></div>
+    <div class="take" style="margin-top:32px"><span class="lbl">Regla práctica</span><p>Calcule las dos dispersiones. Divida la desviación típica entre la MAD escalada. Un resultado cerca de 1 es compatible con datos regulares. Un resultado mucho mayor sugiere valores extremos. Ninguno de los dos prueba nada: con casi la mitad de extremos, el cociente también puede valer 1 por casualidad (vea la sección 04). Examine siempre los datos.</p><p>Un valor extremo no siempre es un error. Puede ser el dato más importante, por ejemplo un cliente excepcional. Examine su causa antes de borrarlo.</p></div>
   </div>
 </section>
 
@@ -912,6 +919,16 @@ function drawB(){
 }
 
 /* ───────── Figura 3: contaminación progresiva ───────── */
+function crossText(X, rows, sigma){
+  let out = [];
+  for (let i = 1; i < rows.length; i++){
+    const a = rows[i - 1].madS - rows[i - 1].sd, b = rows[i].madS - rows[i].sd;
+    if (a * b < 0){ const f = a / (a - b); out.push({x: X[i - 1] + f * (X[i] - X[i - 1]), v: rows[i - 1].sd + f * (rows[i].sd - rows[i - 1].sd)}); }
+  }
+  out = out.filter(o => o.x >= 5);
+  if (!out.length) return 'Con esta configuración, la MAD escalada no llega a cruzar la desviación típica. Cambie la distancia o la proporción de extremos para verlo.';
+  return `Con esta configuración, la MAD escalada cruza a la desviación típica en ${out.map(o => nf(o.x, 0) + ' %').join(' y en ')}. En el primer cruce, las dos valen cerca de ${nf(out[0].v, 1)}, pero σ real es ${nf(sigma, 0)}.`;
+}
 function drawC(){
   const n = S.n, km = Math.ceil(0.6 * n), X = [], rows = [];
   for (let k = 0; k <= km; k++){ X.push(100 * k / n); rows.push(stats(buildSample(n, k).data)); }
@@ -936,6 +953,7 @@ function drawC(){
     refs: [{y: S.sigma, label: 'σ'}], markers: mk, cap: '#capC2', capDefault: 'Mueva el puntero sobre el gráfico.',
     hover: i => `${hdr(i)} s: ${nf(rows[i].sd)}. MAD escalada: ${nf(rows[i].madS)}.`
   });
+  $('#crossTxt').textContent = crossText(X, rows, S.sigma);
 }
 
 /* ───────── Figura 4: convergencia con n ───────── */
