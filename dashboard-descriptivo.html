@@ -333,6 +333,18 @@ fieldset{margin-top:24px}
 .segsel{margin-top:0;padding-top:0}
 .pctin{max-width:340px}
 
+/* Diccionario en rejilla */
+table.cgrid{min-width:680px}
+table.cgrid th.c,table.cgrid td.c{text-align:center;padding:0 1px;width:52px}
+table.cgrid th.rh .def{max-width:none}
+table.cgrid th.c{font-size:10.5px;letter-spacing:.04em;padding:8px 2px}
+table.cgrid td{padding-top:0;padding-bottom:0}
+table.cgrid th.stk{position:sticky;left:0;background:var(--bg);z-index:1;min-width:170px;max-width:260px;box-shadow:1px 0 0 var(--border)}
+.rc{display:flex;align-items:center;justify-content:center;min-height:48px;min-width:44px;cursor:pointer;position:relative}
+.rc input{width:20px;height:20px;accent-color:var(--accent);margin:0;cursor:pointer}
+.rc.auto::after{content:'';position:absolute;inset:6px 4px;border:1px dashed var(--t3);pointer-events:none}
+.rc:focus-within{outline:2px solid var(--accent);outline-offset:-3px}
+
 </style>
 </head>
 <body>
@@ -377,7 +389,7 @@ fieldset{margin-top:24px}
   </div></div>
   <div class="c12 m8 l8 min0">
     <span class="lbl">Diccionario de variables</span>
-    <p class="body" style="margin-top:8px">Cada fila es una variable. La columna «Tipo» muestra lo que el panel detectó. Cámbielo con el menú si no coincide con lo que usted sabe de los datos.</p>
+    <p class="body" style="margin-top:8px">Cada fila es una variable. Cada columna es una clase posible. Cámbiela marcando otra si no coincide con lo que usted sabe de los datos.</p>
     <div id="dictT"></div>
     <details class="rd"><summary><span class="lbl">Qué significa cada tipo</span></summary><div class="rd-b">
       <p><b class="b-ink">Decimal (double).</b> Número con decimales: gasto, ingresos, minutos.</p>
@@ -1512,12 +1524,11 @@ const UI = {logOn: new Set(), pct: '5, 10, 25, 50, 75, 90, 95', boot: 0, zoom: n
 const SAMPLE_NAME = 'Datos de prueba: clientes de una cadena de cafeterías (simulados)';
 
 function renderDict(){
-  const D = DATA;
-  $('#dictT').innerHTML = `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Diccionario de variables"><table class="compact dict" style="min-width:680px"><thead><tr><th scope="col">Variable</th><th scope="col">Tipo</th><th scope="col" class="r">Distintos</th><th scope="col" class="r">Faltan</th><th scope="col">Ejemplos</th></tr></thead><tbody>` + D.vars.map((v, i) => {
-    const ex = [...new Set(v.strs.filter(s => !MISSING.has(s.trim().toLowerCase())))].slice(0, 3).map(s => esc(trunc(s, 18))).join(' · '), changed = v.type !== v.auto;
-    const miss = v.strs.filter(s => MISSING.has(s.trim().toLowerCase())).length;
-    return `<tr><th scope="row" class="rh">${esc(v.name)}${changed ? `<span class="chip">Modificado</span>` : ''}${v.note && !changed ? `<span class="def">${esc(v.note)}</span>` : ''}${v.bad ? `<span class="def">${nf(v.bad, 0)} valores no encajan con este tipo y se tratan como faltantes.</span>` : ''}</th><td><select class="sel" data-i="${i}" aria-label="Tipo de la variable ${esc(v.name)}">${TYPES.map(([k, l]) => `<option value="${k}"${v.type === k ? ' selected' : ''}>${l}${k === v.auto ? ' · auto' : ''}</option>`).join('')}</select></td><td class="r">${nf(v.k, 0)}</td><td class="r">${nf(miss, 0)}</td><td class="ex">${ex}</td></tr>`; }).join('') + `</tbody></table></div>`;
-  $$('#dictT select').forEach(s => s.addEventListener('change', () => { const i = +s.dataset.i, v = DATA.vars[i]; v.type = s.value; materialize(v); if (DATA.filter && DATA.filter.idx === i && !v.cat) DATA.filter = null; renderAll(); const b = $(`#dictT select[data-i="${i}"]`); if (b) b.focus(); }));
+  const D = DATA, cols = [['double', 'Decimal'], ['integer', 'Entero'], ['logical', 'Lógica'], ['factor', 'Factor'], ['ordered', 'Ordenado'], ['character', 'Texto'], ['date', 'Fecha'], ['id', 'Código']];
+  $('#dictT').innerHTML = `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Diccionario de variables: marque la clase de cada variable"><table class="compact dict cgrid" style="min-width:680px"><thead><tr><th scope="col" class="stk">Variable</th>${cols.map(([k, l]) => `<th scope="col" class="c" title="${esc(TYPE_NAME[k])}">${l}</th>`).join('')}</tr></thead><tbody>` + D.vars.map((v, i) => {
+    const ex = [...new Set(v.strs.filter(s => !MISSING.has(s.trim().toLowerCase())))].slice(0, 3).map(s => esc(trunc(s, 18))).join(' · '), changed = v.type !== v.auto, miss = v.strs.filter(s => MISSING.has(s.trim().toLowerCase())).length;
+    return `<tr><th scope="row" class="rh stk">${esc(v.name)}${changed ? `<span class="chip">Modificado</span>` : ''}<span class="def">${nf(v.k, 0)} distintos · ${nf(miss, 0)} sin dato · ${ex}</span>${v.note && !changed ? `<span class="def">${esc(v.note)}</span>` : ''}${v.bad ? `<span class="def">${nf(v.bad, 0)} valores no encajan con este tipo y se tratan como faltantes.</span>` : ''}</th>${cols.map(([k, l]) => `<td class="c"><label class="rc${k === v.auto ? ' auto' : ''}" title="${esc(TYPE_NAME[k])}${k === v.auto ? ' (detectado automáticamente)' : ''}"><input type="radio" name="vt${i}" value="${k}" data-i="${i}"${v.type === k ? ' checked' : ''} aria-label="Variable ${esc(v.name)}: ${esc(TYPE_NAME[k])}${k === v.auto ? ', detectado automáticamente' : ''}"></label></td>`).join('')}</tr>`; }).join('') + `</tbody></table></div><p class="hint" style="margin-top:8px">Marque la clase de cada variable. El recuadro de trazos indica lo que el programa detectó. Pase el cursor sobre un título de columna para ver su nombre completo.</p>`;
+  $$('#dictT input[type=radio]').forEach(s => s.addEventListener('change', () => { const i = +s.dataset.i, v = DATA.vars[i]; v.type = s.value; materialize(v); if (DATA.filter && DATA.filter.idx === i && !v.cat) DATA.filter = null; renderAll(); const b = $(`#dictT input[name="vt${i}"]:checked`); if (b) b.focus(); }));
 }
 function fillSelect(sel, vars, key, filt, dflt){
   const s = $(sel), old = UI[key]; s.innerHTML = vars.map(v => `<option value="${v.idx}">${esc(v.name)} · ${esc(TYPE_NAME[v.type].replace(/ \(.*/, ''))}</option>`).join('');

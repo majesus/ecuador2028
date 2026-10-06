@@ -360,6 +360,18 @@ fieldset{border:0;margin:24px 0 0;padding:0;min-width:0}
 .tile .btn{width:100%;font-size:13px}
 @media print{.ctl,.toc,.skip,.tools,.types,.purpose,.ctlgrid{display:none!important}.sec{padding:24px 0}:root{--bg:#fff}body{background:#fff}}
 
+/* Diccionario en rejilla */
+table.cgrid{min-width:680px}
+table.cgrid th.c,table.cgrid td.c{text-align:center;padding:0 1px;width:52px}
+table.cgrid th.rh .def{max-width:none}
+table.cgrid th.c{font-size:10.5px;letter-spacing:.04em;padding:8px 2px}
+table.cgrid td{padding-top:0;padding-bottom:0}
+table.cgrid th.stk{position:sticky;left:0;background:var(--bg);z-index:1;min-width:170px;max-width:260px;box-shadow:1px 0 0 var(--border)}
+.rc{display:flex;align-items:center;justify-content:center;min-height:48px;min-width:44px;cursor:pointer;position:relative}
+.rc input{width:20px;height:20px;accent-color:var(--accent);margin:0;cursor:pointer}
+.rc.auto::after{content:'';position:absolute;inset:6px 4px;border:1px dashed var(--t3);pointer-events:none}
+.rc:focus-within{outline:2px solid var(--accent);outline-offset:-3px}
+
 </style>
 </head>
 <body>
@@ -406,7 +418,7 @@ fieldset{border:0;margin:24px 0 0;padding:0;min-width:0}
     <span class="lbl">Clases de variable detectadas</span>
     <div id="classCards" style="margin-top:8px"></div>
     <span class="lbl" style="display:block;margin-top:32px">Diccionario de variables</span>
-    <p class="body" style="margin-top:8px">Cada fila es una variable. La columna «Tipo» muestra lo que el laboratorio detectó. Cámbielo con el menú si no coincide con lo que usted sabe de los datos. Los gráficos se actualizan al instante.</p>
+    <p class="body" style="margin-top:8px">Cada fila es una variable. Cada columna es una clase posible. Cámbiela marcando otra columna si no coincide con lo que usted sabe de los datos. Los gráficos se actualizan al instante.</p>
     <div id="dictT"></div>
     <details class="rd"><summary><span class="lbl">Qué significa cada tipo</span></summary><div class="rd-b">
       <p><b class="b-ink">Decimal (double).</b> Número con decimales: gasto, ingresos, minutos.</p>
@@ -1446,46 +1458,55 @@ CH.qq = {
 };
 
 
-/* ───────── Asimetría y curtosis ───────── */
+/* ───────── Forma de la distribución: asimetría y curtosis ───────── */
+const SK_THR = 0.5, KU_THR = 0.5;
+const skClass = g => g > 1 ? 'Asimetría fuerte a la derecha' : g > SK_THR ? 'Asimetría moderada a la derecha' : g < -1 ? 'Asimetría fuerte a la izquierda' : g < -SK_THR ? 'Asimetría moderada a la izquierda' : 'Simétrica';
+const kuClass = g => g > KU_THR ? 'Leptocúrtica (colas pesadas)' : g < -KU_THR ? 'Platicúrtica (colas ligeras)' : 'Mesocúrtica (como la normal)';
+const skIdx = g => g > 1 ? 2 : g > SK_THR ? 1 : g < -1 ? -2 : g < -SK_THR ? -1 : 0, kuIdx = g => g > KU_THR ? 1 : g < -KU_THR ? -1 : 0;
 CH.shape = {
-  id: 'shape', group: 'dist', label: 'Asimetría y curtosis', roles: {c: {k: 'cat', l: 'Grupos de la primera variable (opcional)'}}, multi: [1, 8], perVar: true, minN: 8,
-  opts: ['logv', 'labels'], dflt: {labels: true}, limKeys: ['xmin', 'xmax', 'ymin', 'ymax'],
-  how: {q: 'Sitúa cada variable (o cada grupo) por su asimetría, en horizontal, y su curtosis en exceso, en vertical. El punto (0, 0) es la forma de una campana normal. Las cruces son el intervalo de confianza del 95 % por remuestreo.', w: 'Para ver de un vistazo qué variables se alejan de la normalidad y en qué sentido, antes de elegir entre media y mediana o decidir un logaritmo.', r: 'A la derecha del 0, cola larga de valores altos; a la izquierda, de valores bajos. Por encima del 0, colas pesadas (más valores extremos); por debajo, colas ligeras. La franja central indica asimetría pequeña (menor que 0,5 en valor absoluto). La zona gris es matemáticamente imposible.', c: 'Con pocos datos, ambas medidas son muy inestables: observe la longitud de las cruces. Un solo valor extremo puede mover mucho la curtosis.'},
+  id: 'shape', group: 'dist', label: 'Forma: asimetría y curtosis', roles: {c: {k: 'cat', l: 'Grupos de la primera variable (opcional)'}}, multi: [1, 8], perVar: true, minN: 8, noFacet: true,
+  opts: ['logv', 'bw'], dflt: {bw: 1},
+  how: {q: 'Dibuja, para cada variable, su curva de densidad (línea continua) junto a la de una campana normal con la misma media y desviación típica (línea discontinua). Todas usan la misma escala: desviaciones típicas respecto a la media. El rojo claro marca dónde hay más datos que en una normal; el gris, dónde hay menos. Cada curva lleva su clasificación.', w: 'Antes de resumir una variable con la media, y para decidir si conviene la mediana o un logaritmo.', r: 'Asimetría: si el pico queda a un lado y la cola larga al otro, la variable es asimétrica. La línea roja vertical es la mediana; la negra, la media. Cuanto más separadas, mayor la asimetría. Curtosis: leptocúrtica (colas pesadas) significa más valores extremos que una normal, con un pico estrecho y colas largas; platicúrtica, menos, con una forma achatada; mesocúrtica, como la normal.', c: 'Los umbrales (0,5 y 1 en asimetría; ±0,5 en curtosis) son convenciones. Con pocos datos, ambas medidas son inestables: el gráfico lo indica cuando el intervalo de confianza cruza un umbral. La curtosis mide el peso de las colas, no lo puntiaguda que es la curva.'},
   prep(ctx){
     const cfg = ctx.cfg, log = !!cfg.logv, T = log ? Math.log10 : (v => v), E = [];
     const take = (v, filt) => { const a = []; for (const i of (filt || ctx.rows)){ const x = v.num[i]; if (Number.isFinite(x) && (!log || x > 0)) a.push(T(x)); } return a; };
-    if (ctx.col.has){ const v = ctx.M[0]; for (let j = 0; j < ctx.col.L; j++){ const rows = []; for (const i of ctx.rows) if (ctx.col.idx(i) === j) rows.push(i); E.push({label: ctx.col.names[j], j, vals: take(v, rows)}); } ctx.autoTitle = `Forma de ${pretty(v.name)} por ${pretty(ctx.Cv.v.name)}`; }
-    else { ctx.M.forEach(v => E.push({label: pretty(v.name), j: 0, vals: take(v)})); ctx.autoTitle = ctx.M.length === 1 ? `Forma de ${pretty(ctx.M[0].name)}` : `Forma de ${ctx.M.length} variables`; }
+    if (ctx.col.has){ const v = ctx.M[0]; for (let j = 0; j < ctx.col.L; j++){ const rows = []; for (const i of ctx.rows) if (ctx.col.idx(i) === j) rows.push(i); E.push({label: ctx.col.names[j], vals: take(v, rows)}); } ctx.autoTitle = `Forma de ${pretty(v.name)} por ${pretty(ctx.Cv.v.name)}`; }
+    else { ctx.M.forEach(v => E.push({label: pretty(v.name), vals: take(v)})); ctx.autoTitle = ctx.M.length === 1 ? `Forma de ${pretty(ctx.M[0].name)}` : `Forma de ${ctx.M.length} variables`; }
     const ok = E.filter(e => e.vals.length >= 8), skipped = E.length - ok.length; if (skipped) ctx.notes.push(`${skipped} ${skipped === 1 ? 'entrada tiene' : 'entradas tienen'} menos de 8 datos y no se muestra${skipped === 1 ? '' : 'n'}.`);
-    if (!ok.length) return void (ctx.shapeErr = true);
-    ok.forEach(e => { const d = describe(e.vals), vs = e.vals.length > 3000 ? sample(e.vals, 3000) : e.vals, b = bootstrapDesc(vs, 300, 777); e.g1 = d.skew; e.g2 = d.kurt; e.c1 = b.skew; e.c2 = b.kurt; e.n = d.n; });
+    if (!ok.length){ ctx.notes.push('Ninguna variable tiene datos suficientes (se necesitan al menos 8).'); return void (ctx.shapeErr = true); }
+    const X = Array.from({length: 161}, (_, i) => -4 + 8 * i / 160);
+    ok.forEach(e => { const d = describe(e.vals), vs = e.vals.length > 3000 ? sample(e.vals, 3000) : e.vals, bt = bootstrapDesc(vs, 300, 777); e.d = d; e.g1 = d.skew; e.g2 = d.kurt; e.c1 = bt.skew; e.c2 = bt.kurt; e.n = d.n; e.medz = d.sd > 0 ? (d.med - d.mean) / d.sd : 0;
+      const z = e.vals.map(v => d.sd > 0 ? (v - d.mean) / d.sd : 0), zin = z.filter(v => v >= -4 && v <= 4); e.out = z.length - zin.length;
+      const zs = zin.length > 4000 ? sample(zin, 4000) : zin, sc = Math.min(1, d.iqr / d.sd / KIQR || 1), h = Math.max(0.05, 0.9 * sc * Math.pow(zs.length, -0.2) * (cfg.bw || 1)); e.obs = kdeAt(zs, X, h).map(v => v * zin.length / z.length); e.nor = X.map(x => Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI)); e.ymax = Math.max(...e.obs, 0.4) * 1.12;
+      e.sc = skClass(e.g1); e.kc = kuClass(e.g2); const sOk = Number.isFinite(e.c1[0]) && skIdx(e.c1[0]) === skIdx(e.g1) && skIdx(e.c1[1]) === skIdx(e.g1), kOk = Number.isFinite(e.c2[0]) && kuIdx(e.c2[0]) === kuIdx(e.g2) && kuIdx(e.c2[1]) === kuIdx(e.g2); e.sOk = sOk; e.kOk = kOk; });
     if (ok.some(e => e.n > 3000)) ctx.notes.push('Los intervalos de confianza se calculan sobre una muestra de 3 000 datos. Las medidas usan todos.');
     if (ok.some(e => e.n < 30)) ctx.notes.push('Alguna entrada tiene menos de 30 datos. Su asimetría y su curtosis son muy inestables.');
-    ctx.h = {E: ok, log}; ctx.autoSub = (log ? 'escala logarítmica · ' : '') + `n por entrada: ${ok.map(e => nf(e.n, 0)).join(', ')}`;
-    if (ctx.col.has) ctx.legend = ctx.col.names.map((nm, j) => ({label: nm, sw: swMark(j, ctx.col.fill(j))}));
-    ctx.tbl = {head: ['Entrada', 'n', 'Asimetría (g₁)', 'IC 95 % de g₁', 'Curtosis en exceso (g₂)', 'IC 95 % de g₂', 'Lectura'], rows: ok.map(e => [e.label, e.n, nf(e.g1, 2), `${nf(e.c1[0], 2)} a ${nf(e.c1[1], 2)}`, nf(e.g2, 2), `${nf(e.c2[0], 2)} a ${nf(e.c2[1], 2)}`, `${skewWord(e.g1)}; ${kurtWord(e.g2)}`])};
-    ctx.rd = ok.slice(0, 3).map(e => `<b>${esc(e.label)}</b>: asimetría ${nf(e.g1, 2)} (${skewWord(e.g1)}); curtosis ${nf(e.g2, 2)} (${kurtWord(e.g2)}).`);
-    const bad = ok.filter(e => e.g1 > 1 && !log && e.vals.every(v => v > 0)); if (bad.length) ctx.rd.push('Las variables con asimetría mayor que 1 suelen mejorar con la escala logarítmica. Actívela y compare.'); ctx.rd.push('Con asimetría fuerte, la mediana describe mejor al caso típico que la media.');
+    ctx.h = {E: ok, X, log}; ctx.autoSub = (log ? 'Escala logarítmica. ' : '') + 'Escala común: desviaciones típicas respecto a la media';
+    ctx.legend = [{label: 'Datos', sw: swLine('var(--text)')}, {label: 'Normal con la misma media y desviación', sw: swLine('var(--t3)', true)}, {label: 'Más datos que la normal', sw: swSq('var(--accent)', {op: .3})}, {label: 'Menos datos que la normal', sw: swSq('var(--t3)', {op: .4})}, {label: 'Media (negra) y mediana (roja)', sw: swLine('var(--accent)', true)}];
+    ctx.tbl = {head: ['Entrada', 'n', 'Asimetría (g₁)', 'IC 95 % de g₁', 'Clase por asimetría', 'Curtosis en exceso (g₂)', 'IC 95 % de g₂', 'Clase por curtosis', 'Valores a más de 4 DE'], rows: ok.map(e => [e.label, e.n, nf(e.g1, 2), `${nf(e.c1[0], 2)} a ${nf(e.c1[1], 2)}`, e.sc + (e.sOk ? '' : ' (poco concluyente)'), nf(e.g2, 2), `${nf(e.c2[0], 2)} a ${nf(e.c2[1], 2)}`, e.kc + (e.kOk ? '' : ' (poco concluyente)'), e.out])};
+    ctx.rd = ok.slice(0, 4).map(e => `<b>${esc(e.label)}</b>: ${e.sc.toLowerCase()} (${nf(e.g1, 2)}) y ${e.kc.toLowerCase()} (${nf(e.g2, 2)}).${e.g1 > 1 ? ' La mediana describe mejor al caso típico que la media.' : ''}`);
+    const sk = ok.filter(e => e.g1 > 1 && !log && e.d.min > 0); if (sk.length) ctx.rd.push(`Con asimetría fuerte a la derecha y valores positivos${sk.length === 1 ? '' : ' (' + sk.map(e => esc(e.label)).join(', ') + ')'}, pruebe la escala logarítmica: suele simetrizar la variable.`);
+    ctx.rd.push('Una asimetría o una curtosis lejos de cero no es un error: describe la forma de los datos. Sirve para elegir qué resumen y qué prueba usar.');
   },
-  height(ctx, pw){ return clamp(Math.round(pw * 0.62), 300, 440); },
+  height(ctx, pw){ const n = ctx.h ? ctx.h.E.length : 1, cols = pw < 520 ? 1 : pw < 860 ? 2 : 3, rows = Math.ceil(n / cols); return rows * 215 + (rows - 1) * 20; },
   draw(ctx, k, W, H, o){
-    const h = ctx.h; if (!h) return ''; const P = mkP(W, H, o), m = P.m, c = clipDef(P), E = h.E;
-    let x0 = Math.min(-1, ...E.map(e => Math.min(e.g1, e.c1[0]))), x1 = Math.max(1, ...E.map(e => Math.max(e.g1, e.c1[1]))), y0 = Math.min(-1.5, ...E.map(e => Math.min(e.g2, e.c2[0]))), y1 = Math.max(2, ...E.map(e => Math.max(e.g2, e.c2[1])));
-    const px = (x1 - x0) * 0.08, py = (y1 - y0) * 0.08; const xd = domainOf(x0 - px, x1 + px, false, {min: lim(ctx.cfg, 'xmin'), max: lim(ctx.cfg, 'xmax')}), yd = domainOf(y0 - py, y1 + py, false, {min: lim(ctx.cfg, 'ymin'), max: lim(ctx.cfg, 'ymax')}), sx = mkScale('lin', xd[0], xd[1], m.l, m.l + P.pw), sy = mkScale('lin', yd[0], yd[1], m.t + P.ph, m.t);
-    let g = frameXY(P, sx, sy, {xlab: 'Asimetría g₁ (← cola a la izquierda · 0 · cola a la derecha →)', ylab: 'Curtosis en exceso g₂ (colas ligeras ↓ · 0 · colas pesadas ↑)', vgrid: true, xfmt: v => nf(v, tdec(niceTicks(xd[0], xd[1], 7))), yfmt: v => nf(v, tdec(niceTicks(yd[0], yd[1], 5)))});
-    g += `<g clip-path="url(#${c.id})">`;
-    const par = Array.from({length: 61}, (_, i) => xd[0] + (xd[1] - xd[0]) * i / 60); g += `<path d="M${par.map(x => sx(x).toFixed(1) + ' ' + sy(x * x - 2).toFixed(1)).join('L')}L${sx(xd[1])} ${sy(yd[0])}L${sx(xd[0])} ${sy(yd[0])}Z" fill="var(--surface-2)" opacity=".9"/>`;
-    g += `<rect x="${sx(-0.5)}" y="${m.t}" width="${sx(0.5) - sx(-0.5)}" height="${P.ph}" fill="var(--a10)"/><line x1="${sx(0)}" x2="${sx(0)}" y1="${m.t}" y2="${m.t + P.ph}" class="ref"/><line x1="${m.l}" x2="${m.l + P.pw}" y1="${sy(0)}" y2="${sy(0)}" class="ref"/>`;
-    if (!P.c){ g += `<text class="tk" x="${sx(0)}" y="${m.t + 12}" text-anchor="middle">asimetría pequeña</text>`; if (sy(-2) < m.t + P.ph - 6 || true) g += `<text class="tk" x="${m.l + 6}" y="${m.t + P.ph - 8}">combinación imposible</text>`; }
-    g += `<circle cx="${sx(0)}" cy="${sy(0)}" r="6" fill="var(--bg)" stroke="var(--text)" stroke-width="2"/>` + (P.c ? '' : `<text class="txt muted" x="${sx(0) + 9}" y="${sy(0) + 16}">normal</text>`);
-    E.forEach((e, i) => { const col = ctx.col.has ? ctx.col.fill(e.j) : 'var(--text)', x = sx(e.g1), y = sy(e.g2);
-      g += `<line x1="${sx(e.c1[0])}" x2="${sx(e.c1[1])}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="2" stroke-opacity=".7"/><line x1="${x}" x2="${x}" y1="${sy(e.c2[0])}" y2="${sy(e.c2[1])}" stroke="${col}" stroke-width="2" stroke-opacity=".7"/>`;
-      const tip = `${e.label}: asimetría ${nf(e.g1, 2)} [${nf(e.c1[0], 2)}; ${nf(e.c1[1], 2)}] · curtosis ${nf(e.g2, 2)} [${nf(e.c2[0], 2)}; ${nf(e.c2[1], 2)}] · n = ${e.n}`;
-      g += (ctx.col.has ? ctx.col.mk(e.j, x.toFixed(1), y.toFixed(1), 6.5, `stroke="var(--bg)" stroke-width="1.5" class="bar" tabindex="0" data-tip="${esc(tip)}"`) : `<circle cx="${x}" cy="${y}" r="6" fill="var(--text)" stroke="var(--bg)" stroke-width="1.5" class="bar" tabindex="0" data-tip="${esc(tip)}"/>`);
-      if (ctx.cfg.labels && !P.c) g += `<text class="txt" x="${x + (x > m.l + P.pw - 120 ? -10 : 10)}" y="${y - 9}" text-anchor="${x > m.l + P.pw - 120 ? 'end' : 'start'}">${esc(trunc(e.label, 22))}</text>`; });
-    return g + `</g><defs>${c.def}</defs>`;
+    const h = ctx.h; if (!h) return ''; const n = h.E.length, cols = Math.min(n, W < 520 ? 1 : W < 860 ? 2 : 3), gap = 24, cw = Math.floor((W - (cols - 1) * gap) / cols), chh = 215; let g = '';
+    h.E.forEach((e, i) => {
+      const cx = (i % cols) * (cw + gap), cy = Math.floor(i / cols) * (chh + 20), top = 58, plotH = chh - top - 28, sx = v => cx + (v + 4) / 8 * cw, sy = v => cy + top + plotH - v / e.ymax * plotH, base = cy + top + plotH;
+      g += `<text style="font-size:13px;font-weight:500;fill:var(--text)" x="${cx}" y="${cy + 14}">${esc(trunc(e.label, Math.floor(cw / 7.4)))}<tspan style="font-weight:400;fill:var(--t3)"> · n = ${nf(e.n, 0)}</tspan></text>`;
+      g += `<text style="font-size:12px;fill:var(--text)" x="${cx}" y="${cy + 31}">${esc(e.sc)} (${nf(e.g1, 2)})${e.sOk ? '' : '<tspan style="fill:var(--t3)"> · poco concluyente</tspan>'}</text><text style="font-size:12px;fill:var(--text)" x="${cx}" y="${cy + 46}">${esc(e.kc)} (${nf(e.g2, 2)})${e.kOk ? '' : '<tspan style="fill:var(--t3)"> · poco concluyente</tspan>'}</text>`;
+      [-4, -2, 0, 2, 4].forEach(t => { g += `<line class="gl" x1="${sx(t)}" x2="${sx(t)}" y1="${cy + top}" y2="${base}"/><text class="tk" x="${sx(t)}" y="${base + 15}" text-anchor="${t === -4 ? 'start' : t === 4 ? 'end' : 'middle'}">${t > 0 ? '+' : t < 0 ? '−' : ''}${Math.abs(t)}</text>`; });
+      g += `<line class="axis" x1="${cx}" x2="${cx + cw}" y1="${base}" y2="${base}"/>`;
+      let pos = '', neg = ''; for (let q = 0; q < h.X.length - 1; q++){ const x0 = sx(h.X[q]), x1 = sx(h.X[q + 1]), a0 = sy(e.obs[q]), a1 = sy(e.obs[q + 1]), b0 = sy(e.nor[q]), b1 = sy(e.nor[q + 1]), up = (e.obs[q] + e.obs[q + 1]) >= (e.nor[q] + e.nor[q + 1]), seg = `M${x0.toFixed(1)} ${a0.toFixed(1)}L${x1.toFixed(1)} ${a1.toFixed(1)}L${x1.toFixed(1)} ${b1.toFixed(1)}L${x0.toFixed(1)} ${b0.toFixed(1)}Z`; if (up) pos += seg; else neg += seg; }
+      g += `<path d="${neg}" fill="var(--t3)" opacity=".35"/><path d="${pos}" fill="var(--accent)" opacity=".3"/>`;
+      g += `<path class="ln dash" style="stroke:var(--t3)" d="${h.X.map((x, q) => (q ? 'L' : 'M') + sx(x).toFixed(1) + ' ' + sy(e.nor[q]).toFixed(1)).join('')}"/><path class="ln ink" d="${h.X.map((x, q) => (q ? 'L' : 'M') + sx(x).toFixed(1) + ' ' + sy(e.obs[q]).toFixed(1)).join('')}"/>`;
+      const mz = clamp(e.medz, -4, 4); g += `<line x1="${sx(0)}" x2="${sx(0)}" y1="${cy + top}" y2="${base}" stroke="var(--text)" stroke-width="2"/><line x1="${sx(mz)}" x2="${sx(mz)}" y1="${cy + top}" y2="${base}" stroke="var(--accent)" stroke-width="2" stroke-dasharray="5 3"/>`;
+      g += `<rect x="${cx}" y="${cy + top}" width="${cw}" height="${plotH}" fill="transparent" class="bar" tabindex="0" data-tip="${esc(`${e.label}: asimetría ${nf(e.g1, 2)} [${nf(e.c1[0], 2)}; ${nf(e.c1[1], 2)}] · curtosis ${nf(e.g2, 2)} [${nf(e.c2[0], 2)}; ${nf(e.c2[1], 2)}] · mediana ${fv(e.d.med)} · media ${fv(e.d.mean)}`)}"/>`;
+      if (e.out) g += `<text class="tk" x="${cx + cw}" y="${cy + top + 11}" text-anchor="end">${nf(e.out, 0)} ${e.out === 1 ? 'valor' : 'valores'} a más de 4 DE</text>`;
+    });
+    return g;
   },
-  swatch: (ctx, j) => swMark(j, ctx.col.fill(j))
+  swatch: null
 };
 
 /* ═════════ Categorías × valor: caja, violín, puntos, medias, crestas ═════════ */
@@ -2092,7 +2113,7 @@ const ICONS = {
   hist: '<path d="M3 21V14h5v7zM9 21V8h5v13zM15 21V3h5v18zM21 21V9h5v12zM27 21v-5h5v5z" fill="currentColor" stroke="none" opacity=".8"/>',
   dens: '<path d="M2 21C8 21 10 4 18 4s10 17 16 17" /><path d="M2 21h32"/>',
   ecdf: '<path d="M2 21h7v-4h4v-5h4v-4h5v-5h4v-2h8"/>',
-  shape: '<path d="M3 21h30M18 3v18"/><path d="M6 17C10 10 14 8 18 12s8 3 12-6" stroke-width="1.4"/><circle cx="22" cy="8" r="2" fill="currentColor"/><circle cx="12" cy="15" r="2" fill="currentColor"/>',
+  shape: '<path d="M3 21h30"/><path d="M3 21C8 21 10 4 14 4s5 17 19 17"/><path d="M3 21C10 21 12 9 18 9s8 12 15 12" stroke-dasharray="3 2"/>',
   qq: '<path d="M4 20L32 4"/><circle cx="8" cy="19" r="1.6" fill="currentColor"/><circle cx="14" cy="14" r="1.6" fill="currentColor"/><circle cx="20" cy="12" r="1.6" fill="currentColor"/><circle cx="26" cy="7" r="1.6" fill="currentColor"/><circle cx="31" cy="4" r="1.6" fill="currentColor"/>',
   box: '<path d="M5 6v12M5 12h3M31 6v12M31 12h-3M8 12h20"/><rect x="11" y="7" width="14" height="10" fill="none"/><path d="M18 7v10" stroke-width="3"/>',
   violin: '<path d="M18 2C24 6 24 9 21 12c3 3 3 6 0 10h-6c-3-4-3-7 0-10-3-3-3-6 3-10z"/>',
@@ -2138,11 +2159,11 @@ function defaultCfg(){ UI.cfg = Object.assign({}, DEFAULTS, {m: []}); const nums
 
 /* ───────── Diccionario, filtro y carga ───────── */
 function renderDict(){
-  const D = DATA;
-  $('#dictT').innerHTML = `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Diccionario de variables"><table class="compact dict" style="min-width:680px"><thead><tr><th scope="col">Variable</th><th scope="col">Tipo</th><th scope="col" class="r">Distintos</th><th scope="col" class="r">Faltan</th><th scope="col">Ejemplos</th></tr></thead><tbody>` + D.vars.map((v, i) => {
+  const D = DATA, cols = [['double', 'Decimal'], ['integer', 'Entero'], ['logical', 'Lógica'], ['factor', 'Factor'], ['ordered', 'Ordenado'], ['character', 'Texto'], ['date', 'Fecha'], ['id', 'Código']];
+  $('#dictT').innerHTML = `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Diccionario de variables: marque la clase de cada variable"><table class="compact dict cgrid" style="min-width:680px"><thead><tr><th scope="col" class="stk">Variable</th>${cols.map(([k, l]) => `<th scope="col" class="c" title="${esc(TYPE_NAME[k])}">${l}</th>`).join('')}</tr></thead><tbody>` + D.vars.map((v, i) => {
     const ex = [...new Set(v.strs.filter(s => !MISSING.has(s.trim().toLowerCase())))].slice(0, 3).map(s => esc(trunc(s, 18))).join(' · '), changed = v.type !== v.auto, miss = v.strs.filter(s => MISSING.has(s.trim().toLowerCase())).length;
-    return `<tr><th scope="row" class="rh">${esc(v.name)}${changed ? `<span class="chip">Modificado</span>` : ''}${v.note && !changed ? `<span class="def">${esc(v.note)}</span>` : ''}${v.bad ? `<span class="def">${nf(v.bad, 0)} valores no encajan con este tipo y se tratan como faltantes.</span>` : ''}</th><td><select class="sel" data-i="${i}" aria-label="Tipo de la variable ${esc(v.name)}">${TYPES.map(([k, l]) => `<option value="${k}"${v.type === k ? ' selected' : ''}>${l}${k === v.auto ? ' · auto' : ''}</option>`).join('')}</select></td><td class="r">${nf(v.k, 0)}</td><td class="r">${nf(miss, 0)}</td><td class="ex">${ex}</td></tr>`; }).join('') + `</tbody></table></div>`;
-  $$('#dictT select').forEach(s => s.addEventListener('change', () => { const i = +s.dataset.i, v = DATA.vars[i]; v.type = s.value; materialize(v); if (DATA.filter && DATA.filter.idx === i && !v.cat) DATA.filter = null; renderAll(); const b = $(`#dictT select[data-i="${i}"]`); if (b) b.focus(); }));
+    return `<tr><th scope="row" class="rh stk">${esc(v.name)}${changed ? `<span class="chip">Modificado</span>` : ''}<span class="def">${nf(v.k, 0)} distintos · ${nf(miss, 0)} sin dato · ${ex}</span>${v.note && !changed ? `<span class="def">${esc(v.note)}</span>` : ''}${v.bad ? `<span class="def">${nf(v.bad, 0)} valores no encajan con este tipo y se tratan como faltantes.</span>` : ''}</th>${cols.map(([k, l]) => `<td class="c"><label class="rc${k === v.auto ? ' auto' : ''}" title="${esc(TYPE_NAME[k])}${k === v.auto ? ' (detectado automáticamente)' : ''}"><input type="radio" name="vt${i}" value="${k}" data-i="${i}"${v.type === k ? ' checked' : ''} aria-label="Variable ${esc(v.name)}: ${esc(TYPE_NAME[k])}${k === v.auto ? ', detectado automáticamente' : ''}"></label></td>`).join('')}</tr>`; }).join('') + `</tbody></table></div><p class="hint" style="margin-top:8px">Marque la clase de cada variable. El recuadro de trazos indica lo que el programa detectó. Pase el cursor sobre un título de columna para ver su nombre completo.</p>`;
+  $$('#dictT input[type=radio]').forEach(s => s.addEventListener('change', () => { const i = +s.dataset.i, v = DATA.vars[i]; v.type = s.value; materialize(v); if (DATA.filter && DATA.filter.idx === i && !v.cat) DATA.filter = null; renderAll(); const b = $(`#dictT input[name="vt${i}"]:checked`); if (b) b.focus(); }));
 }
 function renderClasses(){
   const vs = DATA.vars, g = fn => vs.filter(fn), nm = a => a.slice(0, 3).map(v => pretty(v.name)).join(', ') + (a.length > 3 ? '…' : '') || '—';
