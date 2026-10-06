@@ -179,8 +179,11 @@ figcaption{margin-top:16px;font-size:13px;line-height:1.5;color:var(--t3);max-wi
 .txt.red{fill:var(--accent-t)}
 .txt.muted{fill:var(--t2)}
 .read{min-height:3em;font-size:13px;line-height:1.5;color:var(--text);margin-top:8px;font-variant-numeric:tabular-nums}
-.pair{display:grid;gap:32px}
-@media(min-width:768px){.pair{grid-template-columns:1fr 1fr}}
+.pair{display:grid;gap:32px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:768px){.pair{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pair>*{min-width:0}
+.chart{min-width:0;max-width:100%}
+.chart>svg{max-width:100%;height:auto}
 
 /* ───────── Reading & table ───────── */
 .reading{border-top:1px solid var(--text);padding-top:16px;margin-top:32px}
@@ -336,7 +339,7 @@ details.opt .formulas{margin-top:32px}
         <h2 id="h-ej">La idea en un ejemplo</h2>
         <p class="body" style="margin-top:16px">Siete clientes de un restaurante pagan su cuenta. El dato es el gasto de cada cliente, en euros. Los gastos son parecidos. Ahora imagine que el último cliente hace un pedido para toda su oficina y paga 300 €. Pulse el botón y mire qué cambia.</p>
         <div class="tog">
-          <button type="button" class="btn" id="exBtn" aria-pressed="false">Cambiar el último gasto a 30</button>
+          <button type="button" class="btn" id="exBtn" aria-pressed="false">Cambiar el último gasto a 300 €</button>
           <span class="hint" style="margin:0" id="exState"></span>
         </div>
       </div>
@@ -448,6 +451,16 @@ details.opt .formulas{margin-top:32px}
             <button type="button" class="btn" id="b-reset">Restablecer</button>
           </div>
           <p class="hint" id="seedinfo"></p>
+          <details class="rd" id="edBox">
+            <summary><span class="lbl">Editar un dato con el teclado</span></summary>
+            <div class="rd-b">
+              <p class="hint" style="margin-top:0">Alternativa a arrastrar los puntos: elija el número del dato, escriba su nuevo valor y aplíquelo.</p>
+              <div class="field"><label class="lbl" for="edIdx">Dato número</label><select id="edIdx"></select></div>
+              <div class="field"><label class="lbl" for="edVal">Nuevo valor</label><input id="edVal" type="text" inputmode="decimal" autocomplete="off" style="min-height:44px;max-width:100%;width:100%;border:1px solid var(--text);background:var(--bg);color:var(--text);border-radius:0;padding:0 12px;font:inherit"></div>
+              <div class="btns"><button type="button" class="btn" id="edApply">Aplicar el valor</button><button type="button" class="btn" id="edUndo">Restaurar este dato</button></div>
+              <p class="hint" id="edMsg" role="status" aria-live="polite"></p>
+            </div>
+          </details>
         </div>
       </div>
 
@@ -632,7 +645,7 @@ details.opt .formulas{margin-top:32px}
         <p class="body" style="margin-top:16px">Esta sección es opcional. Todo lo anterior se entiende sin ella. Sirve a quien quiere ver la matemática exacta.</p>
         <p class="body"><b>Cómo leer los símbolos.</b> <i>x<sub>i</sub></i> es el dato número <i>i</i>. <i>n</i> es la cantidad de datos. El signo Σ significa «sumar todos». Una barra encima, como en <i>x̄</i>, indica un promedio. Una tilde, como en <i>x̃</i>, indica la mediana.</p>
         <p style="margin-top:24px"></p>
-        <p class="mathwarn" id="mathwarn" role="status">KaTeX no se cargó. La página muestra el código LaTeX en lugar de las fórmulas. Conecte el equipo a internet y recargue la página.</p>
+        <p class="mathwarn" id="mathwarn" role="status">No se pudieron mostrar las fórmulas. La página muestra el código LaTeX en su lugar. Recargue la página; si persiste, pruebe con otro navegador.</p>
       </div>
     </div>
 
@@ -661,7 +674,7 @@ details.opt .formulas{margin-top:32px}
       <div class="f">
         <div class="n"><span class="cap">MAD escalada</span></div>
         <div class="e"><div class="eq">$$\hat{\sigma}_{\mathrm{MAD}}=k\cdot\mathrm{MAD},\qquad k=\frac{1}{\Phi^{-1}(3/4)}\approx 1{,}4826$$</div>
-          <p>Para datos normales, la MAD vale cerca de \(0{,}6745\,\sigma\). El factor \(k\) la lleva a la misma escala que σ. El factor vale solo para datos normales.</p></div>
+          <p>Para datos normales, la MAD vale cerca de \(0{,}6745\,\sigma\). El factor \(k\) la calibra para estimar σ cuando los datos son normales. Con otras distribuciones (uniforme, con dos grupos…) o con pocos datos, la MAD escalada y la desviación típica pueden diferir sin que haya error alguno.</p></div>
       </div>
       <div class="f">
         <div class="n"><span class="cap">Punto de ruptura</span></div>
@@ -708,7 +721,7 @@ details.opt .formulas{margin-top:32px}
           <div><dt>Mediana</dt><dd>El dato central de la muestra ordenada.</dd></div>
           <div><dt>Desviación típica</dt><dd>Una medida de dispersión basada en las distancias a la media, elevadas al cuadrado. Por eso los datos lejanos pesan mucho.</dd></div>
           <div><dt>MAD</dt><dd>La mediana de las distancias entre cada dato y la mediana. Las siglas vienen del inglés «median absolute deviation».</dd></div>
-          <div><dt>MAD escalada</dt><dd>La MAD multiplicada por 1,4826. Así queda en la misma escala que la desviación típica.</dd></div>
+          <div><dt>MAD escalada</dt><dd>La MAD multiplicada por 1,4826. Esa constante la calibra como estimación de σ para datos normales; con otras formas o con pocos datos puede diferir de la desviación típica.</dd></div>
           <div><dt>Dispersión</dt><dd>Cuánto se separan los datos entre sí.</dd></div>
           <div><dt>Medida robusta</dt><dd>Una medida que los valores extremos casi no alteran.</dd></div>
           <div><dt>μ y σ</dt><dd>El centro real y la dispersión real con que el simulador crea los datos. En la vida real no se conocen.</dd></div>
@@ -860,7 +873,7 @@ function drawA(){
   const host = $('#chartA');
   host.addEventListener('pointerdown', e => {
     const t = e.target.closest('[data-i]'); if (!t || !host._A) return;
-    drag = {i: +t.dataset.i, dom: host._A.dom.slice()};
+    S.note = ''; drag = {i: +t.dataset.i, dom: host._A.dom.slice()};
     host.setPointerCapture(e.pointerId); e.preventDefault();
   });
   host.addEventListener('pointermove', e => {
@@ -890,6 +903,8 @@ function lineChart(host, o){
   xt.forEach(v => { g += `<text class="tk" x="${sx(v)}" y="${H - m.b + 18}" text-anchor="middle">${o.xFmt ? o.xFmt(v) : nf(v, xd)}</text><line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="${m.t}" y2="${m.t + ph}" opacity=".5"/>`; });
   g += `<line class="axis" x1="${m.l}" x2="${W - m.r}" y1="${m.t + ph}" y2="${m.t + ph}"/>`;
   g += `<text class="ax-lab" x="${m.l}" y="12">${o.yLab || ''}</text><text class="ax-lab" x="${W - m.r}" y="${H - 4}" text-anchor="end">${o.xLab || ''}</text>`;
+  let nout = 0, ext = 0; o.series.forEach(s => s.pts.forEach(q => { if (Number.isFinite(q[1]) && (q[1] > y1 || q[1] < y0)){ nout++; ext = Math.max(ext, Math.abs(q[1])); } }));
+  if (nout) g += `<text class="mk-t" x="${W - m.r}" y="${m.t - 6}" text-anchor="end">${nout} puntos fuera de la escala (hasta ${nf(ext)})</text>`;
   let body = '';
   (o.refs || []).forEach(r => { if (r.y >= y0 && r.y <= y1) body += `<line class="ref" x1="${m.l}" x2="${W - m.r}" y1="${sy(r.y)}" y2="${sy(r.y)}"/><text class="tk" x="${W - m.r - 4}" y="${sy(r.y) - 5}" text-anchor="end">${r.label}</text>`; });
   (o.markers || []).forEach(k => { if (k.x >= x0 && k.x <= x1) body += `<line class="mk" x1="${sx(k.x)}" x2="${sx(k.x)}" y1="${m.t}" y2="${m.t + ph}"/><text class="mk-t" x="${sx(k.x) + 4}" y="${m.t + 12}">${k.label}</text>`; });
@@ -906,16 +921,28 @@ function lineChart(host, o){
   if (cap) cap.dataset.def = o.capDefault || '';
   if (!host._hook){
     host._hook = true;
+    const show = bi => {
+      const L = host._L; if (!L) return; const pts = L.o.series[0].pts;
+      const lx = L.sx(pts[bi][0]), ln = host.querySelector('#' + L.id + 'l');
+      ln.setAttribute('x1', lx); ln.setAttribute('x2', lx); ln.setAttribute('visibility', 'visible');
+      L.o.series.forEach((s, i) => { const c = host.querySelector('#' + L.id + 'c' + i); if (!Number.isFinite(s.pts[bi][1])){ c.setAttribute('visibility', 'hidden'); return; } c.setAttribute('cx', lx); c.setAttribute('cy', clamp(L.sy(s.pts[bi][1]), L.m.t, L.m.t + (L.o.h || 250) - L.m.t - L.m.b)); c.setAttribute('visibility', 'visible'); });
+      const c = L.o.cap ? $(L.o.cap) : null; if (c) c.textContent = L.o.hover(bi);
+    };
     host.addEventListener('pointermove', e => {
       const L = host._L; if (!L) return;
       const r = host.getBoundingClientRect(), px = e.clientX - r.left;
       const pts = L.o.series[0].pts; let bi = 0, bd = 1e9;
       for (let i = 0; i < pts.length; i++){ const dd = Math.abs(L.sx(pts[i][0]) - px); if (dd < bd){ bd = dd; bi = i; } }
-      const lx = L.sx(pts[bi][0]), ln = host.querySelector('#' + L.id + 'l');
-      ln.setAttribute('x1', lx); ln.setAttribute('x2', lx); ln.setAttribute('visibility', 'visible');
-      L.o.series.forEach((s, i) => { const c = host.querySelector('#' + L.id + 'c' + i); c.setAttribute('cx', lx); c.setAttribute('cy', clamp(L.sy(s.pts[bi][1]), L.m.t, L.m.t + (L.o.h || 250) - L.m.t - L.m.b)); c.setAttribute('visibility', 'visible'); });
-      const c = L.o.cap ? $(L.o.cap) : null; if (c) c.textContent = L.o.hover(bi);
+      show(bi);
     });
+    // Teclado: Tab entra en el gráfico; flechas, Inicio y Fin recorren los valores y el pie de figura los anuncia.
+    host.tabIndex = 0;
+    host.addEventListener('keydown', e => {
+      const L = host._L; if (!L) return; const n = L.o.series[0].pts.length; let i = host._cur == null ? -1 : host._cur;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') i = Math.min(n - 1, i + 1); else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') i = Math.max(0, i < 0 ? 0 : i - 1); else if (e.key === 'Home') i = 0; else if (e.key === 'End') i = n - 1; else return;
+      e.preventDefault(); host._cur = i; const c = L.o.cap ? $(L.o.cap) : null; if (c) c.setAttribute('aria-live', 'polite'); show(i);
+    });
+    host.addEventListener('blur', () => { host._cur = null; const L = host._L; if (!L) return; const c = L.o.cap ? $(L.o.cap) : null; if (c){ c.removeAttribute('aria-live'); c.textContent = c.dataset.def || ''; } host.querySelectorAll('[visibility=visible]').forEach(n => n.setAttribute('visibility', 'hidden')); });
     host.addEventListener('pointerleave', () => {
       const L = host._L; if (!L) return;
       host.querySelectorAll('[visibility=visible]').forEach(n => n.setAttribute('visibility', 'hidden'));
@@ -943,14 +970,14 @@ function drawB(){
     h: 250, xDom: [-20, 20], yDom: dom1, xTicks: xt, xFmt, xLab: 'Posición del dato añadido', yLab: 'Valor',
     series: [{cls: 'ink', pts: ser(r => r.mean)}, {cls: 'red', pts: ser(r => r.med)}],
     refs: [{y: S.mu, label: 'μ'}], markers: mk, cap: '#capB1',
-    capDefault: 'Mueva el puntero sobre el gráfico.',
+    capDefault: 'Mueva el puntero sobre el gráfico o, con el teclado, enfóquelo y use las flechas.',
     hover: i => `${hdr(i)} Media: ${nf(rows[i].mean)}. Mediana: ${nf(rows[i].med)}.`
   });
   lineChart($('#chartB2'), {
     h: 250, xDom: [-20, 20], yDom: [0, maxSd * 1.08], xTicks: xt, xFmt, xLab: 'Posición del dato añadido', yLab: 'Valor',
     series: [{cls: 'ink', pts: ser(r => r.sd)}, {cls: 'red', pts: ser(r => r.madS)}],
     refs: [{y: S.sigma, label: 'σ'}], markers: mk, cap: '#capB2',
-    capDefault: 'Mueva el puntero sobre el gráfico.',
+    capDefault: 'Mueva el puntero sobre el gráfico o, con el teclado, enfóquelo y use las flechas.',
     hover: i => `${hdr(i)} s: ${nf(rows[i].sd)}. MAD escalada: ${nf(rows[i].madS)}.`
   });
 }
@@ -981,13 +1008,13 @@ function drawC(){
   lineChart($('#chartC1'), {
     h: 250, xDom: [0, 60], yDom: dom1, xTicks: xt, xFmt, xLab: 'Proporción de valores extremos', yLab: 'Valor',
     series: [{cls: 'ink', pts: ser(r => r.mean)}, {cls: 'red', pts: ser(r => r.med)}],
-    refs: [{y: S.mu, label: 'μ'}], markers: mk, cap: '#capC1', capDefault: 'Mueva el puntero sobre el gráfico.',
+    refs: [{y: S.mu, label: 'μ'}], markers: mk, cap: '#capC1', capDefault: 'Mueva el puntero sobre el gráfico o, con el teclado, enfóquelo y use las flechas.',
     hover: i => `${hdr(i)} Media: ${nf(rows[i].mean)}. Mediana: ${nf(rows[i].med)}.`
   });
   lineChart($('#chartC2'), {
     h: 250, xDom: [0, 60], yDom: [0, hi2], xTicks: xt, xFmt, xLab: 'Proporción de valores extremos', yLab: 'Valor',
     series: [{cls: 'ink', pts: ser(r => r.sd)}, {cls: 'red', pts: ser(r => r.madS)}],
-    refs: [{y: S.sigma, label: 'σ'}], markers: mk, cap: '#capC2', capDefault: 'Mueva el puntero sobre el gráfico.',
+    refs: [{y: S.sigma, label: 'σ'}], markers: mk, cap: '#capC2', capDefault: 'Mueva el puntero sobre el gráfico o, con el teclado, enfóquelo y use las flechas.',
     hover: i => `${hdr(i)} s: ${nf(rows[i].sd)}. MAD escalada: ${nf(rows[i].madS)}.`
   });
   $('#crossTxt').textContent = crossText(X, rows, S.sigma);
@@ -1016,7 +1043,7 @@ function drawD(){
       {cls: 'ink', dash: true, pts: ser(r => r.b.sd)}, {cls: 'red', dash: true, pts: ser(r => r.b.madS)}
     ],
     refs: [{y: 1, label: 'σ'}], markers: [{x: Math.max(5, S.n), label: 'n actual'}], cap: '#capD',
-    capDefault: 'Mueva el puntero sobre el gráfico.',
+    capDefault: 'Mueva el puntero sobre el gráfico o, con el teclado, enfóquelo y use las flechas.',
     hover: i => `n = ${M[i]}. Limpia: s/σ ${nf(rows[i].a.sd)}, MAD esc./σ ${nf(rows[i].a.madS)}. Con ${nf(eps * 100, 0)} % de extremos: s/σ ${nf(rows[i].b.sd)}, MAD esc./σ ${nf(rows[i].b.madS)}.`
   });
 }
@@ -1032,13 +1059,13 @@ function drawReadouts(){
   $('#o-n').textContent = S.n; $('#o-mu').textContent = S.mu; $('#o-sg').textContent = S.sigma;
   $('#o-k').textContent = `${S.k} (${nf(100 * S.k / S.n, 0)} %)`;
   $('#o-d').textContent = nf(S.d, 1) + SIG;
-  $('#seedinfo').textContent = `Semilla ${S.seed}.` + (S.over.size ? ` Movió ${[...S.over.keys()].filter(i => i < S.n).length} dato(s) a mano.` : '');
+  $('#seedinfo').textContent = `Semilla ${S.seed}.` + (S.note ? ' ' + S.note : '') + (S.over.size ? ` Movió ${[...S.over.keys()].filter(i => i < S.n).length} dato(s) a mano. Las curvas de las secciones siguientes usan la muestra sin editar.` : '');
 }
 
 /* ───────── Ejemplo guiado ───────── */
-const EX = [18, 20, 21, 22, 24, 25, 26];
+const EX = [18, 20, 21, 22, 24, 25, 26], EX_HI = 300;
 let exOn = false;
-const exData = on => { const a = EX.slice(); if (on) a[6] = 300; return a; };
+const exData = on => { const a = EX.slice(); if (on) a[6] = EX_HI; return a; };
 function drawEx(){
   const host = $('#exChart'), W = host.clientWidth || 320, H = W < 520 ? 270 : 290;
   const a = exData(exOn), st = stats(a), b0 = stats(exData(false)), dom = exOn ? [-60, 320] : [14, 30];
@@ -1069,8 +1096,8 @@ function drawEx(){
   const card = (cls, nm, def, now, before) => `<div class="card ${cls}"><div class="lbl"><span class="mark"></span>${nm}</div><div class="def">${def}</div><div class="v">${nf(now)}</div><div class="s">Original: <b>${nf(before)}</b></div></div>`;
   $('#exStats').innerHTML = card('ink', 'Media', 'El promedio', st.mean, b0.mean) + card('red', 'Mediana', 'El dato del medio', st.med, b0.med) + card('ink', 'Desv. típica', 'Dispersión clásica', st.sd, b0.sd) + card('red', 'MAD escalada', 'Dispersión robusta', st.madS, b0.madS);
   $('#exBtn').setAttribute('aria-pressed', exOn);
-  $('#exBtn').textContent = exOn ? 'Volver al gasto original (26 €)' : 'Cambiar el último gasto a 30';
-  $('#exState').textContent = exOn ? 'El cliente 7 gasta 300 €.' : 'Los siete gastos son parecidos.';
+  $('#exBtn').textContent = exOn ? `Volver al gasto original (${nf(EX[6], 0)} €)` : `Cambiar el último gasto a ${nf(EX_HI, 0)} €`;
+  $('#exState').textContent = exOn ? `El cliente 7 gasta ${nf(EX_HI, 0)} €.` : 'Los siete gastos son parecidos.';
   // Conclusión dinámica
   $('#exTake').innerHTML = exOn
     ? `<span class="lbl">Qué ocurrió</span><p>Un solo gasto cambió el resultado. La media subió de ${nf(b0.mean)} a ${nf(st.mean)}. La desviación típica pasó de ${nf(b0.sd)} a ${nf(st.sd)}, unas ${nf(st.sd / b0.sd, 0)} veces más. La mediana quedó en ${nf(st.med)}. La MAD escalada quedó en ${nf(st.madS)}, igual que antes.</p><p>Los números clásicos describen ahora una dispersión que ningún cliente normal tiene. Los números robustos siguen describiendo a los seis clientes normales.</p>`
@@ -1085,7 +1112,7 @@ function drawEx(){
     `<li><span><b>Mediana.</b> Ordene los gastos. Tome el del medio, el cuarto. <span class="res">Resultado: ${nf(st.med)}.</span></span></li>` +
     `<li><span><b>Distancias a la mediana.</b> Reste la mediana a cada gasto. Ignore el signo. Vea la cuarta columna de la tabla 1.</span></li>` +
     `<li><span><b>MAD.</b> Ordene esas distancias. Tome la del medio. <span class="res">Resultado: ${nf(st.mad)}.</span></span></li>` +
-    `<li><span><b>MAD escalada.</b> Multiplique la MAD por 1,4826. Así queda en la misma escala que la desviación típica. <span class="res">Resultado: ${nf(st.madS)}.</span></span></li>`;
+    `<li><span><b>MAD escalada.</b> Multiplique la MAD por 1,4826. Esa constante la calibra para que estime σ si los datos son normales; con otras formas o con pocos datos puede diferir de la desviación típica. <span class="res">Resultado: ${nf(st.madS)}.</span></span></li>`;
   // Tabla
   $('#exBody').innerHTML = a.map((v, i) => `<tr class="${exOn && i === 6 ? 'hl' : ''}"><th scope="row" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--border)">Cliente ${i + 1}</th><td class="r" style="padding:12px 16px 12px 0">${nf(v, 0)}</td><td class="r" style="padding:12px 16px 12px 0">${nf(sq[i])}</td><td class="r" style="padding:12px 16px 12px 0">${nf(ad[i])}</td></tr>`).join('') +
     `<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--text)">Resumen</th><td class="r" style="padding:12px 16px 12px 0;border-bottom:1px solid var(--text)">Media ${nf(st.mean)}</td><td class="r" style="padding:12px 16px 12px 0;border-bottom:1px solid var(--text)">Suma ${nf(ss)}</td><td class="r" style="padding:12px 16px 12px 0;border-bottom:1px solid var(--text)">Mediana ${nf(st.mad)}</td></tr>`;
@@ -1095,8 +1122,9 @@ function drawReading(){
   const a = cur.st, c = cur.cl, n = S.n, k = S.k, eps = k / n, ov = [...S.over.keys()].filter(i => i < n).length;
   const el = $('#reading'); let h = '';
   if (k === 0 && ov === 0){
-    h += `<p><b>Resultado.</b> La muestra no tiene valores extremos. La media y la mediana casi coinciden. La desviación típica y la MAD escalada también casi coinciden.</p>`;
-    h += `<p class="note">La coincidencia no es exacta. Una muestra tiene siempre un pequeño error de azar. Ese error baja cuando hay más datos.</p>`;
+    const q = a.sd > 0 ? a.madS / a.sd : NaN, near = Math.abs(a.mean - a.med) < 0.15 * a.sd && q > 0.75 && q < 1.33;
+    h += `<p><b>Resultado.</b> No se ha impuesto ningún valor extremo. En esta muestra la media vale ${nf(a.mean)} y la mediana ${nf(a.med)}; la desviación típica ${nf(a.sd)} y la MAD escalada ${nf(a.madS)}. ${near ? 'Las parejas de medidas dan valores parecidos.' : 'Las parejas de medidas se separan algo: es el azar de esta muestra o la forma de la distribución elegida.'}</p>`;
+    h += `<p class="note">Con datos de forma normal, las dos parejas coinciden de media, pero no en cada muestra: una muestra tiene siempre error de azar, que baja con más datos. Con otras formas, la desviación típica y la MAD escalada pueden diferir sin que haya ningún error de cálculo.</p>`;
   } else {
     const dm = (a.mean - c.mean) / S.sigma, dd = (a.med - c.med) / S.sigma, rs = c.sd > 0 ? a.sd / c.sd : NaN, rm = c.madS > 0 ? a.madS / c.madS : NaN;
     h += `<p><b>Resultado.</b> La desviación típica pasa de ${nf(c.sd)} a ${nf(a.sd)}. La MAD escalada pasa de ${nf(c.madS)} a ${nf(a.madS)}. La media se mueve ${sgn(dm)}${SIG}. La mediana se mueve ${sgn(dd)}${SIG}.</p>`;
@@ -1105,7 +1133,7 @@ function drawReading(){
     else h += `<p><b>Lectura.</b> Con esta distancia y esta cantidad, los extremos cambian poco las dos medidas. Suba <i>k</i> o <i>d</i> para ver más efecto.</p>`;
     const r = a.madS > 0 ? a.sd / a.madS : NaN;
     if (r > 1.5) h += `<p>El cociente <i>s</i> / MAD escalada vale ${nf(r)}. Un valor alto sugiere valores extremos o colas pesadas. No lo prueba.</p>`;
-    if (eps >= 0.5) h += `<p class="note"><b>Nota.</b> Los extremos forman la mitad o más de la muestra. La mediana y la MAD escalada ya no protegen. Siguen a los extremos.</p>`;
+    if (eps >= 0.5) h += `<p class="note"><b>Nota.</b> Los extremos forman la mitad o más de la muestra. La mediana y la MAD escalada ya no protegen.${S.side === 'both' ? ' Con extremos a ambos lados, el efecto depende de cómo se reparten entre un lado y otro: compare los valores de arriba.' : ' Con extremos a un solo lado, la mediana y la MAD escalada pasan a describir a los extremos.'}</p>`;
     else if (eps >= 0.4) h += `<p class="note"><b>Nota.</b> Cerca de 50 % de extremos, la MAD escalada puede fallar de repente. Suba <i>k</i> poco a poco para ver el salto.</p>`;
   }
   h += `<p class="note">Una unidad σ es la dispersión normal de los datos limpios.</p>`;
@@ -1148,22 +1176,43 @@ function syncControls(){
   $('#n').value = S.n; $('#mu').value = S.mu; $('#sg').value = S.sigma; $('#d').value = S.d;
   document.querySelectorAll('input[name=side]').forEach(r => r.checked = r.value === S.side);
 }
+/* Edición de un dato sin arrastrar: elegir el número del dato, escribir su valor y aplicar. */
+function syncEditor(){
+  const sel = $('#edIdx'), val = $('#edVal'); if (!sel || !cur) return;
+  const keep = sel.value; if (sel.options.length !== S.n) sel.innerHTML = Array.from({length: S.n}, (_, i) => `<option value="${i}"></option>`).join('');
+  Array.from(sel.options).forEach((o, i) => { o.textContent = `${i + 1}${S.over.has(i) ? ' (movido a mano)' : ''}`; });
+  sel.value = keep && +keep < S.n ? keep : '0';
+  if (document.activeElement !== val) val.value = String(+cur.data[+sel.value].toFixed(4)).replace('.', ',');
+}
+function editorEvents(){
+  const sel = $('#edIdx'), val = $('#edVal'), msg = $('#edMsg');
+  sel.addEventListener('change', () => { val.value = String(+cur.data[+sel.value].toFixed(4)).replace('.', ','); msg.textContent = ''; });
+  $('#edApply').addEventListener('click', () => {
+    const x = Number(String(val.value).trim().replace(',', '.')); if (!Number.isFinite(x)){ msg.textContent = 'Escriba un número válido.'; val.focus(); return; }
+    const i = +sel.value; S.over.set(i, x); S.note = ''; render();
+    msg.textContent = `Dato ${i + 1} fijado en ${nf(x)}. Media ${nf(cur.st.mean)}, mediana ${nf(cur.st.med)}, SD ${nf(cur.st.sd)}, MAD escalada ${nf(cur.st.madS)}.`;
+  });
+  $('#edUndo').addEventListener('click', () => { const i = +sel.value; S.over.delete(i); render(); msg.textContent = `Dato ${i + 1} restaurado a ${nf(cur.data[i])}.`; });
+}
 function render(){
-  raf = 0; compute(); drawReadouts(); drawA(); drawEx();
+  raf = 0; compute(); syncEditor(); drawReadouts(); drawA(); drawEx();
   if (!light){ drawReading(); drawTable(); drawTex(); drawB(); drawC(); drawD(); }
   else { drawReading(); drawTable(); drawTex(); }
 }
 
 /* ───────── Eventos ───────── */
-const bind = (id, key, fn) => $(id).addEventListener('input', e => { S[key] = +e.target.value; if (fn) fn(); syncControls(); light = false; schedule(); });
+editorEvents();
+/* Cualquier cambio del modelo (n, μ, σ, k, d, lado) descarta los datos movidos a mano, y se avisa. */
+const dropEdits = () => { if (S.over.size){ S.over.clear(); S.note = 'Se descartaron los datos movidos a mano porque ha cambiado el modelo.'; } };
+const bind = (id, key, fn) => $(id).addEventListener('input', e => { S[key] = +e.target.value; dropEdits(); if (fn) fn(); syncControls(); light = false; schedule(); });
 bind('#n', 'n'); bind('#mu', 'mu'); bind('#sg', 'sigma'); bind('#k', 'k'); bind('#d', 'd');
-document.querySelectorAll('input[name=side]').forEach(r => r.addEventListener('change', e => { S.side = e.target.value; light = false; schedule(); }));
+document.querySelectorAll('input[name=side]').forEach(r => r.addEventListener('change', e => { S.side = e.target.value; dropEdits(); light = false; schedule(); }));
 document.querySelectorAll('[data-p]').forEach(b => b.addEventListener('click', () => {
-  const p = b.dataset.p; S.k = p === 'one' ? 1 : Math.round(+p * S.n); S.over.clear(); syncControls(); light = false; schedule();
+  const p = b.dataset.p; S.k = p === 'one' ? 1 : Math.round(+p * S.n); dropEdits(); syncControls(); light = false; schedule();
 }));
 $('#exBtn').addEventListener('click', () => { exOn = !exOn; drawEx(); });
-$('#b-new').addEventListener('click', () => { S.seed = 1 + Math.floor(Math.random() * 99999); pool = makePool(S.seed, 400); S.over.clear(); light = false; schedule(); });
-$('#b-reset').addEventListener('click', () => { Object.assign(S, DEF); S.over.clear(); pool = makePool(S.seed, 400); syncControls(); light = false; schedule(); });
+$('#b-new').addEventListener('click', () => { S.seed = 1 + Math.floor(Math.random() * 99999); pool = makePool(S.seed, 400); S.over.clear(); S.note = ''; light = false; schedule(); });
+$('#b-reset').addEventListener('click', () => { Object.assign(S, DEF); S.over.clear(); S.note = ''; pool = makePool(S.seed, 400); syncControls(); light = false; schedule(); });
 
 new ResizeObserver(es => { const w = es[0].contentRect.width; if (Math.abs(w - lastW) > 1){ lastW = w; light = false; schedule(); } }).observe($('#chartA'));
 

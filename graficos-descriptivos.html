@@ -553,19 +553,26 @@ function qt(p, v){ let lo = -1e3, hi = 1e3; for (let i = 0; i < 200; i++){ const
 /* ───────── Descriptivos básicos ───────── */
 const KMAD = 1.4826, KIQR = 1.349;
 const quantS = (s, p) => { const h = (s.length - 1) * p, lo = Math.floor(h), hi = Math.ceil(h); return s[lo] + (h - lo) * (s[hi] - s[lo]); };
+/* Asimetría (g1) y curtosis en exceso (g2) con centrado y escalado: no dependen de la unidad. NaN si todos los datos son iguales. */
+function shapeMoments(a, mean){
+  const n = a.length; let sc = 0; for (const v of a){ const d = Math.abs(v - mean); if (d > sc) sc = d; }
+  if (!(sc > 0) || sc <= 1e-12 * Math.abs(mean)) return {g1: NaN, g2: NaN};
+  let s2 = 0, s3 = 0, s4 = 0; for (const v of a){ const z = (v - mean) / sc, z2 = z * z; s2 += z2; s3 += z2 * z; s4 += z2 * z2; }
+  s2 /= n; s3 /= n; s4 /= n; return {g1: s3 / Math.pow(s2, 1.5), g2: s4 / (s2 * s2) - 3};
+}
 function describe(a){
   const n = a.length, s = Float64Array.from(a).sort();
   let t = 0; for (const v of a) t += v; const mean = t / n;
-  let ss = 0, m3 = 0, m4 = 0; for (const v of a){ const d = v - mean, d2 = d * d; ss += d2; m3 += d2 * d; m4 += d2 * d2; }
-  const m2 = ss / n; m3 /= n; m4 /= n;
+  let ss = 0; for (const v of a){ const d = v - mean; ss += d * d; }
+  const m2 = ss / n;
   const sd = n > 1 ? Math.sqrt(ss / (n - 1)) : NaN, med = quantS(s, 0.5), q1 = quantS(s, 0.25), q3 = quantS(s, 0.75);
   const mad = quantS(Float64Array.from(a, v => Math.abs(v - med)).sort(), 0.5);
-  const g1 = m2 > 1e-300 ? m3 / Math.pow(m2, 1.5) : NaN, g2 = m2 > 1e-300 ? m4 / (m2 * m2) - 3 : NaN;
+  const {g1, g2} = shapeMoments(a, mean);
   const se = sd / Math.sqrt(n), tq = n > 1 ? qt(0.975, n - 1) : NaN;
   const trim = (() => { const k = Math.floor(0.1 * n); if (n - 2 * k < 1) return mean; let u = 0; for (let i = k; i < n - k; i++) u += s[i]; return u / (n - 2 * k); })();
   return {n, s, sum: t, mean, med, q1, q3, iqr: q3 - q1, sd, var: sd * sd, cv: mean !== 0 ? sd / Math.abs(mean) : NaN, se, ciLo: mean - tq * se, ciHi: mean + tq * se, mad, madS: KMAD * mad, iqrS: (q3 - q1) / KIQR,
     min: s[0], max: s[n - 1], range: s[n - 1] - s[0], skew: g1, kurt: g2, trim, m2,
-    bowley: q3 - q1 > 1e-300 ? (q3 + q1 - 2 * med) / (q3 - q1) : NaN,
+    bowley: q3 > q1 ? (q3 + q1 - 2 * med) / (q3 - q1) : NaN,
     f1: q1 - 1.5 * (q3 - q1), f2: q3 + 1.5 * (q3 - q1),
     p: pp => quantS(s, pp)};
 }
@@ -609,9 +616,9 @@ function ranks(a){ // rangos promedio + info de empates
 function pearson(x, y){
   const n = x.length; let mx = 0, my = 0; for (let i = 0; i < n; i++){ mx += x[i]; my += y[i]; } mx /= n; my /= n;
   let sxy = 0, sxx = 0, syy = 0; for (let i = 0; i < n; i++){ const a = x[i] - mx, b = y[i] - my; sxy += a * b; sxx += a * a; syy += b * b; }
-  const r = sxx > 0 && syy > 0 ? sxy / Math.sqrt(sxx * syy) : NaN, df = n - 2;
-  const t = Math.abs(r) < 1 ? r * Math.sqrt(df / (1 - r * r)) : Infinity, p = n > 2 ? (Math.abs(r) < 1 ? t2p(t, df) : 0) : NaN;
-  let lo = NaN, hi = NaN; if (n > 3 && Math.abs(r) < 1){ const z = Math.atanh(r), se = 1 / Math.sqrt(n - 3); lo = Math.tanh(z - 1.959964 * se); hi = Math.tanh(z + 1.959964 * se); }
+  const r0 = sxx > 0 && syy > 0 ? sxy / Math.sqrt(sxx * syy) : NaN, ok = Number.isFinite(r0), r = ok ? Math.max(-1, Math.min(1, r0)) : NaN, df = n - 2;
+  const t = !ok ? NaN : Math.abs(r) < 1 ? r * Math.sqrt(df / (1 - r * r)) : Infinity, p = n > 2 && ok ? (Math.abs(r) < 1 ? t2p(t, df) : 0) : NaN;  // p = NaN si una variable es constante
+  let lo = NaN, hi = NaN; if (n > 3 && ok && Math.abs(r) < 1){ const z = Math.atanh(r), se = 1 / Math.sqrt(n - 3); lo = Math.tanh(z - 1.959964 * se); hi = Math.tanh(z + 1.959964 * se); }
   const slope = sxx > 0 ? sxy / sxx : NaN; return {r, p, lo, hi, n, slope, icpt: my - slope * mx, r2: r * r};
 }
 function spearman(x, y){ const rx = ranks(x).r, ry = ranks(y).r, o = pearson(rx, ry), n = x.length; let lo = NaN, hi = NaN; if (n > 3 && Math.abs(o.r) < 1){ const z = Math.atanh(o.r), se = Math.sqrt(1.06 / (n - 3)); lo = Math.tanh(z - 1.959964 * se); hi = Math.tanh(z + 1.959964 * se); } return {rho: o.r, p: o.p, n, lo, hi}; }
@@ -626,19 +633,35 @@ function kendall(x, y){
 }
 
 /* ───────── Contrastes no paramétricos y paramétricos ───────── */
+/* Distribución exacta de U (Mann–Whitney, sin empates): configuraciones por valor de U */
+function uCounts(n1, n2){
+  const mx = n1 * n2, c = new Float64Array(mx + 1); c[0] = 1;
+  for (let i = 1; i <= n1; i++){ const s = n2 + i; for (let j = mx; j >= s; j--) c[j] -= c[j - s]; for (let j = i; j <= mx; j++) c[j] += c[j - i]; }
+  return c;
+}
+/* Distribución exacta de la suma de rangos positivos (Wilcoxon, sin empates ni ceros) */
+function wCounts(n){
+  const mx = n * (n + 1) / 2, c = new Float64Array(mx + 1); c[0] = 1;
+  for (let i = 1; i <= n; i++) for (let j = mx; j >= i; j--) c[j] += c[j - i];
+  return c;
+}
+const cdfOf = (c, k) => { let t = 0, s = 0; for (let j = 0; j < c.length; j++){ t += c[j]; if (j <= k) s += c[j]; } return s / t; };
 function mannWhitney(a, b){
   const n1 = a.length, n2 = b.length, all = a.concat(b), {r, ties} = ranks(all); let R1 = 0; for (let i = 0; i < n1; i++) R1 += r[i];
   const U1 = R1 - n1 * (n1 + 1) / 2, U2 = n1 * n2 - U1, N = n1 + n2, mu = n1 * n2 / 2;
   const tc = ties.reduce((s, t) => s + (t * t * t - t), 0), sg = Math.sqrt(n1 * n2 / 12 * ((N + 1) - tc / (N * (N - 1))));
-  const U = Math.min(U1, U2), z = sg > 0 ? (Math.abs(U1 - mu) - 0.5) / sg : NaN, p = sg > 0 ? z2p(Math.max(0, z)) : NaN;
-  return {U1, U2, U, z, p, cles: U1 / (n1 * n2), rb: 2 * U1 / (n1 * n2) - 1, n1, n2};
+  const U = Math.min(U1, U2), z = sg > 0 ? (Math.abs(U1 - mu) - 0.5) / sg : NaN, exact = n1 < 50 && n2 < 50 && !ties.length;
+  const p = exact ? Math.min(1, 2 * cdfOf(uCounts(n1, n2), U)) : sg > 0 ? z2p(Math.max(0, z)) : NaN, method = exact ? 'exacto' : 'aproximación normal';
+  return {method, U1, U2, U, z, p, cles: U1 / (n1 * n2), rb: 2 * U1 / (n1 * n2) - 1, n1, n2};
 }
 function wilcoxon(x, y){
   const d = []; for (let i = 0; i < x.length; i++){ const v = x[i] - y[i]; if (v !== 0) d.push(v); }
   const n = d.length; if (n < 1) return {W: NaN, p: NaN, n: 0};
   const {r, ties} = ranks(d.map(Math.abs)); let Wp = 0, Wm = 0; d.forEach((v, i) => { if (v > 0) Wp += r[i]; else Wm += r[i]; });
   const mu = n * (n + 1) / 4, tc = ties.reduce((s, t) => s + (t * t * t - t), 0), sg = Math.sqrt(n * (n + 1) * (2 * n + 1) / 24 - tc / 48);
-  const z = sg > 0 ? (Math.abs(Wp - mu) - 0.5) / sg : NaN; return {Wp, Wm, W: Math.min(Wp, Wm), z, p: sg > 0 ? z2p(Math.max(0, z)) : NaN, n, rb: (Wp - Wm) / (Wp + Wm)};
+  const z = sg > 0 ? (Math.abs(Wp - mu) - 0.5) / sg : NaN, exact = n < 50 && !ties.length && n === x.length, W = Math.min(Wp, Wm);
+  const p = exact ? Math.min(1, 2 * cdfOf(wCounts(n), W)) : sg > 0 ? z2p(Math.max(0, z)) : NaN;
+  return {method: exact ? 'exacto' : 'aproximación normal', Wp, Wm, W, z, p, n, rb: (Wp - Wm) / (Wp + Wm)};
 }
 function kruskal(groups){
   const all = [].concat(...groups), N = all.length, {r, ties} = ranks(all); let H = 0, off = 0; const sums = [];
@@ -701,10 +724,10 @@ function kdeAt(vals, xs, h){ const n = vals.length, k = 1 / (n * h * Math.sqrt(2
 
 /* ───────── Incertidumbre: bootstrap y Hodges–Lehmann ───────── */
 function quickStats(a){
-  const n = a.length, s = Float64Array.from(a).sort(); let t = 0; for (const v of a) t += v; const mean = t / n; let ss = 0, m3 = 0, m4 = 0;
-  for (const v of a){ const d = v - mean, d2 = d * d; ss += d2; m3 += d2 * d; m4 += d2 * d2; }
-  const m2 = ss / n, med = quantS(s, 0.5), q1 = quantS(s, 0.25), q3 = quantS(s, 0.75), k = Math.floor(0.1 * n); let tr = 0; for (let i = k; i < n - k; i++) tr += s[i];
-  return {mean, med, trim: n - 2 * k > 0 ? tr / (n - 2 * k) : mean, sd: n > 1 ? Math.sqrt(ss / (n - 1)) : NaN, madS: KMAD * quantS(Float64Array.from(a, v => Math.abs(v - med)).sort(), 0.5), iqr: q3 - q1, skew: m2 > 1e-300 ? (m3 / n) / Math.pow(m2, 1.5) : NaN, kurt: m2 > 1e-300 ? (m4 / n) / (m2 * m2) - 3 : NaN};
+  const n = a.length, s = Float64Array.from(a).sort(); let t = 0; for (const v of a) t += v; const mean = t / n; let ss = 0;
+  for (const v of a){ const d = v - mean; ss += d * d; }
+  const sh = shapeMoments(a, mean), med = quantS(s, 0.5), q1 = quantS(s, 0.25), q3 = quantS(s, 0.75), k = Math.floor(0.1 * n); let tr = 0; for (let i = k; i < n - k; i++) tr += s[i];
+  return {mean, med, trim: n - 2 * k > 0 ? tr / (n - 2 * k) : mean, sd: n > 1 ? Math.sqrt(ss / (n - 1)) : NaN, madS: KMAD * quantS(Float64Array.from(a, v => Math.abs(v - med)).sort(), 0.5), iqr: q3 - q1, skew: sh.g1, kurt: sh.g2};
 }
 function bootstrapDesc(a, B = 400, seed = 12345){
   const n = a.length, r = rng(seed), out = {}, keys = ['mean', 'med', 'trim', 'sd', 'madS', 'iqr', 'skew', 'kurt'], buf = new Float64Array(n);
@@ -713,10 +736,21 @@ function bootstrapDesc(a, B = 400, seed = 12345){
   const ci = {}; keys.forEach(k => { const s = Float64Array.from(out[k]).sort(); ci[k] = s.length > 20 ? [quantS(s, 0.025), quantS(s, 0.975)] : [NaN, NaN]; });
   return ci;
 }
-function hodgesLehmann(x, y){ // mediana de todas las diferencias x_i − y_j, con IC 95 % sin supuestos (Bauer)
-  const n1 = x.length, n2 = y.length, m = n1 * n2; if (m > 4e6) return {est: NaN, lo: NaN, hi: NaN};
+/* Mediana de todas las diferencias x_i − y_j (desplazamiento de Hodges–Lehmann) e IC por inversión de la prueba de Mann–Whitney.
+   Sin empates y con n1, n2 < 50: IC exacto, con el nivel que realmente se alcanza (cover). Si no, aproximación normal con corrección de empates. */
+function hodgesLehmann(x, y){
+  const n1 = x.length, n2 = y.length, m = n1 * n2; if (m > 4e6) return {est: NaN, lo: NaN, hi: NaN, cover: NaN, method: ''};
   const d = new Float64Array(m); let k = 0; for (let i = 0; i < n1; i++) for (let j = 0; j < n2; j++) d[k++] = x[i] - y[j]; d.sort();
-  const est = quantS(d, 0.5), c = Math.floor(m / 2 - 1.959964 * Math.sqrt(m * (n1 + n2 + 1) / 12)); return {est, lo: c >= 0 ? d[c] : d[0], hi: c >= 0 ? d[m - 1 - c] : d[m - 1]};
+  const est = quantS(d, 0.5), ties = ranks(Array.from(x).concat(Array.from(y))).ties;
+  if (!ties.length && n1 < 50 && n2 < 50){
+    const c = uCounts(n1, n2); let tot = 0; for (const v of c) tot += v;
+    let cum = 0, qu = 0; for (let j = 0; j <= m; j++){ cum += c[j] / tot; if (cum >= 0.025 - 1e-12){ qu = j; break; } }
+    if (qu === 0) qu = 1;
+    let below = 0; for (let j = 0; j < qu; j++) below += c[j] / tot;
+    return {est, lo: d[qu - 1], hi: d[m - qu], cover: 1 - 2 * below, method: 'exacto'};
+  }
+  const N = n1 + n2, tc = ties.reduce((s, t) => s + (t * t * t - t), 0), sd = Math.sqrt(m / 12 * ((N + 1) - tc / (N * (N - 1)))), raw = Math.floor(m / 2 - 1.959964 * sd), c = Math.max(0, raw);
+  return {est, lo: d[c], hi: d[m - 1 - c], cover: raw >= 0 ? 0.95 : NaN, method: 'aproximación normal'};
 }
 
 /* ───────── Concentración (Gini, Lorenz) ───────── */
@@ -792,6 +826,8 @@ const pct = (v, d = 1) => nf(v * 100, d) + ' %';
 const pTxt = p => !Number.isFinite(p) ? '—' : p < 0.001 ? '< 0,001' : nf(p, 3);
 const pl = (n, a, b) => `${nf(n, 0)} ${n === 1 ? a : b}`;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const rangeOf = a => { let lo = Infinity, hi = -Infinity; for (const v of a){ if (v < lo) lo = v; if (v > hi) hi = v; } return [lo, hi]; };
+const maxOf = a => { let m = -Infinity; for (const v of a) if (v > m) m = v; return m; };
 
 /* ───────── Pseudoaleatorio con semilla ───────── */
 function rng(seed){ let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -800,7 +836,8 @@ function rng(seed){ let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F
 const MISSING = new Set(['', 'na', 'n/a', 'nan', 'null', 'none', '-', '.', '#n/a', 's/d', 'nd', '?']);
 function parseNum(raw){
   let s = String(raw).trim(); if (!s) return NaN;
-  s = s.replace(/[ \s€$£%]/g, '').replace('−', '-');
+  s = s.replace(/^[\s€$£%]+|[\s€$£%]+$/g, '').replace('−', '-');   // símbolos solo en los extremos
+  if (/\s/.test(s)){ if (!/^[+-]?\d{1,3}(?:\s\d{3})+(?:[.,]\d+)?$/.test(s)) return NaN; s = s.replace(/\s/g, ''); }   // «1 2» no es 12; «1 234» sí es 1234
   const m = s.match(/^([+-]?)([\d.,]+)((?:e[+-]?\d+)?)$/i); if (!m) return NaN;
   let b = m[2]; const dot = b.includes('.'), com = b.includes(',');
   if (dot && com){
@@ -831,23 +868,30 @@ function detectDelim(text){
   for (const d of [';', '\t', ',', '|']){ let c = 0, q = false; for (const ch of first){ if (ch === '"') q = !q; else if (!q && ch === d) c++; } if (c > bc){ bc = c; best = d; } }
   return best;
 }
+const MAX_ROWS = 200000;
+/* Devuelve los registros leídos (como máximo MAX_ROWS + 1: títulos y datos). rows.total cuenta todos los registros del archivo. */
 function parseRows(text, delim){
-  const rows = []; let row = [], cur = '', q = false, i = 0; const N = text.length;
+  const rows = []; let row = [], cur = '', q = false, qAt = 0, line = 1, total = 0, i = 0; const N = text.length;
+  const end = () => { row.push(cur); cur = ''; if (row.length > 1 || row[0].trim() !== ''){ total++; if (rows.length <= MAX_ROWS) rows.push(row); } row = []; };
   while (i < N){
     const ch = text[i];
-    if (q){ if (ch === '"'){ if (text[i + 1] === '"'){ cur += '"'; i++; } else q = false; } else cur += ch; }
-    else if (ch === '"' && cur === '') q = true;
+    if (q){ if (ch === '"'){ if (text[i + 1] === '"'){ cur += '"'; i++; } else q = false; } else { if (ch === '\n') line++; cur += ch; } }
+    else if (ch === '"' && cur === ''){ q = true; qAt = line; }
     else if (ch === delim){ row.push(cur); cur = ''; }
-    else if (ch === '\n' || ch === '\r'){ if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.length > 1 || row[0].trim() !== '') rows.push(row); row = []; if (rows.length > 200001) break; }
+    else if (ch === '\n' || ch === '\r'){ if (ch === '\r' && text[i + 1] === '\n') i++; line++; end(); }
     else cur += ch;
     i++;
   }
-  if (cur !== '' || row.length){ row.push(cur); if (row.length > 1 || row[0].trim() !== '') rows.push(row); }
-  return rows;
+  if (q) throw new Error('Unas comillas se abren en la línea ' + qAt + ' y no se cierran. Ciérrelas o elimínelas.');
+  if (cur !== '' || row.length) end();
+  rows.total = total; return rows;
 }
+let LAST_ENC = '';
 async function readFileText(file){
-  const buf = await file.arrayBuffer(); let text = new TextDecoder('utf-8').decode(buf);
-  if (text.includes('�')) text = new TextDecoder('windows-1252').decode(buf);
+  const buf = await file.arrayBuffer(), u = new Uint8Array(buf); let text;
+  if (u[0] === 0xFF && u[1] === 0xFE){ LAST_ENC = 'UTF-16 (little endian)'; text = new TextDecoder('utf-16le').decode(buf); }
+  else if (u[0] === 0xFE && u[1] === 0xFF){ LAST_ENC = 'UTF-16 (big endian)'; text = new TextDecoder('utf-16be').decode(buf); }
+  else { try { text = new TextDecoder('utf-8', {fatal: true}).decode(buf); LAST_ENC = 'UTF-8'; } catch (e){ text = new TextDecoder('windows-1252').decode(buf); LAST_ENC = 'Windows-1252 (el archivo no era UTF-8 válido)'; } }
   if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
   return text;
 }
@@ -866,7 +910,7 @@ const BOOL_PAIRS = [['true', 'false'], ['t', 'f'], ['verdadero', 'falso'], ['v',
 function inferVar(v){
   const vals = v.strs.filter(s => !MISSING.has(s.trim().toLowerCase())), m = vals.length, uniq = new Set(vals), k = uniq.size;
   v.m = m; v.k = k; v.note = '';
-  if (m === 0) return 'id';
+  if (m === 0){ v.note = 'Está vacía.'; return 'id'; }
   const low = new Set([...uniq].map(s => s.trim().toLowerCase()));
   if (k <= 2 && BOOL_PAIRS.some(([a, b]) => [...low].every(x => x === a || x === b))) return 'logical';
   let nNum = 0, nInt = 0, nDate = 0; for (const s of vals){ const x = parseNum(s); if (Number.isFinite(x)){ nNum++; if (Number.isInteger(x)) nInt++; } else if (Number.isFinite(parseDate(s))) nDate++; }
@@ -874,13 +918,15 @@ function inferVar(v){
   const nameId = /^(id|id[_ .-]|identificador|c[oó]digo|cod[_ .-]|n[uú]mero|num[_ .-]|cliente|client|folio)/i.test(v.name.trim()) || /(^|[_ .-])id$/i.test(v.name.trim());
   if (m >= 3 && nNum / m >= 0.9){
     const allInt = nInt === nNum;
-    if (k === m && m > 10 && allInt && nameId) return 'id';
+    if (vals.some(s => /[%€$£]/.test(s))) v.note = 'Los símbolos «%», «€», «$» y «£» se descartan: «12 %» se lee como 12 (puntos porcentuales).';
+    else if (vals.some(s => /^\d{1,3}([.,]\d{3})+$/.test(s.trim()))) v.note = 'Valores como «1,234» o «1.234» se leen como miles (1234). Si son decimales, escríbalos con un solo separador y menos de tres decimales.';
+    if (k === m && m > 10 && allInt && nameId){ v.note = 'Detectada como código: cada fila tiene un valor distinto y el título lo sugiere.'; return 'id'; }
     if (allInt && k <= 7 && k >= 3) v.note = 'Tiene solo ' + k + ' valores distintos. Puede tratarse como factor ordenado.';
     if (k === 2) return 'factor';
     return allInt ? 'integer' : 'double';
   }
-  if (k === m && m > 10) return 'id';
-  if (nameId && k > 0.9 * m && m > 10) return 'id';
+  if (k === m && m > 10){ v.note = 'Detectada como código o texto libre: cada fila tiene un valor distinto.'; return 'id'; }
+  if (nameId && k > 0.9 * m && m > 10){ v.note = 'Detectada como código: casi todas las filas tienen un valor distinto y el título lo sugiere.'; return 'id'; }
   if (k <= 20 || k / m <= 0.05){ if (k >= 3 && [...uniq].every(x => /^[<>≤≥]?\s*\d/.test(x.trim()))){ v.note = 'Las categorías parecen tener un orden natural.'; return 'ordered'; } return 'factor'; }
   return 'character';
 }
@@ -894,14 +940,19 @@ function materialize(v){
     const a = new Float64Array(n); for (let i = 0; i < n; i++){ const s = v.strs[i]; if (MISSING.has(s.trim().toLowerCase())) a[i] = NaN; else { const x = parseDate(s); a[i] = x; if (!Number.isFinite(x)) v.bad++; } }
     v.num = a;
   } else if (t === 'logical'){
-    const cat = new Int16Array(n).fill(-1); let tf = false;
+    const cat = new Int32Array(n).fill(-1); let tf = false;
     for (let i = 0; i < n; i++){ const s = v.strs[i].trim().toLowerCase(); if (MISSING.has(s)) continue; if (TRUE_T.has(s)){ cat[i] = 1; if (s === 'true' || s === 't' || s === 'verdadero' || s === 'v' || s === 'false') tf = true; } else if (FALSE_T.has(s)){ cat[i] = 0; if (s === 'false' || s === 'f' || s === 'falso') tf = true; } else v.bad++; }
     v.cat = cat; v.levels = tf ? ['Falso', 'Verdadero'] : ['No', 'Sí'];
   } else if (t === 'factor' || t === 'ordered'){
     const cnt = new Map(); for (const s of v.strs){ const x = s.trim(); if (MISSING.has(x.toLowerCase())) continue; cnt.set(x, (cnt.get(x) || 0) + 1); }
-    const lv = [...cnt.keys()]; if (t === 'ordered') lv.sort(natCmp); else lv.sort((a, b) => cnt.get(b) - cnt.get(a) || a.localeCompare(b, 'es'));
-    const ix = new Map(lv.map((l, i) => [l, i])), cat = new Int16Array(n).fill(-1);
-    for (let i = 0; i < n; i++){ const x = v.strs[i].trim(); if (ix.has(x)) cat[i] = Math.min(ix.get(x), 32000); }
+    const lv = [...cnt.keys()]; v.ordNote = '';
+    if (t === 'ordered'){
+      lv.sort(natCmp);
+      if (v.order){ const o = v.order.filter(l => cnt.has(l)); lv.sort((a, b) => { const ia = o.indexOf(a), ib = o.indexOf(b); return ia < 0 && ib < 0 ? natCmp(a, b) : ia < 0 ? 1 : ib < 0 ? -1 : ia - ib; }); }
+      else if (lv.some(l => !Number.isFinite(parseNum(l)))) v.ordNote = 'El orden de las categorías es alfabético porque no son números. Compruebe que es el correcto y, si no, corríjalo.';
+    } else lv.sort((a, b) => cnt.get(b) - cnt.get(a) || a.localeCompare(b, 'es'));
+    const ix = new Map(lv.map((l, i) => [l, i])), cat = new Int32Array(n).fill(-1);
+    for (let i = 0; i < n; i++){ const x = v.strs[i].trim(); if (ix.has(x)) cat[i] = ix.get(x); }
     v.cat = cat; v.levels = lv;
   }
   v.cache = {};
@@ -909,13 +960,18 @@ function materialize(v){
 function buildData(text, name, isSample){
   const delim = detectDelim(text), rows = parseRows(text, delim);
   if (rows.length < 3) throw new Error('El archivo necesita una fila de títulos y al menos dos filas de datos.');
-  const width = Math.max(...rows.slice(0, 200).map(r => r.length));
+  const width = rows[0].length; let short = 0;
+  for (let r = 1; r < rows.length; r++){ const L = rows[r].length; if (L > width) throw new Error(`La fila ${r + 1} tiene ${L} campos y la primera solo ${width}. Revise el separador y las comillas, o añada el título que falta.`); if (L < width) short++; }
   const isNumOrMissing = c => MISSING.has(c.trim().toLowerCase()) || Number.isFinite(parseNum(c));
   const hasHeader = !rows[0].every(isNumOrMissing);
   const used = new Set(), headers = Array.from({length: width}, (_, j) => { let h = hasHeader ? String(rows[0][j] ?? '').trim() : ''; if (!h) h = 'columna ' + (j + 1); let u = h, k = 2; while (used.has(u)) u = h + ' (' + (k++) + ')'; used.add(u); return u; });
-  const body = hasHeader ? rows.slice(1) : rows, vars = [];
+  let body = hasHeader ? rows.slice(1) : rows; const vars = [], warn = [];
+  if (body.length > MAX_ROWS) body = body.slice(0, MAX_ROWS);
+  const omitted = rows.total - (hasHeader ? 1 : 0) - body.length;
+  if (omitted > 0) warn.push(`Atención: el archivo tiene ${omitted.toLocaleString('es-ES')} filas de datos más que el límite de ${MAX_ROWS.toLocaleString('es-ES')}. Se han leído solo las primeras ${MAX_ROWS.toLocaleString('es-ES')}: los resultados no incluyen las demás.`);
+  if (short) warn.push(`${short.toLocaleString('es-ES')} ${short === 1 ? 'fila tiene' : 'filas tienen'} menos campos que los títulos. Sus huecos cuentan como datos faltantes.`);
   for (let j = 0; j < width; j++){ const v = {name: headers[j], strs: body.map(r => String(r[j] ?? '').trim())}; v.auto = inferVar(v); v.type = v.auto; v.idx = j; materialize(v); vars.push(v); }
-  return {name, delim, rows: body.length, vars, isSample: !!isSample, mask: null, nUsed: body.length, filter: null};
+  return {name, delim, rows: body.length, vars, isSample: !!isSample, mask: null, nUsed: body.length, filter: null, warn, omitted};
 }
 
 /* ───────── Datos de prueba (simulados, con semilla) ───────── */
@@ -1011,6 +1067,8 @@ const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n)
 const hex3 = h => { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); };
 const mixC = (a, b, t) => { const A = hex3(a), B = hex3(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
 const pretty = s => String(s).replace(/_/g, ' ');
+/* Las lecturas admiten solo <b>…</b>: cualquier otra etiqueta HTML (por ejemplo, de un título de columna) se muestra como texto. */
+const safeRd = s => String(s).replace(/<(?!\/?b>)/g, '&lt;');
 const decOf = v => { const s = String(+Number(v).toPrecision(6)); if (s.includes('e')) return 6; const i = s.indexOf('.'); return i < 0 ? 0 : s.length - i - 1; };
 const sample = (arr, k) => { const n = arr.length; if (n <= k) return Array.from(arr); const out = [], r = rng(777), st = n / k; for (let i = 0; i < k; i++) out.push(arr[Math.min(n - 1, Math.floor(i * st + r() * st))]); return out; };
 const lim = (cfg, k) => { const s = String(cfg[k] ?? '').trim().replace(',', '.'); if (s === '') return null; const v = Number(s); return Number.isFinite(v) ? v : null; };
@@ -1099,7 +1157,7 @@ function catView(v){
     if (v.cache.cv !== undefined) return v.cache.cv;
     const s = new Set(); for (let i = 0; i < v.num.length; i++){ const x = v.num[i]; if (Number.isFinite(x)){ s.add(x); if (s.size > 12) break; } }
     if (s.size > 12 || s.size < 2){ v.cache.cv = null; return null; }
-    const lv = [...s].sort((a, b) => a - b), ix = new Map(lv.map((x, i) => [x, i])), cat = new Int16Array(v.num.length).fill(-1);
+    const lv = [...s].sort((a, b) => a - b), ix = new Map(lv.map((x, i) => [x, i])), cat = new Int32Array(v.num.length).fill(-1);
     for (let i = 0; i < v.num.length; i++){ const x = v.num[i]; if (Number.isFinite(x)) cat[i] = ix.get(x); }
     return v.cache.cv = {cat, levels: lv.map(x => nf(x, Number.isInteger(x) ? 0 : 2)), ordered: true, v, derived: true};
   }
@@ -1125,7 +1183,7 @@ function colorSpec(cv, rows, cfg, notes){
   const present = []; for (let k = 0; k < K; k++) if (cnt[k] > 0) present.push(k);
   const seq = cv.ordered && present.length >= 2 && present.length <= 9; let keep = present, otros = false;
   if (!seq && present.length > 4){ keep = present.slice().sort((a, b) => cnt[b] - cnt[a]).slice(0, 3).sort((a, b) => a - b); otros = true; notes && notes.push(`La variable de color tiene ${present.length} categorías. Se muestran las 3 más numerosas y el resto se agrupa en «Otros». Para verlas todas, use paneles (facetas).`); }
-  const map = new Int16Array(K).fill(otros ? keep.length : -1); keep.forEach((k, j) => { map[k] = j; });
+  const map = new Int32Array(K).fill(otros ? keep.length : -1); keep.forEach((k, j) => { map[k] = j; });
   const names = keep.map(k => cv.levels[k]).concat(otros ? ['Otros'] : []), L = names.length, bg = cssv('--bg') || '#fafaf9', ac = cssv('--accent') || '#C8102E';
   const fill = j => seq ? mixC(bg, ac, 0.2 + 0.8 * j / Math.max(1, L - 1)) : (otros && j === L - 1 ? 'var(--t3)' : `var(--c${j + 1})`);
   return {L, names, map, has: true, seq, otros, base, fill, line: fill, idx: i => { const c = cv.cat[i]; return c < 0 ? -1 : map[c]; },
@@ -1150,10 +1208,15 @@ function aggStat(a, agg){
   return agg === 'median' ? quantS(s, 0.5) : agg === 'min' ? s[0] : agg === 'max' ? s[n - 1] : agg === 'p90' ? quantS(s, 0.9) : agg === 'p10' ? quantS(s, 0.1) : NaN;
 }
 const AGGS = {mean: 'Media', median: 'Mediana', sum: 'Suma', n: 'Recuento', min: 'Mínimo', max: 'Máximo', p90: 'Percentil 90', p10: 'Percentil 10'};
+const BOOT_CACHE = new Map();
+/* IC percentil 95 % por remuestreo (300 réplicas, semilla fija). Se guarda en memoria por datos y parámetros para no repetir el cálculo al cambiar de opciones. */
 function bootCI(a, stat, B = 300, seed = 4242){
-  const n = a.length; if (n < 5) return [NaN, NaN]; const r = rng(seed), buf = new Float64Array(n), out = new Float64Array(B);
+  const n = a.length; if (n < 5) return [NaN, NaN];
+  let s1 = 0, s2 = 0; for (let i = 0; i < n; i++){ s1 += a[i]; s2 += a[i] * a[i]; } const key = `${stat}|${B}|${seed}|${n}|${s1}|${s2}|${a[0]}|${a[n - 1]}`;
+  if (BOOT_CACHE.has(key)) return BOOT_CACHE.get(key);
+  const r = rng(seed), buf = new Float64Array(n), out = new Float64Array(B);
   for (let b = 0; b < B; b++){ for (let i = 0; i < n; i++) buf[i] = a[Math.floor(r() * n)]; out[b] = aggStat(buf, stat); }
-  out.sort(); return [quantS(out, 0.025), quantS(out, 0.975)];
+  out.sort(); const ci = [quantS(out, 0.025), quantS(out, 0.975)]; if (BOOT_CACHE.size > 400) BOOT_CACHE.clear(); BOOT_CACHE.set(key, ci); return ci;
 }
 function ciOf(a, est, o){ // o: 'mean'|'median' + tipo de error
   const n = a.length; if (n < 2) return [NaN, NaN];
@@ -1306,8 +1369,8 @@ function makeCtx(cfg){
 
 /* ───────── Asimetría y curtosis: palabras y anotación ───────── */
 const skewWord = g => !Number.isFinite(g) ? 'sin dato' : Math.abs(g) < 0.5 ? 'aproximadamente simétrica' : g > 0 ? (g > 1 ? 'muy asimétrica, con cola larga a la derecha' : 'asimétrica, con cola a la derecha') : (g < -1 ? 'muy asimétrica, con cola larga a la izquierda' : 'asimétrica, con cola a la izquierda');
-const kurtWord = g => !Number.isFinite(g) ? 'sin dato' : Math.abs(g) < 0.5 ? 'colas como las de una normal' : g > 0 ? (g > 3 ? 'colas muy pesadas (muchos valores extremos)' : 'colas pesadas (más valores extremos que una normal)') : 'colas ligeras (menos valores extremos que una normal)';
-const shapeSentence = d => Number.isFinite(d.skew) ? `Forma: asimetría <b>${nf(d.skew, 2)}</b> (${skewWord(d.skew)}) y curtosis en exceso <b>${nf(d.kurt, 2)}</b> (${kurtWord(d.kurt)}).` : 'No hay variación suficiente para medir la forma.';
+const kurtWord = g => !Number.isFinite(g) ? 'sin dato' : Math.abs(g) < 0.5 ? 'curtosis cercana a la de una normal' : g > 0 ? (g > 3 ? 'curtosis muy alta: suele indicar colas muy pesadas' : 'curtosis alta: suele indicar colas más pesadas que una normal') : 'curtosis baja: suele indicar colas más ligeras o una forma aplanada';
+const shapeSentence = d => Number.isFinite(d.skew) ? `Forma: asimetría <b>${nf(d.skew, 2)}</b> (${skewWord(d.skew)}) y curtosis en exceso <b>${nf(d.kurt, 2)}</b> (${kurtWord(d.kurt)}). Son resúmenes orientativos: no sustituyen a mirar el gráfico, y valores cercanos a cero no garantizan una forma de campana.` : 'No hay variación suficiente para medir la forma.';
 function shapeAnnot(cfg, P, d, W){
   if (!cfg.shape || P.c || !Number.isFinite(d.skew)) return '';
   const x = W - P.m.r - 4, y = P.m.t + 12; return `<text class="txt" x="${x}" y="${y}" text-anchor="end">Asimetría ${nf(d.skew, 2)}: ${skewWord(d.skew).split(',')[0]}</text><text class="txt" x="${x}" y="${y + 15}" text-anchor="end">Curtosis ${nf(d.kurt, 2)}: ${kurtWord(d.kurt).split(' (')[0]}</text>`;
@@ -1444,7 +1507,7 @@ CH.qq = {
     ctx.h = {S, lo, hi, log}; ctx.autoTitle = `Gráfico Q–Q normal de ${pretty(X.name)}`; if (log) ctx.autoSub += ' · escala logarítmica';
     const d = describe(Array.from(S[0])), sw = S[0].length >= 3 && S[0].length <= 5000 ? shapiroWilk(Array.from(S[0])) : null;
     ctx.tbl = {head: [...(ctx.panels.length > 1 ? ['Panel'] : []), 'n', 'Asimetría', 'Curtosis en exceso', 'Shapiro–Wilk W', 'Valor p'], rows: S.map((s, k) => { const q = describe(Array.from(s)), w = s.length >= 3 && s.length <= 5000 ? shapiroWilk(Array.from(s)) : {W: NaN, p: NaN}; return [...(ctx.panels.length > 1 ? [ctx.panels[k].label] : []), s.length, nf(q.skew, 2), nf(q.kurt, 2), nf(w.W, 3), pTxt(w.p)]; })};
-    ctx.rd = [Number.isFinite(d.skew) ? (Math.abs(d.skew) < 0.5 ? 'La asimetría es pequeña: los datos se parecen a una normal en su forma general.' : d.skew > 0 ? 'Los puntos se curvan hacia arriba por la derecha: hay una cola larga de valores altos. Pruebe la escala logarítmica.' : 'Los puntos se curvan hacia abajo por la izquierda: hay una cola larga de valores bajos.') : 'No hay variación suficiente.', sw && Number.isFinite(sw.p) ? `La prueba de Shapiro–Wilk da un valor p de <b>${pTxt(sw.p)}</b>. ${sw.p < 0.05 ? 'Hay evidencia de que los datos no son normales.' : 'No hay evidencia contra la normalidad.'}` : ''].filter(Boolean);
+    ctx.rd = [Number.isFinite(d.skew) ? (Math.abs(d.skew) < 0.5 ? 'La asimetría es pequeña: no hay una cola claramente más larga en un lado. Eso no garantiza que la forma sea una campana normal.' : d.skew > 0 ? 'Los puntos se curvan hacia arriba por la derecha: hay una cola larga de valores altos. Pruebe la escala logarítmica.' : 'Los puntos se curvan hacia abajo por la izquierda: hay una cola larga de valores bajos.') : 'No hay variación suficiente.', sw && Number.isFinite(sw.p) ? `La prueba de Shapiro–Wilk da un valor p de <b>${pTxt(sw.p)}</b>. ${sw.p < 0.05 ? 'Hay evidencia de que los datos no son normales.' : 'No hay evidencia contra la normalidad.'}` : ''].filter(Boolean);
   },
   draw(ctx, k, W, H, o){
     const h = ctx.h, P = mkP(W, H, o), m = P.m, c = clipDef(P), s = h.S[k], n = s.length, step = Math.max(1, Math.floor(n / 500)), pts = []; for (let i = 0; i < n; i += step) pts.push([qnorm((i + 0.5) / n), s[i]]);
@@ -1515,12 +1578,12 @@ function prepCV(ctx, statKey){
   for (const i of ctx.rows) cnt[Xc ? Xc.cat[i] : 0]++;
   let present = []; for (let q = 0; q < K; q++) if (cnt[q] > 0) present.push(q);
   const topN = ctx.def.noTop ? 99 : (+cfg.topN || 12); if (present.length > topN){ present = present.slice().sort((a, b) => cnt[b] - cnt[a]).slice(0, topN).sort((a, b) => a - b); ctx.notes.push(`Hay muchas categorías. Se muestran las ${topN} más numerosas.`); }
-  const cmapRaw = new Int16Array(K).fill(-1); present.forEach((q, i) => { cmapRaw[q] = i; });
+  const cmapRaw = new Int32Array(K).fill(-1); present.forEach((q, i) => { cmapRaw[q] = i; });
   const pooled = present.map(() => []); for (const i of ctx.rows){ const c = Xc ? cmapRaw[Xc.cat[i]] : 0; if (c >= 0) pooled[c].push(Y.num[i]); }
   const stat = pooled.map(a => aggStat(a, statKey || 'median')); let ord = present.map((q, i) => i);
   const order = cfg.order || 'nat';
   if (Xc){ if (order === 'val') ord.sort((a, b) => stat[b] - stat[a]); else if (order === 'vala') ord.sort((a, b) => stat[a] - stat[b]); else if (order === 'alpha') ord.sort((a, b) => Xc.derived ? present[a] - present[b] : Xc.levels[present[a]].localeCompare(Xc.levels[present[b]], 'es', {numeric: true})); }
-  const pos = new Int16Array(K).fill(-1); ord.forEach((i, r) => { pos[present[i]] = r; });
+  const pos = new Int32Array(K).fill(-1); ord.forEach((i, r) => { pos[present[i]] = r; });
   const cats = ord.map(i => ({label: Xc ? Xc.levels[present[i]] : pretty(Y.name), n: pooled[i].length}));
   const A = ctx.panels.map(p => cats.map(() => Array.from({length: L}, () => []))); let lo = Infinity, hi = -Infinity;
   ctx.panels.forEach((p, k) => { for (const i of p.rows){ const c = Xc ? pos[Xc.cat[i]] : 0, j = ctx.col.idx(i); if (c < 0 || j < 0) continue; const v = Y.num[i]; A[k][c][j].push(v); const t = T(v); if (t < lo) lo = t; if (t > hi) hi = t; } });
@@ -1530,7 +1593,9 @@ function prepCV(ctx, statKey){
 }
 function cvSetup(ctx, k, W, H, o, extra = {}){
   const cfg = ctx.cfg, cv = ctx.cv, horiz = cfg.orient !== 'v', labels = cv.cats.map(c => c.label), mm = Object.assign(catMargins(labels, horiz, W, {compact: o.compact}), extra.mm || {}), P = mkP(W, H, o, mm); P.rot = mm.rot;
-  const dom = domainOf(extra.lo ?? cv.lo, extra.hi ?? cv.hi, cv.log, {min: lim(cfg, 'vmin'), max: lim(cfg, 'vmax'), zero: !!cfg.zero || extra.zero}), m = P.m;
+  let plo = cv.lo, phi = cv.hi;
+  if (cfg.shared === false && ctx.panels.length > 1){ let a = Infinity, b = -Infinity; cv.A[k].forEach(c => c.forEach(arr => { for (const v of arr){ if (v < a) a = v; if (v > b) b = v; } })); if (a <= b){ plo = a; phi = b; } }   // escala propia de cada panel
+  const dom = domainOf(extra.lo ?? plo, extra.hi ?? phi, cv.log, {min: lim(cfg, 'vmin'), max: lim(cfg, 'vmax'), zero: !!cfg.zero || extra.zero}), m = P.m;
   const vsc = horiz ? mkScale(cv.log ? 'log' : 'lin', dom[0], dom[1], m.l, m.l + P.pw) : mkScale(cv.log ? 'log' : 'lin', dom[0], dom[1], m.t + P.ph, m.t);
   const subs = cv.cats.map((c, i) => 'n = ' + nf(ctx.panels.length > 1 ? cv.A[k][i].reduce((a, b) => a + b.length, 0) : c.n, 0));
   const fr = cvFrame(P, {labels, subs, horiz, vsc, vlab: (ctx.vlabel != null ? ctx.vlabel : pretty(ctx.Y.name) + (cv.log ? ' (escala log.)' : '')), clab: ctx.Xc ? pretty(ctx.X.name) : '' });
@@ -1542,7 +1607,7 @@ function cvTable(ctx){
   ctx.panels.forEach((p, k) => ctx.cv.cats.forEach((c, i) => { for (let j = 0; j < L; j++){ const a = ctx.cv.A[k][i][j]; if (!a.length) continue; const d = describe(a); ctx.tbl.rows.push([...(np > 1 ? [p.label] : []), c.label, ...(L > 1 ? [ctx.col.names[j]] : []), d.n, fv(d.mean), fv(d.med), fv(d.sd), fv(d.q1), fv(d.q3), fv(d.min), fv(d.max)]); } }));
 }
 function cvRead(ctx){
-  const cv = ctx.cv, meds = cv.cats.map((c, i) => { const a = [].concat(...cv.A.map(p => [].concat(...p[i]))); return {l: c.label, m: aggStat(a, 'median'), n: a.length}; }).filter(x => x.n > 0).sort((a, b) => b.m - a.m), nm = pretty(ctx.Y.name);
+  const cv = ctx.cv, meds = cv.cats.map((c, i) => { const a = [].concat(...cv.A.map(p => [].concat(...p[i]))); return {l: c.label, m: aggStat(a, 'median'), n: a.length}; }).filter(x => x.n > 0).sort((a, b) => b.m - a.m), nm = esc(pretty(ctx.Y.name));
   if (meds.length < 2) return [`La mediana de ${nm} es <b>${fv(meds[0] ? meds[0].m : NaN)}</b>.`];
   const hi = meds[0], lo = meds[meds.length - 1];
   return [`La mediana de ${nm} más alta es la de <b>${esc(hi.l)}</b> (${fv(hi.m)}) y la más baja la de <b>${esc(lo.l)}</b> (${fv(lo.m)}).`, `La diferencia entre ambas es de ${fv(hi.m - lo.m)}${lo.m > 0 ? ` (${nf((hi.m / lo.m - 1) * 100, 0)} % más)` : ''}. Este gráfico describe la muestra. Para saber si la diferencia supera al azar, use las pruebas del Panel de análisis descriptivo.`];
@@ -1578,7 +1643,7 @@ CH.violin = {
   id: 'violin', group: 'comp', label: 'Violín', roles: cvRoles(),
   opts: ['logv', 'orient', 'order', 'topN', 'bw', 'vscale', 'showMean', 'ref', 'shared'], dflt: {orient: 'v', order: 'nat', vscale: 'width', showMean: true},
   how: {q: 'Dibuja la forma completa de la distribución de cada grupo como una curva simétrica. Cuanto más ancho el violín, más datos hay en ese valor. Dentro se marca la caja de cuartiles y la mediana.', w: 'Para ver si un grupo tiene dos picos o una forma distinta, algo que una caja no muestra.', r: 'La barra gruesa interior va del primer al tercer cuartil. El punto blanco es la mediana. La forma exterior es la densidad.', c: 'Con menos de 10 datos por grupo, la forma es poco fiable. La curva no sale del rango observado.'},
-  prep(ctx){ prepCV(ctx, 'median'); const cv = ctx.cv; cv.dens = cv.A.map(p => p.map(c => c.map(a => { if (a.length < 5) return null; const t = a.map(cv.T); return kdeCurve(t, Math.min(...t), Math.max(...t), 70, ctx.cfg.bw); }))); let mx = 0; cv.dens.forEach(p => p.forEach(c => c.forEach(q => { if (q) mx = Math.max(mx, ...q.Y); }))); cv.maxD = mx;
+  prep(ctx){ prepCV(ctx, 'median'); const cv = ctx.cv; cv.dens = cv.A.map(p => p.map(c => c.map(a => { if (a.length < 5) return null; const t = a.map(cv.T); return kdeCurve(t, ...rangeOf(t), 70, ctx.cfg.bw); }))); let mx = 0; cv.dens.forEach(p => p.forEach(c => c.forEach(q => { if (q) mx = Math.max(mx, ...q.Y); }))); cv.maxD = mx;
     ctx.autoTitle = `Forma de ${pretty(ctx.Y.name)}` + (ctx.Xc ? ` según ${pretty(ctx.X.name)}` : ''); cvTable(ctx); ctx.rd = cvRead(ctx); if (cv.dens.some(p => p.some(c => c.some(q => q === null)))) ctx.notes.push('Algún grupo tiene menos de 5 datos y no se dibuja su violín.'); },
   height: CH.box.height,
   draw(ctx, k, W, H, o){
@@ -1619,7 +1684,7 @@ CH.strip = {
 
 CH.means = {
   id: 'means', group: 'comp', label: 'Medias e intervalos', roles: cvRoles(),
-  opts: ['stat', 'ci', 'other', 'logv', 'orient', 'order', 'topN', 'pts', 'zero', 'labels', 'ref', 'shared'], dflt: {orient: 'h', order: 'val', stat: 'mean', ci: 'ci', pts: false, labels: true, zero: false, other: true},
+  opts: ['stat', 'ci', 'other', 'logv', 'orient', 'order', 'topN', 'pts', 'zero', 'labels', 'ref'], dflt: {orient: 'h', order: 'val', stat: 'mean', ci: 'ci', pts: false, labels: true, zero: false, other: true},
   how: {q: 'Marca un punto por grupo con su media o su mediana y una barra con su incertidumbre: el intervalo de confianza del 95 %, la desviación típica o el error estándar.', w: 'Para comparar el valor típico de varios grupos y ver cuánta confianza merece cada estimación.', r: 'Si los intervalos de dos grupos no se solapan, es probable que difieran. Si se solapan mucho, la diferencia puede ser azar. Una barra más larga indica una estimación más incierta.', c: 'El intervalo de la media supone datos poco asimétricos; con valores extremos, use la mediana (intervalo por remuestreo). Solapar no equivale a «no significativo»: confirme con una prueba.'},
   prep(ctx){
     const cfg = ctx.cfg, stat = cfg.stat === 'median' ? 'median' : 'mean'; prepCV(ctx, stat); const cv = ctx.cv, err = cfg.ci || 'ci';
@@ -1630,7 +1695,8 @@ CH.means = {
     const L = cv.L, np = ctx.panels.length, on = stat === 'mean' ? 'Mediana' : 'Media'; if (cfg.other) ctx.legend = [...(ctx.col.has ? ctx.col.names.map((nm, j) => ({label: nm, sw: swMark(0, ctx.col.fill(j))})) : [{label: en, sw: swCirc(ctx.col.base.line)}]), {label: on + ' (rombo)', sw: (x, y) => `<path d="M${x + 7} ${y - 6}l6 6l-6 6l-6 -6z" fill="var(--bg)" stroke="var(--text)" stroke-width="1.8"/>`}]; ctx.tbl = {head: [...(np > 1 ? ['Panel'] : []), 'Categoría', ...(L > 1 ? ['Grupo'] : []), 'n', en, 'Límite inferior', 'Límite superior', on], rows: []};
     ctx.panels.forEach((p, k) => cv.cats.forEach((c, i) => { for (let j = 0; j < L; j++){ const q = cv.est[k][i][j]; if (q) ctx.tbl.rows.push([...(np > 1 ? [p.label] : []), c.label, ...(L > 1 ? [ctx.col.names[j]] : []), q.n, fv(q.e), fv(q.lo), fv(q.hi), fv(q.o)]); } }));
     const flat = []; cv.cats.forEach((c, i) => { const q = cv.est[0][i][0]; if (q) flat.push({l: c.label, ...q}); }); flat.sort((a, b) => b.e - a.e);
-    ctx.rd = flat.length > 1 ? [`El valor más alto es el de <b>${esc(flat[0].l)}</b> (${fv(flat[0].e)}) y el más bajo el de <b>${esc(flat[flat.length - 1].l)}</b> (${fv(flat[flat.length - 1].e)}).`, Number.isFinite(flat[0].lo) && Number.isFinite(flat[flat.length - 1].hi) ? (flat[0].lo > flat[flat.length - 1].hi ? 'Los intervalos de esos dos grupos no se solapan: la diferencia es probablemente real.' : 'Los intervalos de esos dos grupos se solapan: la diferencia puede deberse al azar.') : ''].filter(Boolean) : [`${en}: <b>${fv(flat[0] ? flat[0].e : NaN)}</b>.`];
+    ctx.rd = flat.length > 1 ? [`El valor más alto es el de <b>${esc(flat[0].l)}</b> (${fv(flat[0].e)}) y el más bajo el de <b>${esc(flat[flat.length - 1].l)}</b> (${fv(flat[flat.length - 1].e)}).`, Number.isFinite(flat[0].lo) && Number.isFinite(flat[flat.length - 1].hi) ? (flat[0].lo > flat[flat.length - 1].hi ? 'Los intervalos de esos dos grupos no se solapan: los datos sugieren una diferencia. Confírmela con las pruebas del Panel de análisis descriptivo.' : 'Los intervalos de esos dos grupos se solapan. Eso no prueba que no haya diferencia: use las pruebas del Panel de análisis descriptivo.') : ''].filter(Boolean) : [`${en}: <b>${fv(flat[0] ? flat[0].e : NaN)}</b>.`];
+    ctx.notes.push(err === 'ci' ? (stat === 'mean' ? 'Intervalo de confianza del 95 % de la media con la distribución t.' : 'Intervalo de confianza del 95 % de la mediana por remuestreo (bootstrap percentil, 300 réplicas, semilla fija).') + ' Supone observaciones independientes: no vale para medidas repetidas o pareadas.' : 'Las barras de error describen la variación de los datos o de la media; no son un intervalo de confianza del 95 %.');
     if (stat === 'mean'){ let sk = false; cv.A.forEach(p => p.forEach(c => c.forEach(a => { if (a.length >= 8){ const d = describe(a); if (Math.abs(d.skew) > 1.5) sk = true; } }))); if (sk) ctx.notes.push('Algún grupo es muy asimétrico. La media puede engañar: pruebe la mediana o la escala logarítmica.'); }
   },
   height: CH.box.height,
@@ -1654,7 +1720,7 @@ CH.ridge = {
   id: 'ridge', group: 'comp', label: 'Crestas', roles: {y: {k: 'num', l: 'Variable numérica', req: 1, log: 'logv', lim: ['vmin', 'vmax']}, x: {k: 'cat', l: 'Categorías (una cresta por grupo)', req: 1}},
   opts: ['logv', 'order', 'topN', 'bw', 'overlap', 'showMedian', 'showMean', 'ref'], dflt: {order: 'val', overlap: 2, showMedian: true, showMean: true}, noTop: false,
   how: {q: 'Apila las curvas de densidad de varios grupos, una por fila, sobre un mismo eje. Cada cresta tiene la misma área.', w: 'Cuando hay muchos grupos (5 a 15) y interesa comparar su forma y su posición.', r: 'Lea cada cresta como una densidad: pico alto, valores frecuentes. La marca roja es la mediana. Si las crestas se desplazan, los grupos difieren.', c: 'Con pocos datos por grupo, las crestas son poco fiables. Se ordenan por mediana si elige «por valor».'},
-  prep(ctx){ prepCV(ctx, 'median'); const cv = ctx.cv; cv.rows = cv.cats.map((c, i) => { const a = [].concat(...cv.A.map(p => [].concat(...p[i]))); if (a.length < 5) return {a, c}; const t = a.map(cv.T); return {a, c, q: kdeCurve(t, Math.min(...t), Math.max(...t), 80, ctx.cfg.bw)}; }); let mx = 0; cv.rows.forEach(r => { if (r.q) mx = Math.max(mx, ...r.q.Y); }); cv.maxD = mx; ctx.autoTitle = `Forma de ${pretty(ctx.Y.name)} según ${pretty(ctx.X.name)}`; cvTable(ctx); ctx.rd = cvRead(ctx); if (cv.rows.some(r => !r.q)) ctx.notes.push('Los grupos con menos de 5 datos no se dibujan.'); },
+  prep(ctx){ prepCV(ctx, 'median'); const cv = ctx.cv; cv.rows = cv.cats.map((c, i) => { const a = [].concat(...cv.A.map(p => [].concat(...p[i]))); if (a.length < 5) return {a, c}; const t = a.map(cv.T); return {a, c, q: kdeCurve(t, ...rangeOf(t), 80, ctx.cfg.bw)}; }); let mx = 0; cv.rows.forEach(r => { if (r.q) mx = Math.max(mx, ...r.q.Y); }); cv.maxD = mx; ctx.autoTitle = `Forma de ${pretty(ctx.Y.name)} según ${pretty(ctx.X.name)}`; cvTable(ctx); ctx.rd = cvRead(ctx); if (cv.rows.some(r => !r.q)) ctx.notes.push('Los grupos con menos de 5 datos no se dibujan.'); },
   height(ctx){ return clamp(90 + ctx.cv.cats.length * 40, 240, 700); },
   draw(ctx, k, W, H, o){
     const cv = ctx.cv, cfg = ctx.cfg, labels = cv.cats.map(c => c.label), mm = catMargins(labels, true, W, {compact: o.compact}), P = mkP(W, H, o, mm), m = P.m, c0 = clipDef(P), dom = domainOf(cv.lo, cv.hi, cv.log, {min: lim(cfg, 'vmin'), max: lim(cfg, 'vmax')}), sx = mkScale(cv.log ? 'log' : 'lin', dom[0], dom[1], m.l, m.l + P.pw);
@@ -1681,13 +1747,13 @@ function prepBars(ctx){
   let present = []; for (let q = 0; q < K; q++) if (cnt[q] > 0) present.push(q);
   const topN = +cfg.topN || 12; let keep = present, otros = false;
   if (present.length > topN + 1){ keep = present.slice().sort((a, b) => cnt[b] - cnt[a]).slice(0, topN).sort((a, b) => a - b); otros = true; ctx.notes.push(`Hay ${present.length} categorías. Se muestran las ${topN} más numerosas y el resto se agrupa en «Otros».`); }
-  const map = new Int16Array(K).fill(otros ? keep.length : -1); keep.forEach((q, i) => { map[q] = i; });
+  const map = new Int32Array(K).fill(otros ? keep.length : -1); keep.forEach((q, i) => { map[q] = i; });
   const R0 = keep.length + (otros ? 1 : 0), labels = keep.map(q => Xc.levels[q]).concat(otros ? ['Otros'] : []);
   const pooled = Array.from({length: R0}, () => []); for (const i of ctx.rows){ const c = map[Xc.cat[i]]; if (c >= 0) pooled[c].push(freq ? 1 : Y.num[i]); }
   const tot0 = pooled.map(a => freq ? a.length : aggStat(a, agg));
   let ord = labels.map((_, i) => i); const order = cfg.order || 'nat', fixedEnd = otros ? R0 - 1 : -1; let sortable = ord.filter(i => i !== fixedEnd);
   if (order === 'val') sortable.sort((a, b) => tot0[b] - tot0[a]); else if (order === 'vala') sortable.sort((a, b) => tot0[a] - tot0[b]); else if (order === 'alpha') sortable.sort((a, b) => Xc.derived ? keep[a] - keep[b] : labels[a].localeCompare(labels[b], 'es', {numeric: true}));
-  ord = sortable.concat(otros ? [fixedEnd] : []); const pos = new Int16Array(R0); ord.forEach((i, r) => { pos[i] = r; });
+  ord = sortable.concat(otros ? [fixedEnd] : []); const pos = new Int32Array(R0); ord.forEach((i, r) => { pos[i] = r; });
   const R = R0, cats = ord.map(i => ({label: labels[i], n: pooled[i].length}));
   const A = ctx.panels.map(() => cats.map(() => Array.from({length: L}, () => []))); ctx.panels.forEach((p, k) => { for (const i of p.rows){ const c0 = map[Xc.cat[i]], j = ctx.col.idx(i); if (c0 < 0 || j < 0) continue; A[k][pos[c0]][j].push(freq ? 1 : Y.num[i]); } });
   const additive = freq || agg === 'sum' || agg === 'n'; let stack = ctx.col.has && L > 1 ? (cfg.stack || 'group') : 'group';
@@ -1714,7 +1780,7 @@ function prepBars(ctx){
   if (withOther){ const on = agg === 'mean' ? 'Mediana' : 'Media'; ctx.legend = [...(ctx.col.has ? ctx.col.names.map((nm, j) => ({label: nm, sw: swSq(ctx.col.fill(j))})) : [{label: AGGS[agg], sw: swSq(ctx.col.base.fill)}]), {label: on + ' (rombo)', sw: (x, y) => `<path d="M${x + 7} ${y - 6}l6 6l-6 6l-6 -6z" fill="var(--bg)" stroke="var(--text)" stroke-width="1.8"/>`}]; }
   if (errSel !== 'none' && ctx.col.has && stack !== 'group') ctx.notes.push('Las barras de error se ocultan en barras apiladas.');
   if (!freq && (agg === 'mean') && !ctx.col.has){ const d = describe(pooled.flat()); if (Math.abs(d.skew) > 2 && d.n > 15) ctx.notes.push('La variable es muy asimétrica. La media de cada grupo puede estar dominada por unos pocos valores extremos. Compare con la mediana.'); }
-  if (!freq && (agg === 'mean' || agg === 'sum') && Y && ctx.rows.length) { const mnY = Math.min(...Array.from(arrOf(ctx.rows, Y))); if (mnY < 0) ctx.notes.push('Hay valores negativos. Las barras parten de cero y pueden ir hacia abajo.'); }
+  if (!freq && (agg === 'mean' || agg === 'sum') && Y && ctx.rows.length) { const mnY = rangeOf(arrOf(ctx.rows, Y))[0]; if (mnY < 0) ctx.notes.push('Hay valores negativos. Las barras parten de cero y pueden ir hacia abajo.'); }
   const np = ctx.panels.length; ctx.tbl = {head: [...(np > 1 ? ['Panel'] : []), 'Categoría', ...(L > 1 ? ['Grupo'] : []), 'Filas', pctMode || stack === 'pct' ? 'Porcentaje' : aggName, ...(errSel !== 'none' ? ['Límite inf.', 'Límite sup.'] : [])], rows: []};
   ctx.panels.forEach((p, k) => cats.forEach((c, i) => { for (let j = 0; j < L; j++){ const a = A[k][i][j]; if (!a.length) continue; ctx.tbl.rows.push([...(np > 1 ? [p.label] : []), c.label, ...(L > 1 ? [ctx.col.names[j]] : []), a.length, (pctMode || stack === 'pct') ? nf(val[k][i][j], 1) + ' %' : agg === 'n' || freq ? nf(val[k][i][j], 0) : fv(val[k][i][j]), ...(errSel !== 'none' ? [Number.isFinite(lo[k][i][j]) ? fv(lo[k][i][j]) : '—', Number.isFinite(hi[k][i][j]) ? fv(hi[k][i][j]) : '—'] : [])]); } }));
   const t0 = cats.map((c, i) => ({l: c.label, n: c.n, v: tot0[ord[i]]})).sort((a, b) => b.v - a.v), N = t0.reduce((s, x) => s + (freq ? x.n : 0), 0);
@@ -1760,14 +1826,14 @@ const textOn = hex => { const rgb = /^#/.test(hex) ? hex3(hex) : [128, 128, 128]
 
 CH.freq = {
   id: 'freq', group: 'cat', label: 'Barras de frecuencia', roles: barRoles(false),
-  opts: ['pctMode', 'orient', 'order', 'topN', 'stack', 'style', 'labels', 'pareto', 'hl', 'err', 'shared'], dflt: {orient: 'h', order: 'val', pctMode: 'count', stack: 'group', style: 'bar', labels: true, err: 'none', pareto: false},
+  opts: ['pctMode', 'orient', 'order', 'topN', 'stack', 'style', 'labels', 'pareto', 'hl', 'err'], dflt: {orient: 'h', order: 'val', pctMode: 'count', stack: 'group', style: 'bar', labels: true, err: 'none', pareto: false},
   how: {q: 'Cuenta cuántas filas hay en cada categoría. La longitud de cada barra es proporcional al recuento o al porcentaje.', w: 'Para variables categóricas: canal, segmento, nivel de satisfacción. Con un color, muestra cómo se reparte otra categoría dentro de cada una.', r: 'Barra más larga, más filas. Con «apiladas al 100 %» cada barra suma el 100 % y se lee la composición. El diagrama de Pareto añade el porcentaje acumulado.', c: 'Las barras parten siempre de cero. Con muchas categorías, el resto se agrupa en «Otros». Las barras de error de Wilson indican la incertidumbre de un porcentaje.'},
   prep(ctx){ prepBars(ctx); }, height(ctx, pw){ const horiz = ctx.cfg.orient !== 'v', R = ctx.cv.cats.length; return horiz ? clamp(70 + R * (ctx.cv.stack === 'group' && ctx.cv.L > 1 ? 14 * ctx.cv.L + 12 : 36), 200, 700) : clamp(Math.round(pw * 0.6), 250, 420); },
   draw: drawBars, swatch: (ctx, j) => swSq(ctx.col.fill(j))
 };
 CH.bars = {
   id: 'bars', group: 'comp', label: 'Barras de resumen', roles: barRoles(true),
-  opts: ['agg', 'alsoMed', 'err', 'orient', 'order', 'topN', 'stack', 'style', 'labels', 'hl', 'shared'], dflt: {orient: 'h', order: 'val', agg: 'mean', stack: 'group', style: 'bar', labels: true, err: 'ci', alsoMed: true},
+  opts: ['agg', 'alsoMed', 'err', 'orient', 'order', 'topN', 'stack', 'style', 'labels', 'hl'], dflt: {orient: 'h', order: 'val', agg: 'mean', stack: 'group', style: 'bar', labels: true, err: 'ci', alsoMed: true},
   how: {q: 'Resume una variable numérica en cada categoría con una sola cifra (media, mediana, suma, máximo…) y la dibuja como barra.', w: 'Cuando interesa un total (suma) o un valor típico (media o mediana) por categoría y se quiere una lectura inmediata.', r: 'La barra es el resumen elegido. El bigote negro es el intervalo de confianza del 95 % de la media, o el de remuestreo de la mediana, o la dispersión.', c: 'Una barra oculta la distribución completa. Si hay valores extremos, la media engaña. Compruebe con la caja o con la mediana.'},
   prep(ctx){ prepBars(ctx); }, height: CH.freq.height, draw: drawBars, swatch: (ctx, j) => swSq(ctx.col.fill(j))
 };
@@ -1776,7 +1842,7 @@ CH.bars = {
 function crossPrep(ctx){
   const cfg = ctx.cfg, Xc = ctx.Xc, Yc = ctx.Yc, topN = +cfg.topN || 10;
   const mk = cv => { const K = cv.levels.length, cnt = new Array(K).fill(0); for (const i of ctx.rows) cnt[cv.cat[i]]++; let present = []; for (let q = 0; q < K; q++) if (cnt[q] > 0) present.push(q); let keep = present, otros = false; if (present.length > topN + 1){ keep = present.slice().sort((a, b) => cnt[b] - cnt[a]).slice(0, topN).sort((a, b) => a - b); otros = true; }
-    const map = new Int16Array(K).fill(otros ? keep.length : -1); keep.forEach((q, i) => { map[q] = i; }); return {map, labels: keep.map(q => cv.levels[q]).concat(otros ? ['Otros'] : []), otros, derived: cv.derived, keep}; };
+    const map = new Int32Array(K).fill(otros ? keep.length : -1); keep.forEach((q, i) => { map[q] = i; }); return {map, labels: keep.map(q => cv.levels[q]).concat(otros ? ['Otros'] : []), otros, derived: cv.derived, keep}; };
   const a = mk(Xc), b = mk(Yc), C = a.labels.length, R = b.labels.length, N = Array.from({length: R}, () => new Array(C).fill(0)), Zs = Array.from({length: R}, () => Array.from({length: C}, () => []));
   for (const i of ctx.rows){ const c = a.map[Xc.cat[i]], r = b.map[Yc.cat[i]]; if (c < 0 || r < 0) continue; N[r][c]++; if (ctx.Z) Zs[r][c].push(ctx.Z.num[i]); }
   const rt = N.map(r => r.reduce((x, y) => x + y, 0)), ct = a.labels.map((_, j) => N.reduce((s, r) => s + r[j], 0)), tot = rt.reduce((x, y) => x + y, 0);
@@ -1863,13 +1929,19 @@ function attachNearest(host, hid, rid, pts, tipFn, rad = 30){
   const hit = host.querySelector('#' + hid), ring = host.querySelector('#' + rid), svg = host.querySelector('svg'); if (!hit) return;
   hit.addEventListener('pointermove', e => { const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const q = pt.matrixTransform(hit.getScreenCTM().inverse()); let bi = -1, bd = rad * rad; for (let i = 0; i < pts.length; i++){ const dx = pts[i][0] - q.x, dy = pts[i][1] - q.y, dd = dx * dx + dy * dy; if (dd < bd){ bd = dd; bi = i; } } if (bi >= 0){ ring.setAttribute('cx', pts[bi][0]); ring.setAttribute('cy', pts[bi][1]); ring.setAttribute('r', pts[bi][2] + 3); ring.setAttribute('visibility', 'visible'); showTip(tipFn(pts[bi]), e.clientX, e.clientY); } else { ring.setAttribute('visibility', 'hidden'); TIP.hidden = true; } });
   hit.addEventListener('pointerleave', () => { ring.setAttribute('visibility', 'hidden'); TIP.hidden = true; });
+  // Teclado: Tab entra en el gráfico; flechas, Inicio y Fin recorren los puntos de izquierda a derecha y se anuncia cada valor.
+  const order = pts.map((_, i) => i).sort((a, b) => pts[a][0] - pts[b][0] || pts[a][1] - pts[b][1]); let cur = -1;
+  hit.setAttribute('tabindex', '0'); hit.setAttribute('role', 'application'); hit.setAttribute('aria-label', 'Explorar los puntos del gráfico con las flechas izquierda y derecha. Inicio y Fin saltan al primero y al último punto.');
+  const go = s => { cur = s; const q = pts[order[s]], r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, sx = r.width / (vb.width || r.width), sy = r.height / (vb.height || r.height); ring.setAttribute('cx', q[0]); ring.setAttribute('cy', q[1]); ring.setAttribute('r', q[2] + 3); ring.setAttribute('visibility', 'visible'); showTip(`Punto ${s + 1} de ${order.length}. ${tipFn(q)}`, r.left + q[0] * sx, r.top + q[1] * sy); };
+  hit.addEventListener('keydown', e => { if (!order.length) return; let s = cur; const k = e.key; if (k === 'ArrowRight' || k === 'ArrowDown') s = Math.min(order.length - 1, cur + 1); else if (k === 'ArrowLeft' || k === 'ArrowUp') s = Math.max(0, cur < 0 ? 0 : cur - 1); else if (k === 'Home') s = 0; else if (k === 'End') s = order.length - 1; else return; e.preventDefault(); go(s); });
+  hit.addEventListener('blur', () => { ring.setAttribute('visibility', 'hidden'); TIP.hidden = true; cur = -1; });
 }
 
 /* ───────── Dispersión ───────── */
 CH.scatter = {
   id: 'scatter', group: 'rel', label: 'Dispersión', roles: {x: {k: 'num', l: 'Eje horizontal (X)', req: 1, log: 'logx', lim: ['xmin', 'xmax']}, y: {k: 'num', l: 'Eje vertical (Y)', req: 1, log: 'logy', lim: ['ymin', 'ymax']}, z: {k: 'num', l: 'Tamaño de la burbuja'}, c: {k: 'cat', l: 'Color (forma y color por grupo)'}, f: {k: 'cat', l: 'Paneles (un gráfico por grupo)'}},
   opts: ['logx', 'logy', 'reg', 'span', 'ellipse', 'annot', 'alpha', 'psize', 'shared'], dflt: {reg: 'none', alpha: 0.5, psize: 3, annot: true, ellipse: false},
-  how: {q: 'Cada punto es una fila. La posición muestra sus valores en dos variables. Con una tercera variable, el tamaño de la burbuja; con una categoría, el color y la forma.', w: 'Para ver si dos variables numéricas varían juntas, de qué forma y con qué dispersión.', r: 'Una nube inclinada hacia arriba indica relación positiva; hacia abajo, negativa; redonda, ausencia de relación lineal. La recta es el ajuste lineal con su intervalo del 95 %. La curva suave (LOESS) sigue la tendencia sin suponer una recta. La elipse contiene aproximadamente el 95 % de los puntos.', c: 'Correlación no implica causalidad. Con muchos puntos, estos se superponen: pruebe el mapa de densidad. Los valores extremos pueden dominar la recta.'},
+  how: {q: 'Cada punto es una fila. La posición muestra sus valores en dos variables. Con una tercera variable, el tamaño de la burbuja; con una categoría, el color y la forma.', w: 'Para ver si dos variables numéricas varían juntas, de qué forma y con qué dispersión.', r: 'Una nube inclinada hacia arriba indica relación positiva; hacia abajo, negativa; redonda, ausencia de relación lineal. La recta es el ajuste lineal con su intervalo del 95 %. La curva suave (LOESS) sigue la tendencia sin suponer una recta. La elipse de dispersión describe dónde cae aproximadamente el 95 % de los puntos si la nube fuera normal en dos dimensiones; no es un intervalo de confianza del centro.', c: 'Correlación no implica causalidad. Con muchos puntos, estos se superponen: pruebe el mapa de densidad. Los valores extremos pueden dominar la recta.'},
   prep(ctx){
     const cfg = ctx.cfg, X = ctx.X, Y = ctx.Y, Z = ctx.Z, lx = !!cfg.logx, ly = !!cfg.logy, Tx = lx ? Math.log10 : (v => v), Ty = ly ? Math.log10 : (v => v), L = ctx.col.L;
     const P = ctx.panels.map(p => { const pts = []; for (const i of p.rows){ const j = ctx.col.idx(i); if (j < 0) continue; pts.push({x: X.num[i], y: Y.num[i], z: Z ? Z.num[i] : NaN, j, i}); } return pts; });
@@ -1882,11 +1954,12 @@ CH.scatter = {
     if (Z){ const ps = cfg.psize / 3, rs = v => (2.5 + (z1 > z0 ? Math.sqrt((v - z0) / (z1 - z0)) : 0.5) * 11) * ps; ctx.h.rs = rs; ctx.legend = ctx.col.has ? ctx.col.names.map((nm, j) => ({label: nm, sw: swCirc(ctx.col.fill(j))})) : []; ctx.legend.push({label: `${pretty(Z.name)}: ${fv(z0)}`, sw: (x, y) => `<circle cx="${x + 7}" cy="${y}" r="${Math.min(6, rs(z0))}" fill="var(--t2)" fill-opacity=".5" stroke="var(--text)" stroke-opacity=".5"/>`}, {label: `${fv(z1)}`, sw: (x, y) => `<circle cx="${x + 7}" cy="${y}" r="${Math.min(8, rs(z1))}" fill="var(--t2)" fill-opacity=".5" stroke="var(--text)" stroke-opacity=".5"/>`}); }
     const np = ctx.panels.length; ctx.tbl = {head: [...(np > 1 ? ['Panel'] : []), ...(L > 1 ? ['Grupo'] : []), 'n', 'r de Pearson', 'ρ de Spearman', 'Valor p (Spearman)'], rows: []};
     stats.forEach((s, k) => s.forEach((q, j) => { if (!q.n) return; ctx.tbl.rows.push([...(np > 1 ? [ctx.panels[k].label] : []), ...(L > 1 ? [ctx.col.names[j]] : []), q.n, nf(q.r, 2), nf(q.rho, 2), pTxt(q.ps)]); }));
-    const s0 = stats[0].reduce((a, b) => (b.n || 0) > (a.n || 0) ? b : a, {n: 0}); if (s0.n >= 4){ const rho = s0.rho, w = Math.abs(rho) < 0.1 ? 'prácticamente nula' : Math.abs(rho) < 0.3 ? 'débil' : Math.abs(rho) < 0.5 ? 'moderada' : Math.abs(rho) < 0.7 ? 'fuerte' : 'muy fuerte'; ctx.rd = [`La relación es <b>${w}</b> y <b>${rho > 0 ? 'positiva' : 'negativa'}</b> (ρ de Spearman = ${nf(rho, 2)}, r de Pearson = ${nf(s0.r, 2)}).`, Math.abs(s0.r - rho) > 0.15 ? 'Pearson y Spearman difieren. La relación no es lineal o hay valores extremos que distorsionan a Pearson.' : 'Pearson y Spearman coinciden: la relación es bastante lineal.', 'Una relación no prueba causalidad.']; } else ctx.rd = ['No hay datos suficientes para medir la relación.'];
+    const s0 = stats[0].reduce((a, b) => (b.n || 0) > (a.n || 0) ? b : a, {n: 0}); if (s0.n >= 4 && !Number.isFinite(s0.rho)) ctx.rd = ['La relación no se puede medir: una de las dos variables toma siempre el mismo valor en estas filas.'];
+    else if (s0.n >= 4){ const rho = s0.rho, w = Math.abs(rho) < 0.1 ? 'prácticamente nula' : Math.abs(rho) < 0.3 ? 'débil' : Math.abs(rho) < 0.5 ? 'moderada' : Math.abs(rho) < 0.7 ? 'fuerte' : 'muy fuerte'; ctx.rd = [`La relación es <b>${w}</b> y <b>${rho > 0 ? 'positiva' : 'negativa'}</b> (ρ de Spearman = ${nf(rho, 2)}, r de Pearson = ${nf(s0.r, 2)}).`, Math.abs(s0.r - rho) > 0.15 ? 'Pearson y Spearman difieren. La relación puede no ser lineal o haber valores extremos que distorsionan a Pearson.' : 'Pearson y Spearman son parecidos. Eso no demuestra que la relación sea una recta: mire la forma de la nube.', 'Una relación no prueba causalidad.']; } else ctx.rd = ['No hay datos suficientes para medir la relación.'];
     if (cfg.reg !== 'none' && L > 1) ctx.notes.push(L > 3 ? 'El ajuste se calcula en cada grupo de color. Con tantos grupos, las líneas saturan el gráfico: considere paneles.' : 'El ajuste se calcula por separado en cada grupo de color.');
   },
   draw(ctx, k, W, H, o){
-    const cfg = ctx.cfg, h = ctx.h, P = mkP(W, H, o), m = P.m, c = clipDef(P), sh = cfg.shared !== false, pts = h.P[k], xs0 = sh ? [h.x0, h.x1] : [Math.min(...pts.map(p => p.x)), Math.max(...pts.map(p => p.x))], ys0 = sh ? [h.y0, h.y1] : [Math.min(...pts.map(p => p.y)), Math.max(...pts.map(p => p.y))];
+    const cfg = ctx.cfg, h = ctx.h, P = mkP(W, H, o), m = P.m, c = clipDef(P), sh = cfg.shared !== false, pts = h.P[k], xs0 = sh ? [h.x0, h.x1] : rangeOf(pts.map(p => p.x)), ys0 = sh ? [h.y0, h.y1] : rangeOf(pts.map(p => p.y));
     const xd = domainOf(xs0[0], xs0[1], h.lx, {min: lim(cfg, 'xmin'), max: lim(cfg, 'xmax')}), yd = domainOf(ys0[0], ys0[1], h.ly, {min: lim(cfg, 'ymin'), max: lim(cfg, 'ymax')}), sx = mkScale(h.lx ? 'log' : 'lin', xd[0], xd[1], m.l, m.l + P.pw), sy = mkScale(h.ly ? 'log' : 'lin', yd[0], yd[1], m.t + P.ph, m.t);
     let g = frameXY(P, sx, sy, {xlab: pretty(ctx.X.name) + (h.lx ? ' (escala log.)' : ''), ylab: pretty(ctx.Y.name) + (h.ly ? ' (escala log.)' : ''), vgrid: true}); g += `<g clip-path="url(#${c.id})">`;
     const U = t => t, Ux = h.lx ? (t => Math.pow(10, t)) : U, Uy = h.ly ? (t => Math.pow(10, t)) : U, ps = +cfg.psize || 3, alpha = +cfg.alpha || 0.5, hid = 'sh' + (++hitN), rid = 'sr' + hitN, hp = [];
@@ -1905,7 +1978,7 @@ CH.scatter = {
       else { g += ctx.col.mk(j, x.toFixed(1), y.toFixed(1), ps, `opacity="${alpha}" ${ctx.col.has ? 'stroke="var(--bg)" stroke-width=".6"' : ''}`); hpts.push([x, y, ps + 1, grp]); } });
     // Ajustes sobre los puntos
     if (cfg.reg !== 'none') ord.forEach(j => {
-      const a = h.P[k].filter(p => p.j === j); if (a.length < 6) return; const tx = a.map(p => h.Tx(p.x)), ty = a.map(p => h.Ty(p.y)), col = ctx.col.has ? ctx.col.line(j) : 'var(--accent)', lo = Math.min(...tx), hi = Math.max(...tx), grid = Array.from({length: 60}, (_, i) => lo + (hi - lo) * i / 59);
+      const a = h.P[k].filter(p => p.j === j); if (a.length < 6) return; const tx = a.map(p => h.Tx(p.x)), ty = a.map(p => h.Ty(p.y)), col = ctx.col.has ? ctx.col.line(j) : 'var(--accent)', lo = rangeOf(tx)[0], hi = rangeOf(tx)[1], grid = Array.from({length: 60}, (_, i) => lo + (hi - lo) * i / 59);
       if (cfg.reg === 'lin'){ const f = ols(tx, ty); if (!f) return; const band = grid.map(t => f.band(t)); if (Number.isFinite(f.tq)) g += `<path d="M${grid.map((t, i) => sx(Ux(t)).toFixed(1) + ' ' + sy(Uy(band[i][1])).toFixed(1)).join('L')}L${grid.slice().reverse().map((t, i) => sx(Ux(t)).toFixed(1) + ' ' + sy(Uy(band[59 - i][0])).toFixed(1)).join('L')}Z" fill="${col}" fill-opacity=".14" stroke="none"/>`;
         g += `<path class="ln" stroke="${col}" stroke-width="2.8" d="M${grid.map(t => sx(Ux(t)).toFixed(1) + ' ' + sy(Uy(f.at(t))).toFixed(1)).join('L')}"/>`; }
       else { const ys = loess(tx, ty, +cfg.span || 0.75, grid); let d = ''; ys.forEach((v, i) => { if (Number.isFinite(v)) d += (d ? 'L' : 'M') + sx(Ux(grid[i])).toFixed(1) + ' ' + sy(Uy(v)).toFixed(1); }); g += `<path class="ln" stroke="${col}" stroke-width="2.8" d="${d}"/>`; }
@@ -1930,8 +2003,8 @@ CH.bin2d = {
     const grids = ctx.panels.map(p => { const g = new Int32Array(nb * nb); for (const i of p.rows){ const a = Math.min(nb - 1, Math.floor((Tx(X.num[i]) - x0) / wx)), b = Math.min(nb - 1, Math.floor((Ty(Y.num[i]) - y0) / wy)); g[b * nb + a]++; } return g; });
     let mx = 0, mxK = []; grids.forEach(g => { let q = 0; for (const v of g){ if (v > q) q = v; } mxK.push(q); mx = Math.max(mx, q); });
     ctx.h = {x0, x1, y0, y1, wx, wy, nb, grids, mx, mxK, lx, ly, Tx, Ty}; ctx.autoTitle = `Densidad de ${pretty(Y.name)} y ${pretty(X.name)}`; ctx.autoSub += ` · casillas: ${nb} × ${nb}`;
-    const xs = Array.from(arrOf(ctx.rows, X)), ys = Array.from(arrOf(ctx.rows, Y)), sp = spearman(xs, ys); ctx.rd = [`Las casillas más oscuras reúnen hasta <b>${nf(mx, 0)}</b> filas.`, `ρ de Spearman = ${nf(sp.rho, 2)}.`];
-    ctx.tbl = {head: ['X desde', 'X hasta', 'Y desde', 'Y hasta', 'Filas'], rows: []}; const g0 = grids[0]; for (let b = 0; b < nb; b++) for (let a = 0; a < nb; a++){ if (g0[b * nb + a]) ctx.tbl.rows.push([fv((lx ? 10 ** (x0 + a * wx) : x0 + a * wx)), fv((lx ? 10 ** (x0 + (a + 1) * wx) : x0 + (a + 1) * wx)), fv((ly ? 10 ** (y0 + b * wy) : y0 + b * wy)), fv((ly ? 10 ** (y0 + (b + 1) * wy) : y0 + (b + 1) * wy)), g0[b * nb + a]]); }
+    const xs = Array.from(arrOf(ctx.rows, X)), ys = Array.from(arrOf(ctx.rows, Y)), sp = spearman(xs, ys); ctx.rd = [`Las casillas más oscuras reúnen hasta <b>${nf(mx, 0)}</b> filas.`, Number.isFinite(sp.rho) ? `ρ de Spearman = ${nf(sp.rho, 2)}.` : 'La correlación no se puede calcular: una de las dos variables toma siempre el mismo valor.'];
+    const np2 = ctx.panels.length; ctx.tbl = {head: [...(np2 > 1 ? ['Panel'] : []), 'X desde', 'X hasta', 'Y desde', 'Y hasta', 'Filas'], rows: []}; grids.forEach((g0, k) => { for (let b = 0; b < nb; b++) for (let a = 0; a < nb; a++){ if (g0[b * nb + a]) ctx.tbl.rows.push([...(np2 > 1 ? [ctx.panels[k].label] : []), fv((lx ? 10 ** (x0 + a * wx) : x0 + a * wx)), fv((lx ? 10 ** (x0 + (a + 1) * wx) : x0 + (a + 1) * wx)), fv((ly ? 10 ** (y0 + b * wy) : y0 + b * wy)), fv((ly ? 10 ** (y0 + (b + 1) * wy) : y0 + (b + 1) * wy)), g0[b * nb + a]]); } });
     const bg = cssv('--bg') || '#fafaf9'; ctx.legend = [{label: '1 fila', sw: swSq(heatColor(0.1, true))}, {label: `${nf(mx, 0)} filas`, sw: swSq(heatColor(1, true))}];
   },
   draw(ctx, k, W, H, o){
@@ -1961,8 +2034,7 @@ CH.time = {
     const cum = !!cfg.cum && (agg === 'n' || agg === 'sum'); if (cfg.cum && !cum) ctx.notes.push('El acumulado solo tiene sentido con recuentos o sumas.');
     const other = !!cfg.alsoMed && Y && (agg === 'mean' || agg === 'median') && !cum;
     const series = ctx.panels.map(p => { const buckets = Array.from({length: L}, () => Array.from({length: P}, () => [])); for (const i of p.rows){ const j = ctx.col.idx(i); if (j < 0) continue; const b = idx.get(periodStart(X.num[i], unit)); if (b == null) continue; buckets[j][b].push(Y ? Y.num[i] : 1); }
-      return buckets.map(bs => { const mkv = ag => { let v = bs.map(a => a.length ? aggStat(a, ag) : (ag === 'n' || ag === 'sum' ? 0 : NaN)); const w = Math.max(1, Math.round(+cfg.ma || 1)); if (w > 1){ v = v.map((x, i) => { let s = 0, c = 0; for (let q = Math.max(0, i - w + 1); q <= i; q++) if (Number.isFinite(v[q])){ s += v[q]; c++; } return c ? s / c : NaN; }); } return v; }; let v = mkv(agg); const v2 = other ? mkv(agg === 'mean' ? 'median' : 'mean') : null; const w = Math.max(1, Math.round(+cfg.ma || 1));
-        if (w > 1){ v = v.map((x, i) => { let s = 0, c = 0; for (let q = Math.max(0, i - w + 1); q <= i; q++) if (Number.isFinite(v[q])){ s += v[q]; c++; } return c ? s / c : NaN; }); }
+      return buckets.map(bs => { const mkv = ag => { let v = bs.map(a => a.length ? aggStat(a, ag) : (ag === 'n' || ag === 'sum' ? 0 : NaN)); const w = Math.max(1, Math.round(+cfg.ma || 1)); if (w > 1){ v = v.map((x, i) => { let s = 0, c = 0; for (let q = Math.max(0, i - w + 1); q <= i; q++) if (Number.isFinite(v[q])){ s += v[q]; c++; } return c ? s / c : NaN; }); } return v; }; let v = mkv(agg); const v2 = other ? mkv(agg === 'mean' ? 'median' : 'mean') : null;   // mkv ya aplica la media móvil: no se vuelve a suavizar
         if (cum){ let s = 0; v = v.map(x => { s += Number.isFinite(x) ? x : 0; return s; }); } return {v, v2, n: bs.map(a => a.length)}; }); });
     let lo = Infinity, hi = -Infinity; series.forEach(S => S.forEach(q => q.v.concat(q.v2 || []).forEach(x => { if (Number.isFinite(x)){ if (x < lo) lo = x; if (x > hi) hi = x; } })));
     ctx.h = {periods, series, unit, agg, cum, lo, hi, P, other};
@@ -1971,9 +2043,14 @@ CH.time = {
     ctx.autoTitle = `${an}${cum ? ' acumulado' : ''} por ${UNITS[unit].toLowerCase()}`; ctx.autoSub += ` · ${P} periodos`;
     ctx.tbl = {head: ['Periodo', ...(ctx.panels.length > 1 ? ['Panel'] : []), ...(L > 1 ? ctx.col.names : [an])].concat(other && L === 1 ? [(agg === 'mean' ? 'Mediana' : 'Media')] : []), rows: []};
     ctx.panels.forEach((p, k) => periods.forEach((s, b) => ctx.tbl.rows.push([periodLabel(s, unit), ...(ctx.panels.length > 1 ? [p.label] : []), ...series[k].map(q => Number.isFinite(q.v[b]) ? (agg === 'n' ? nf(q.v[b], 0) : fv(q.v[b])) : '—'), ...(other && L === 1 ? [Number.isFinite(series[k][0].v2[b]) ? fv(series[k][0].v2[b]) : '—'] : [])])));
-    const v0 = series[0][0].v; let mxi = 0; v0.forEach((x, i) => { if (Number.isFinite(x) && (!Number.isFinite(v0[mxi]) || x > v0[mxi])) mxi = i; });
-    const last = [...v0].reverse().find(Number.isFinite);
-    ctx.rd = [`El valor más alto (${agg === 'n' ? nf(v0[mxi], 0) : fv(v0[mxi])}) se da en <b>${periodLabel(periods[mxi], unit)}</b>.`, `El último periodo vale ${agg === 'n' ? nf(last, 0) : fv(last)}.`, 'Compare siempre periodos con un número similar de filas: unos pocos datos producen oscilaciones.'];
+    ctx.rd = []; const fm = x => agg === 'n' ? nf(x, 0) : fv(x);
+    series.forEach((S, k) => S.forEach((q, j) => { if (ctx.rd.length >= 6 || !q.v.some(Number.isFinite)) return; const v0 = q.v; let mxi = 0; v0.forEach((x, i) => { if (Number.isFinite(x) && (!Number.isFinite(v0[mxi]) || x > v0[mxi])) mxi = i; }); const last = [...v0].reverse().find(Number.isFinite);
+      const who = [ctx.panels.length > 1 ? ctx.panels[k].label : '', ctx.col.has ? ctx.col.names[j] : ''].filter(Boolean).map(esc).join(' · ');
+      ctx.rd.push(`${who ? `<b>${who}</b>: el` : 'El'} valor más alto (${fm(v0[mxi])}) se da en <b>${periodLabel(periods[mxi], unit)}</b>${cum ? '' : ' y el último periodo vale ' + fm(last)}.`); }));
+    if (!ctx.rd.length) ctx.rd.push('No hay valores calculables en los periodos.');
+    if (series.length * L > 6) ctx.rd.push('Se resumen solo las 6 primeras series. El resto está en la tabla de datos.');
+    ctx.rd.push('Compare siempre periodos con un número similar de filas: unos pocos datos producen oscilaciones.');
+    if (cfg.ma > 1) ctx.notes.push('La media móvil trata los periodos como puntos equiespaciados y promedia los valores disponibles de la ventana.');
     if (L > 4 || ctx.col.otros) { /* ya avisado */ }
   },
   draw(ctx, k, W, H, o){
@@ -2004,7 +2081,7 @@ CH.parallel = {
     ctx.h = {cols, st, nz, norm, nm, n}; ctx.autoTitle = `Perfil de ${nm} variables`; ctx.autoSub += ` · ejes: ${norm === 'z' ? 'estandarizados (desviaciones típicas)' : norm === 'minmax' ? 'de mínimo a máximo' : 'por percentil'}`;
     const L = ctx.col.L; ctx.tbl = {head: [...(L > 1 ? ['Grupo'] : ['Resumen']), ...M.map(v => pretty(v.name))], rows: []};
     for (let j = 0; j < L; j++){ const sel = []; rows.forEach((i, r) => { if (ctx.col.idx(i) === j) sel.push(r); }); if (!sel.length) continue; ctx.tbl.rows.push([L > 1 ? ctx.col.names[j] : 'Media', ...cols.map(c => { let s = 0; sel.forEach(r => { s += c[r]; }); return fv(s / sel.length); })]); }
-    if (L > 1){ const best = M.map((v, q) => { let bj = 0, bv = -Infinity; for (let j = 0; j < L; j++){ let s = 0, c = 0; rows.forEach((i, r) => { if (ctx.col.idx(i) === j){ s += nz[q][r]; c++; } }); const mv = c ? s / c : -Infinity; if (mv > bv){ bv = mv; bj = j; } } return `${pretty(v.name)}: ${ctx.col.names[bj]}`; }); ctx.rd = ['Cada línea es una fila. La línea gruesa es el perfil medio de cada grupo.', 'El grupo con el valor medio más alto en cada variable: ' + best.join('; ') + '.']; }
+    if (L > 1){ const best = M.map((v, q) => { let bj = 0, bv = -Infinity; for (let j = 0; j < L; j++){ let s = 0, c = 0; rows.forEach((i, r) => { if (ctx.col.idx(i) === j){ s += nz[q][r]; c++; } }); const mv = c ? s / c : -Infinity; if (mv > bv){ bv = mv; bj = j; } } return `${pretty(v.name)}: ${ctx.col.names[bj]}`; }); ctx.rd = ['Cada línea es una fila. La línea gruesa es el perfil medio de cada grupo.', 'El grupo con el valor medio más alto en cada variable: ' + best.map(esc).join('; ') + '.']; }
     else ctx.rd = ['Cada línea es una fila. Las líneas que viajan juntas tienen un perfil parecido.', 'Añada una variable de color para ver el perfil medio de cada grupo.'];
     if (n > 600) ctx.notes.push('Se dibujan 600 líneas al azar. Los perfiles medios usan todas las filas.');
     if (norm === 'z' && st.some(q => Math.abs(q.skew) > 1.5)) ctx.notes.push('Alguna variable es muy asimétrica. Con ejes estandarizados, sus valores extremos aplastan al resto. Pruebe la escala por percentil.');
@@ -2099,13 +2176,13 @@ const FIELDS = {
   heatm: fSel('Qué colorea la casilla', [['n', 'Número de filas'], ['pt', '% del total'], ['pr', '% de cada fila'], ['pc', '% de cada columna'], ['res', 'Residuos ajustados (asociación)'], ['agg', 'Resumen de una variable numérica']]),
   reg: fSel('Ajuste', [['none', 'Sin ajuste'], ['lin', 'Recta con intervalo del 95 %'], ['loess', 'Curva suave (LOESS)']]),
   span: Object.assign(fRng('Suavizado de la curva', 0.3, 1, 0.05, v => nf(v, 2)), {show: c => c.reg === 'loess'}),
-  ellipse: fChk('Elipse de confianza del 95 %'), annot: fChk('Anotar ρ de Spearman y r de Pearson'),
+  ellipse: fChk('Elipse de dispersión (95 % de los puntos si la nube fuera normal)'), annot: fChk('Anotar ρ de Spearman y r de Pearson'),
   nbins2: fRng('Casillas por eje', 8, 50, 1, v => nf(v, 0)),
   unit: fSel('Periodo', Object.entries(UNITS)), ma: fRng('Media móvil (periodos)', 1, 12, 1, v => nf(v, 0), '1 significa sin suavizar.'),
   cum: fChk('Acumulado', 'Solo con recuentos o sumas.'), area: fChk('Rellenar bajo la línea'), dots: fChk('Mostrar un punto por periodo'),
   norm: fSel('Escala de los ejes', [['rank', 'Por percentil (recomendada con datos asimétricos)'], ['z', 'Estandarizada (desviaciones típicas)'], ['minmax', 'De mínimo a máximo']])
 };
-const LIMS = {vmin: 'Mínimo del eje de valores', vmax: 'Máximo del eje de valores', xmin: 'Mínimo del eje X', xmax: 'Máximo del eje X', ymin: 'Mínimo del eje Y', ymax: 'Máximo del eje Y'};
+const LIMS = {vmin: 'Valor mínimo (excluye los datos menores)', vmax: 'Valor máximo (excluye los datos mayores)', xmin: 'X mínimo (excluye los datos menores)', xmax: 'X máximo (excluye los datos mayores)', ymin: 'Y mínimo (excluye los datos menores)', ymax: 'Y máximo (excluye los datos mayores)'};
 const limKeysOf = def => { if (def.limKeys) return def.limKeys; const s = new Set(); Object.values(def.roles).forEach(r => { if (r.lim) r.lim.forEach(k => s.add(k)); }); if (!s.size && ['bars', 'freq', 'time'].includes(def.id)) { s.add('vmin'); s.add('vmax'); } return [...s]; };
 
 /* ───────── Iconos de los tipos de gráfico ───────── */
@@ -2162,8 +2239,9 @@ function renderDict(){
   const D = DATA, cols = [['double', 'Decimal'], ['integer', 'Entero'], ['logical', 'Lógica'], ['factor', 'Factor'], ['ordered', 'Ordenado'], ['character', 'Texto'], ['date', 'Fecha'], ['id', 'Código']];
   $('#dictT').innerHTML = `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Diccionario de variables: marque la clase de cada variable"><table class="compact dict cgrid" style="min-width:680px"><thead><tr><th scope="col" class="stk">Variable</th>${cols.map(([k, l]) => `<th scope="col" class="c" title="${esc(TYPE_NAME[k])}">${l}</th>`).join('')}</tr></thead><tbody>` + D.vars.map((v, i) => {
     const ex = [...new Set(v.strs.filter(s => !MISSING.has(s.trim().toLowerCase())))].slice(0, 3).map(s => esc(trunc(s, 18))).join(' · '), changed = v.type !== v.auto, miss = v.strs.filter(s => MISSING.has(s.trim().toLowerCase())).length;
-    return `<tr><th scope="row" class="rh stk">${esc(v.name)}${changed ? `<span class="chip">Modificado</span>` : ''}<span class="def">${nf(v.k, 0)} distintos · ${nf(miss, 0)} sin dato · ${ex}</span>${v.note && !changed ? `<span class="def">${esc(v.note)}</span>` : ''}${v.bad ? `<span class="def">${nf(v.bad, 0)} valores no encajan con este tipo y se tratan como faltantes.</span>` : ''}</th>${cols.map(([k, l]) => `<td class="c"><label class="rc${k === v.auto ? ' auto' : ''}" title="${esc(TYPE_NAME[k])}${k === v.auto ? ' (detectado automáticamente)' : ''}"><input type="radio" name="vt${i}" value="${k}" data-i="${i}"${v.type === k ? ' checked' : ''} aria-label="Variable ${esc(v.name)}: ${esc(TYPE_NAME[k])}${k === v.auto ? ', detectado automáticamente' : ''}"></label></td>`).join('')}</tr>`; }).join('') + `</tbody></table></div><p class="hint" style="margin-top:8px">Marque la clase de cada variable. El recuadro de trazos indica lo que el programa detectó. Pase el cursor sobre un título de columna para ver su nombre completo.</p>`;
-  $$('#dictT input[type=radio]').forEach(s => s.addEventListener('change', () => { const i = +s.dataset.i, v = DATA.vars[i]; v.type = s.value; materialize(v); if (DATA.filter && DATA.filter.idx === i && !v.cat) DATA.filter = null; renderAll(); const b = $(`#dictT input[name="vt${i}"]:checked`); if (b) b.focus(); }));
+    return `<tr><th scope="row" class="rh stk">${esc(v.name)}${changed ? `<span class="chip">Modificado</span>` : ''}<span class="def">${nf(v.k, 0)} distintos · ${nf(miss, 0)} sin dato · ${ex}</span>${v.note && !changed ? `<span class="def">${esc(v.note)}</span>` : ''}${v.type === 'ordered' && v.levels ? `<span class="def">${v.ordNote ? esc(v.ordNote) : 'Orden actual, de menor a mayor. Puede cambiarlo:'}</span><input class="sel ordin" type="text" data-ord="${i}" value="${esc(v.levels.join('; '))}" autocomplete="off" aria-label="Orden de las categorías de ${esc(v.name)}, de menor a mayor, separadas por punto y coma" style="width:100%;max-width:34ch;margin-top:4px">` : ''}${v.bad ? `<span class="def">${nf(v.bad, 0)} valores no encajan con este tipo y se tratan como faltantes.</span>` : ''}</th>${cols.map(([k, l]) => `<td class="c"><label class="rc${k === v.auto ? ' auto' : ''}" title="${esc(TYPE_NAME[k])}${k === v.auto ? ' (detectado automáticamente)' : ''}"><input type="radio" name="vt${i}" value="${k}" data-i="${i}"${v.type === k ? ' checked' : ''} aria-label="Variable ${esc(v.name)}: ${esc(TYPE_NAME[k])}${k === v.auto ? ', detectado automáticamente' : ''}"></label></td>`).join('')}</tr>`; }).join('') + `</tbody></table></div><p class="hint" style="margin-top:8px">Marque la clase de cada variable. El recuadro de trazos indica lo que el programa detectó. Pase el cursor sobre un título de columna para ver su nombre completo.</p>`;
+  $$('#dictT input[type=radio]').forEach(s => s.addEventListener('change', () => { const i = +s.dataset.i, v = DATA.vars[i], msg = retype(v, () => { v.type = s.value; }); renderAll(); setLoadMsg(msg); const b = $(`#dictT input[name="vt${i}"]:checked`); if (b) b.focus(); }));
+  $$('#dictT input.ordin').forEach(s => s.addEventListener('change', () => { const i = +s.dataset.ord, v = DATA.vars[i], o = [...new Set(s.value.split(';').map(x => x.trim()).filter(Boolean))], msg = retype(v, () => { v.order = o; }); renderAll(); setLoadMsg(msg); const b = $(`#dictT input[data-ord="${i}"]`); if (b) b.focus(); }));
 }
 function renderClasses(){
   const vs = DATA.vars, g = fn => vs.filter(fn), nm = a => a.slice(0, 3).map(v => pretty(v.name)).join(', ') + (a.length > 3 ? '…' : '') || '—';
@@ -2179,8 +2257,21 @@ function renderFilter(){
     v.levels.forEach((l, i) => { const lab = document.createElement('label'), inp = document.createElement('input'), sp = document.createElement('span'); lab.className = 'chk'; inp.type = 'checkbox'; inp.checked = D.filter.levels.has(i); sp.textContent = `${l} (${c[i]})`; lab.append(inp, sp); box.appendChild(lab);
       inp.addEventListener('change', () => { if (inp.checked) D.filter.levels.add(i); else D.filter.levels.delete(i); if (!D.filter.levels.size){ D.filter.levels.add(i); inp.checked = true; } renderAll(true); }); }); }
 }
+function setLoadMsg(extra){ const m = $('#loadMsg'); m.textContent = (DATA.baseMsg + (extra ? ' ' + extra : '')).trim(); m.classList.toggle('err', DATA.warn.length > 0 || !!extra); }
+/* Cambia la clase u orden de una variable sin alterar qué filas quedan seleccionadas en el filtro. Devuelve un aviso si el filtro se reinicia. */
+function retype(v, change){
+  const f = DATA.filter && DATA.filter.idx === v.idx ? DATA.filter : null, keep = f && v.levels ? [...f.levels].map(k => v.levels[k]) : null; let msg = '';
+  change(); materialize(v);
+  if (f){
+    if (!v.cat){ DATA.filter = null; msg = `Al cambiar la clase de «${v.name}» se ha quitado el filtro, porque ya no es una categoría.`; }
+    else { const s = new Set(); (keep || []).forEach(l => { const k = v.levels.indexOf(l); if (k >= 0) s.add(k); });
+      if (!s.size || s.size !== keep.length){ f.levels = new Set(v.levels.map((_, k) => k)); msg = `Al cambiar la clase de «${v.name}» las categorías ya no coinciden. El filtro se ha reiniciado: ahora incluye todas las filas.`; }
+      else f.levels = s; }
+  }
+  return msg;
+}
 function loadData(text, name, isSample){
-  try { DATA = buildData(text, name, isSample); setMask(); defaultCfg(); const m = $('#loadMsg'); m.textContent = `${name}: ${nf(DATA.rows, 0)} filas y ${nf(DATA.vars.length, 0)} variables.${DATA.vars.length > 1 ? ` Separador: «${DATA.delim === '\t' ? 'tabulador' : DATA.delim}».` : ''}`; m.classList.remove('err'); UI.galN = 12; renderAll(); }
+  try { DATA = buildData(text, name, isSample); setMask(); defaultCfg(); DATA.baseMsg = `${name}: ${nf(DATA.rows, 0)} filas y ${nf(DATA.vars.length, 0)} variables.${DATA.vars.length > 1 ? ` Separador: «${DATA.delim === '\t' ? 'tabulador' : DATA.delim}».` : ''}${isSample ? '' : ` Codificación: ${LAST_ENC}.`} ${DATA.warn.join(' ')}`.trim(); setLoadMsg(''); UI.galN = 12; renderAll(); }
   catch (e){ const m = $('#loadMsg'); m.textContent = 'No se pudo leer el archivo. ' + e.message; m.classList.add('err'); }
 }
 function renderAll(keepFilter){ if (!DATA) return; setMask(); renderDict(); renderClasses(); if (!keepFilter) renderFilter(); ensureCfg(); renderBuilder(); renderGallery(); }
@@ -2209,7 +2300,7 @@ function renderControls(){
   if (def.multi){ const nums = DATA.vars.filter(x => isKind(x, 'num')); v += `<fieldset class="fld"><legend class="lbl">Variables numéricas (de ${def.multi[0]} a ${def.multi[1]})</legend><div class="chkgrid mchk">${nums.map(x => `<label class="chk"><input type="checkbox" data-m="${x.idx}"${(cfg.m || []).includes(x.idx) ? ' checked' : ''}><span>${esc(pretty(x.name))}</span></label>`).join('')}</div></fieldset>`; }
   let hlHtml = ''; if (def.opts.includes('hl')){ const cv = ctxXc(); if (cv && cfg.c < 0){ hlHtml = `<div class="fld"><label class="lbl" for="f_hl">Resaltar una categoría</label><select class="sel" id="f_hl" data-k="hl"><option value="">— Ninguna —</option>${cv.levels.map(l => `<option value="${esc(l)}"${cfg.hl === l ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select><p class="help">Pinta de rojo esa categoría y deja el resto en gris.</p></div>`; } }
   let opts = def.opts.filter(k => k !== 'hl').map(k => fieldHTML(k, cfg)).join('') + hlHtml;
-  const lims = limKeysOf(def).map(k => `<div class="fld"><label class="lbl" for="f_${k}">${LIMS[k]}</label><input type="text" class="sel" id="f_${k}" data-k="${k}" value="${esc(cfg[k])}" placeholder="automático" autocomplete="off"></div>`).join('');
+  const lims = limKeysOf(def).map(k => `<div class="fld"><label class="lbl" for="f_${k}">${LIMS[k]}</label><input type="text" class="sel" id="f_${k}" data-k="${k}" value="${esc(cfg[k])}" placeholder="automático" autocomplete="off"></div>`).join('') + (limKeysOf(def).length ? `<p class="help" style="grid-column:1/-1;margin:0">Estos límites no solo recortan el dibujo: los datos fuera de ellos se excluyen de los cálculos, de las estadísticas y de la tabla.</p>` : '');
   const noCol = ['heat2', 'mosaic', 'parallel', 'splom', 'bin2d'].includes(def.id) || cfg.c >= 0;
   const look = `${noCol ? '' : `<div class="fld"><label class="lbl" for="f_col">Color de las marcas</label><select class="sel" id="f_col" data-k="col">${Object.entries(SERIES).map(([k, s]) => `<option value="${k}"${cfg.col === k ? ' selected' : ''}>${s.name}</option>`).join('')}</select><p class="help">Un solo color da lectura limpia. Use una variable de color para distinguir grupos.</p></div>`}<div class="fld"><label class="lbl" for="f_aspect">Proporción del gráfico</label><select class="sel" id="f_aspect" data-k="aspect">${[['auto', 'Automática'], ['16:9', 'Panorámica 16:9'], ['4:3', 'Clásica 4:3'], ['1:1', 'Cuadrada'], ['3:4', 'Vertical 3:4']].map(([k, l]) => `<option value="${k}"${cfg.aspect === k ? ' selected' : ''}>${l}</option>`).join('')}</select></div>` + [['title', 'Título', 'automático'], ['subtitle', 'Subtítulo', 'automático'], ['note', 'Nota al pie', 'p. ej., fuente o aclaración']].map(([k, l, ph]) => `<div class="fld"><label class="lbl" for="f_${k}">${l}</label><input type="text" class="sel" id="f_${k}" data-k="${k}" value="${esc(cfg[k])}" placeholder="${ph}" autocomplete="off"></div>`).join('');
   $('#ctl').innerHTML = `<div class="cg"><h3>3. Variables</h3>${v}</div><div class="cg"><h3>4. Ajustes de este gráfico</h3>${opts || '<p class="help">Este gráfico no tiene ajustes adicionales.</p>'}${lims ? `<details class="rd" style="margin-top:16px"><summary><span class="lbl">Límites de los ejes (opcional)</span></summary><div class="rd-b" style="max-width:none">${lims}</div></details>` : ''}</div><div class="cg"><h3>5. Aspecto y texto</h3>${look}<div class="btns" style="grid-template-columns:1fr"><button type="button" class="btn" id="bReset">Restablecer los ajustes de este gráfico</button></div></div>`;
@@ -2227,7 +2318,7 @@ function drawChart(){
   CURRENT = ctx;
   notes.innerHTML = ctx.notes.length ? `<ul class="notes">${[...new Set(ctx.notes)].map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '';
   const def = ctx.def, rows = ctx.tbl ? ctx.tbl.rows : [], cap = 200;
-  info.innerHTML = `<details class="rd" data-rd="rd"${UI.open.rd ? ' open' : ''}><summary><span class="lbl">Lectura en lenguaje sencillo</span></summary><div class="rd-b reading" style="border-top:0">${ctx.rd.map(p => `<p>${p}</p>`).join('')}</div></details>
+  info.innerHTML = `<details class="rd" data-rd="rd"${UI.open.rd ? ' open' : ''}><summary><span class="lbl">Lectura en lenguaje sencillo</span></summary><div class="rd-b reading" style="border-top:0">${ctx.rd.map(p => `<p>${safeRd(p)}</p>`).join('')}</div></details>
   <details class="rd" data-rd="how"${UI.open.how ? ' open' : ''}><summary><span class="lbl">Cómo leer este gráfico</span></summary><div class="rd-b"><p><b class="b-ink">Qué muestra.</b> ${esc(def.how.q)}</p><p><b class="b-ink">Cuándo usarlo.</b> ${esc(def.how.w)}</p><p><b class="b-ink">Cómo leerlo.</b> ${esc(def.how.r)}</p><p><b class="b-ink">Precauciones.</b> ${esc(def.how.c)}</p></div></details>
   <details class="rd" data-rd="tbl"${UI.open.tbl ? ' open' : ''}><summary><span class="lbl">Datos del gráfico (tabla)</span></summary><div class="rd-b" style="max-width:none">${ctx.tbl ? tbl(ctx.tbl.head.map(esc), rows.slice(0, cap).map(r => r.map(c => esc(String(c)))), {label: 'Datos del gráfico', min: 420, right: ctx.tbl.head.map((_, i) => i).filter(i => i > 0 && rows.length && /^[-−+]?[\d.,]+( %)?$|^—$/.test(String(rows[0][i])))}) + (rows.length > cap ? `<p class="note" style="margin-top:8px">Se muestran las primeras ${cap} de ${nf(rows.length, 0)} filas. El archivo CSV contiene todas.</p>` : '') : ''}</div></details>`;
 }
@@ -2254,15 +2345,36 @@ function renderGallery(){
 
 /* ───────── Exportación y configuración ───────── */
 function downloadText(name, text, type){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type})); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
-const csvCell = s => { s = String(s); return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-function cfgToJSON(){ const c = UI.cfg, V = DATA.vars, nm = i => i >= 0 && V[i] ? V[i].name : null, o = Object.assign({}, c); ROLE_KEYS.forEach(k => { o[k] = nm(c[k]); }); o.m = (c.m || []).map(nm).filter(Boolean); return JSON.stringify({aplicacion: 'laboratorio-graficos-descriptivos', version: 1, datos: DATA.name, configuracion: o}, null, 2); }
+/* Los textos que empiezan por = + - @ (o tabulador / retorno) se exportan con una comilla simple delante para que una hoja de cálculo no los ejecute como fórmula.
+   Los números tipados («-5,3», «1e-4») se dejan tal cual. */
+const csvCell = s => { s = String(s); if (/^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+(?:[.,]\d+)?(?:e[+-]?\d+)?$/i.test(s)) s = "'" + s; return /[",\r\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+/* Huella de los datos: títulos de las columnas y número de filas. */
+const dataSig = () => { let h = 2166136261; const s = DATA.vars.map(v => v.name).join('\u0001') + '|' + DATA.rows; for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16); };
+const CFG_VERSION = 2;
+function cfgToJSON(){
+  const c = UI.cfg, V = DATA.vars, nm = i => i >= 0 && V[i] ? V[i].name : null, o = Object.assign({}, c); ROLE_KEYS.forEach(k => { o[k] = nm(c[k]); }); o.m = (c.m || []).map(nm).filter(Boolean);
+  const tipos = {}, orden = {}; V.forEach(v => { if (v.type !== v.auto) tipos[v.name] = v.type; if (v.order) orden[v.name] = v.order; });
+  const filtro = DATA.filter ? {variable: V[DATA.filter.idx].name, categorias: [...DATA.filter.levels].map(k => V[DATA.filter.idx].levels[k])} : null;
+  return JSON.stringify({aplicacion: 'laboratorio-graficos-descriptivos', version: CFG_VERSION, datos: {nombre: DATA.name, filas: DATA.rows, huella: dataSig()}, filtro, tipos, orden, configuracion: o}, null, 2);
+}
+/* Valida todo antes de tocar el estado: si el archivo no es válido, no cambia nada. Devuelve {miss, warn}. */
 function cfgFromJSON(text){
-  const j = JSON.parse(text), o = j && j.configuracion; if (!o || !CH[o.type]) throw new Error('El archivo no contiene una configuración válida.');
-  const V = DATA.vars, idx = n => n == null ? -1 : V.findIndex(v => v.name === n), c = Object.assign({}, DEFAULTS, {m: []}); let miss = [];
-  Object.keys(DEFAULTS).forEach(k => { if (k in o && !['x', 'y', 'z', 'c', 'f', 'm'].includes(k) && typeof o[k] === typeof DEFAULTS[k]) c[k] = o[k]; });
-  ROLE_KEYS.forEach(k => { if (o[k] != null){ const i = idx(o[k]); if (i < 0) miss.push(o[k]); c[k] = i; } });
-  c.m = (o.m || []).map(idx).filter(i => i >= 0); UI.cfg = c; UI.purpose = CH[c.type].group; ensureCfg(); renderBuilder();
-  return miss;
+  let j; try { j = JSON.parse(text); } catch (e){ throw new Error('El archivo no se puede leer: no es un JSON válido.'); }
+  const o = j && j.configuracion; if (!j || j.aplicacion !== 'laboratorio-graficos-descriptivos' || !o || typeof o !== 'object' || !CH[o.type]) throw new Error('El archivo no contiene una configuración válida de este laboratorio.');
+  const ver = Number(j.version); if (!(ver >= 1 && ver <= CFG_VERSION)) throw new Error('La configuración es de una versión que este laboratorio no conoce.');
+  const V = DATA.vars, idx = n => typeof n === 'string' ? V.findIndex(v => v.name === n) : -1, c = Object.assign({}, DEFAULTS, {m: []}), miss = [], warn = [];
+  Object.keys(DEFAULTS).forEach(k => { if (k in o && !['x', 'y', 'z', 'c', 'f', 'm'].includes(k) && typeof o[k] === typeof DEFAULTS[k]){ if (typeof o[k] === 'number' && !Number.isFinite(o[k])) return; if (typeof o[k] === 'number' && FIELDS[k] && FIELDS[k].t === 'range') c[k] = Math.min(FIELDS[k].max, Math.max(FIELDS[k].min, o[k])); else c[k] = o[k]; } });
+  ROLE_KEYS.forEach(k => { if (typeof o[k] === 'string'){ const i = idx(o[k]); if (i < 0) miss.push(o[k]); c[k] = i; } });
+  c.m = (Array.isArray(o.m) ? o.m : []).map(idx).filter(i => i >= 0);
+  if (ver >= 2){
+    const d = j.datos || {}; if (d.huella && d.huella !== dataSig()) warn.push(`La configuración se guardó con otros datos (${String(d.nombre || 'sin nombre')}, ${String(d.filas)} filas). Compruebe que el resultado es el esperado.`);
+    let msgs = [];
+    if (j.tipos && typeof j.tipos === 'object') Object.entries(j.tipos).forEach(([n, t]) => { const i = idx(n); if (i >= 0 && TYPE_NAME[t] && V[i].type !== t) msgs.push(retype(V[i], () => { V[i].type = t; })); });
+    if (j.orden && typeof j.orden === 'object') Object.entries(j.orden).forEach(([n, ord]) => { const i = idx(n); if (i >= 0 && Array.isArray(ord) && ord.every(x => typeof x === 'string')) msgs.push(retype(V[i], () => { V[i].order = ord; })); });
+    if (j.filtro && typeof j.filtro.variable === 'string'){ const i = idx(j.filtro.variable), v = V[i]; if (v && v.cat && Array.isArray(j.filtro.categorias)){ const s = new Set(); j.filtro.categorias.forEach(l => { const k = v.levels.indexOf(l); if (k >= 0) s.add(k); }); if (s.size) DATA.filter = {idx: i, levels: s}; else warn.push('No se pudo restaurar el filtro: sus categorías no existen en estos datos.'); } else warn.push('No se pudo restaurar el filtro: la variable no existe o no es categórica.'); }
+    warn.push(...msgs.filter(Boolean));
+  } else warn.push('Es una configuración antigua: solo guarda el aspecto del gráfico, no los filtros ni las clases de variable.');
+  UI.cfg = c; UI.purpose = CH[c.type].group; renderAll(); return {miss, warn};
 }
 
 /* ───────── Eventos ───────── */
@@ -2290,7 +2402,7 @@ $('#bSvg').addEventListener('click', () => { const s = exportSVGText(); if (s) d
 $('#bPng').addEventListener('click', () => exportPNG(2, b => { if (!b){ $('#chartNotes').innerHTML = '<p class="msg err">El navegador no pudo generar el PNG. Descargue el SVG.</p>'; return; } const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `grafico-${UI.cfg.type}.png`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }));
 $('#bData').addEventListener('click', () => { if (!CURRENT || !CURRENT.tbl) return; const t = CURRENT.tbl; downloadText(`datos-grafico-${UI.cfg.type}.csv`, '﻿' + [t.head, ...t.rows].map(r => r.map(csvCell).join(';')).join('\r\n'), 'text/csv;charset=utf-8'); });
 $('#bCfgSave').addEventListener('click', () => downloadText(`configuracion-${UI.cfg.type}.json`, cfgToJSON(), 'application/json;charset=utf-8'));
-$('#cfgIn').addEventListener('change', async e => { const f = e.target.files[0]; if (!f) return; try { const miss = cfgFromJSON(await f.text()); $('#chartNotes').insertAdjacentHTML('afterbegin', miss.length ? `<p class="msg">Configuración cargada. No se encontraron estas variables en los datos actuales: ${esc(miss.join(', '))}.</p>` : `<p class="msg">Configuración cargada.</p>`); } catch (er){ $('#chartNotes').innerHTML = `<p class="msg err">${esc(er.message)}</p>`; } e.target.value = ''; });
+$('#cfgIn').addEventListener('change', async e => { const f = e.target.files[0]; if (!f) return; try { const {miss, warn} = cfgFromJSON(await f.text()); $('#chartNotes').insertAdjacentHTML('afterbegin', `<p class="msg">Configuración cargada.${miss.length ? ` No se encontraron estas variables en los datos actuales: ${esc(miss.join(', '))}.` : ''}${warn.length ? ' ' + warn.map(esc).join(' ') : ''}</p>`); } catch (er){ $('#chartNotes').innerHTML = `<p class="msg err">${esc(er.message)}</p>`; } e.target.value = ''; });
 $('#galOut').addEventListener('click', e => { const b = e.target.closest('button[data-open]'); if (!b) return; const v = DATA.vars[+b.dataset.open], c = galCfg(v); const keep = {}; UI.cfg = Object.assign({}, DEFAULTS, c, {m: []}); UI.cfg.showMean = CH[c.type].dflt.showMean ?? true; UI.cfg.kde = CH[c.type].dflt.kde ?? true; if (c.type === 'hist'){ UI.cfg.showMean = true; UI.cfg.kde = true; } UI.purpose = CH[c.type].group; ensureCfg(); renderBuilder(); $('#grafico').scrollIntoView({behavior: 'smooth', block: 'start'}); });
 $('#galMore').addEventListener('click', () => { UI.galN += 12; renderGallery(); });
 let rz, lastW = innerWidth; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!DATA || innerWidth === lastW) return; lastW = innerWidth; drawChart(); renderGallery(); }, 150); });

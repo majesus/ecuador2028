@@ -533,19 +533,26 @@ function qt(p, v){ let lo = -1e3, hi = 1e3; for (let i = 0; i < 200; i++){ const
 /* ───────── Descriptivos básicos ───────── */
 const KMAD = 1.4826, KIQR = 1.349;
 const quantS = (s, p) => { const h = (s.length - 1) * p, lo = Math.floor(h), hi = Math.ceil(h); return s[lo] + (h - lo) * (s[hi] - s[lo]); };
+/* Asimetría (g1) y curtosis en exceso (g2) con centrado y escalado: no dependen de la unidad. NaN si todos los datos son iguales. */
+function shapeMoments(a, mean){
+  const n = a.length; let sc = 0; for (const v of a){ const d = Math.abs(v - mean); if (d > sc) sc = d; }
+  if (!(sc > 0) || sc <= 1e-12 * Math.abs(mean)) return {g1: NaN, g2: NaN};
+  let s2 = 0, s3 = 0, s4 = 0; for (const v of a){ const z = (v - mean) / sc, z2 = z * z; s2 += z2; s3 += z2 * z; s4 += z2 * z2; }
+  s2 /= n; s3 /= n; s4 /= n; return {g1: s3 / Math.pow(s2, 1.5), g2: s4 / (s2 * s2) - 3};
+}
 function describe(a){
   const n = a.length, s = Float64Array.from(a).sort();
   let t = 0; for (const v of a) t += v; const mean = t / n;
-  let ss = 0, m3 = 0, m4 = 0; for (const v of a){ const d = v - mean, d2 = d * d; ss += d2; m3 += d2 * d; m4 += d2 * d2; }
-  const m2 = ss / n; m3 /= n; m4 /= n;
+  let ss = 0; for (const v of a){ const d = v - mean; ss += d * d; }
+  const m2 = ss / n;
   const sd = n > 1 ? Math.sqrt(ss / (n - 1)) : NaN, med = quantS(s, 0.5), q1 = quantS(s, 0.25), q3 = quantS(s, 0.75);
   const mad = quantS(Float64Array.from(a, v => Math.abs(v - med)).sort(), 0.5);
-  const g1 = m2 > 1e-300 ? m3 / Math.pow(m2, 1.5) : NaN, g2 = m2 > 1e-300 ? m4 / (m2 * m2) - 3 : NaN;
+  const {g1, g2} = shapeMoments(a, mean);
   const se = sd / Math.sqrt(n), tq = n > 1 ? qt(0.975, n - 1) : NaN;
   const trim = (() => { const k = Math.floor(0.1 * n); if (n - 2 * k < 1) return mean; let u = 0; for (let i = k; i < n - k; i++) u += s[i]; return u / (n - 2 * k); })();
   return {n, s, sum: t, mean, med, q1, q3, iqr: q3 - q1, sd, var: sd * sd, cv: mean !== 0 ? sd / Math.abs(mean) : NaN, se, ciLo: mean - tq * se, ciHi: mean + tq * se, mad, madS: KMAD * mad, iqrS: (q3 - q1) / KIQR,
     min: s[0], max: s[n - 1], range: s[n - 1] - s[0], skew: g1, kurt: g2, trim, m2,
-    bowley: q3 - q1 > 1e-300 ? (q3 + q1 - 2 * med) / (q3 - q1) : NaN,
+    bowley: q3 > q1 ? (q3 + q1 - 2 * med) / (q3 - q1) : NaN,
     f1: q1 - 1.5 * (q3 - q1), f2: q3 + 1.5 * (q3 - q1),
     p: pp => quantS(s, pp)};
 }
@@ -589,9 +596,9 @@ function ranks(a){ // rangos promedio + info de empates
 function pearson(x, y){
   const n = x.length; let mx = 0, my = 0; for (let i = 0; i < n; i++){ mx += x[i]; my += y[i]; } mx /= n; my /= n;
   let sxy = 0, sxx = 0, syy = 0; for (let i = 0; i < n; i++){ const a = x[i] - mx, b = y[i] - my; sxy += a * b; sxx += a * a; syy += b * b; }
-  const r = sxx > 0 && syy > 0 ? sxy / Math.sqrt(sxx * syy) : NaN, df = n - 2;
-  const t = Math.abs(r) < 1 ? r * Math.sqrt(df / (1 - r * r)) : Infinity, p = n > 2 ? (Math.abs(r) < 1 ? t2p(t, df) : 0) : NaN;
-  let lo = NaN, hi = NaN; if (n > 3 && Math.abs(r) < 1){ const z = Math.atanh(r), se = 1 / Math.sqrt(n - 3); lo = Math.tanh(z - 1.959964 * se); hi = Math.tanh(z + 1.959964 * se); }
+  const r0 = sxx > 0 && syy > 0 ? sxy / Math.sqrt(sxx * syy) : NaN, ok = Number.isFinite(r0), r = ok ? Math.max(-1, Math.min(1, r0)) : NaN, df = n - 2;
+  const t = !ok ? NaN : Math.abs(r) < 1 ? r * Math.sqrt(df / (1 - r * r)) : Infinity, p = n > 2 && ok ? (Math.abs(r) < 1 ? t2p(t, df) : 0) : NaN;  // p = NaN si una variable es constante
+  let lo = NaN, hi = NaN; if (n > 3 && ok && Math.abs(r) < 1){ const z = Math.atanh(r), se = 1 / Math.sqrt(n - 3); lo = Math.tanh(z - 1.959964 * se); hi = Math.tanh(z + 1.959964 * se); }
   const slope = sxx > 0 ? sxy / sxx : NaN; return {r, p, lo, hi, n, slope, icpt: my - slope * mx, r2: r * r};
 }
 function spearman(x, y){ const rx = ranks(x).r, ry = ranks(y).r, o = pearson(rx, ry), n = x.length; let lo = NaN, hi = NaN; if (n > 3 && Math.abs(o.r) < 1){ const z = Math.atanh(o.r), se = Math.sqrt(1.06 / (n - 3)); lo = Math.tanh(z - 1.959964 * se); hi = Math.tanh(z + 1.959964 * se); } return {rho: o.r, p: o.p, n, lo, hi}; }
@@ -606,19 +613,35 @@ function kendall(x, y){
 }
 
 /* ───────── Contrastes no paramétricos y paramétricos ───────── */
+/* Distribución exacta de U (Mann–Whitney, sin empates): configuraciones por valor de U */
+function uCounts(n1, n2){
+  const mx = n1 * n2, c = new Float64Array(mx + 1); c[0] = 1;
+  for (let i = 1; i <= n1; i++){ const s = n2 + i; for (let j = mx; j >= s; j--) c[j] -= c[j - s]; for (let j = i; j <= mx; j++) c[j] += c[j - i]; }
+  return c;
+}
+/* Distribución exacta de la suma de rangos positivos (Wilcoxon, sin empates ni ceros) */
+function wCounts(n){
+  const mx = n * (n + 1) / 2, c = new Float64Array(mx + 1); c[0] = 1;
+  for (let i = 1; i <= n; i++) for (let j = mx; j >= i; j--) c[j] += c[j - i];
+  return c;
+}
+const cdfOf = (c, k) => { let t = 0, s = 0; for (let j = 0; j < c.length; j++){ t += c[j]; if (j <= k) s += c[j]; } return s / t; };
 function mannWhitney(a, b){
   const n1 = a.length, n2 = b.length, all = a.concat(b), {r, ties} = ranks(all); let R1 = 0; for (let i = 0; i < n1; i++) R1 += r[i];
   const U1 = R1 - n1 * (n1 + 1) / 2, U2 = n1 * n2 - U1, N = n1 + n2, mu = n1 * n2 / 2;
   const tc = ties.reduce((s, t) => s + (t * t * t - t), 0), sg = Math.sqrt(n1 * n2 / 12 * ((N + 1) - tc / (N * (N - 1))));
-  const U = Math.min(U1, U2), z = sg > 0 ? (Math.abs(U1 - mu) - 0.5) / sg : NaN, p = sg > 0 ? z2p(Math.max(0, z)) : NaN;
-  return {U1, U2, U, z, p, cles: U1 / (n1 * n2), rb: 2 * U1 / (n1 * n2) - 1, n1, n2};
+  const U = Math.min(U1, U2), z = sg > 0 ? (Math.abs(U1 - mu) - 0.5) / sg : NaN, exact = n1 < 50 && n2 < 50 && !ties.length;
+  const p = exact ? Math.min(1, 2 * cdfOf(uCounts(n1, n2), U)) : sg > 0 ? z2p(Math.max(0, z)) : NaN, method = exact ? 'exacto' : 'aproximación normal';
+  return {method, U1, U2, U, z, p, cles: U1 / (n1 * n2), rb: 2 * U1 / (n1 * n2) - 1, n1, n2};
 }
 function wilcoxon(x, y){
   const d = []; for (let i = 0; i < x.length; i++){ const v = x[i] - y[i]; if (v !== 0) d.push(v); }
   const n = d.length; if (n < 1) return {W: NaN, p: NaN, n: 0};
   const {r, ties} = ranks(d.map(Math.abs)); let Wp = 0, Wm = 0; d.forEach((v, i) => { if (v > 0) Wp += r[i]; else Wm += r[i]; });
   const mu = n * (n + 1) / 4, tc = ties.reduce((s, t) => s + (t * t * t - t), 0), sg = Math.sqrt(n * (n + 1) * (2 * n + 1) / 24 - tc / 48);
-  const z = sg > 0 ? (Math.abs(Wp - mu) - 0.5) / sg : NaN; return {Wp, Wm, W: Math.min(Wp, Wm), z, p: sg > 0 ? z2p(Math.max(0, z)) : NaN, n, rb: (Wp - Wm) / (Wp + Wm)};
+  const z = sg > 0 ? (Math.abs(Wp - mu) - 0.5) / sg : NaN, exact = n < 50 && !ties.length && n === x.length, W = Math.min(Wp, Wm);
+  const p = exact ? Math.min(1, 2 * cdfOf(wCounts(n), W)) : sg > 0 ? z2p(Math.max(0, z)) : NaN;
+  return {method: exact ? 'exacto' : 'aproximación normal', Wp, Wm, W, z, p, n, rb: (Wp - Wm) / (Wp + Wm)};
 }
 function kruskal(groups){
   const all = [].concat(...groups), N = all.length, {r, ties} = ranks(all); let H = 0, off = 0; const sums = [];
@@ -660,9 +683,10 @@ function fisher2x2(a, b, c, d){
   const r1 = a + b, r2 = c + d, c1 = a + c, n = r1 + r2, lo = Math.max(0, c1 - r2), hi = Math.min(r1, c1);
   const pr = x => Math.exp(lchoose(r1, x) + lchoose(r2, c1 - x) - lchoose(n, c1)), p0 = pr(a); let p = 0;
   for (let x = lo; x <= hi; x++){ const q = pr(x); if (q <= p0 * (1 + 1e-7)) p += q; }
-  const or = (b * c) === 0 ? ((a * d) === 0 ? NaN : Infinity) : (a * d) / (b * c);
-  const A = a + 0.5, B = b + 0.5, C = c + 0.5, D = d + 0.5, lor = Math.log(A * D / (B * C)), se = Math.sqrt(1 / A + 1 / B + 1 / C + 1 / D);
-  return {p: Math.min(1, p), or, orLo: Math.exp(lor - 1.959964 * se), orHi: Math.exp(lor + 1.959964 * se)};
+  const zero = a * b * c * d === 0, k = zero ? 0.5 : 0;   // con una celda vacía se suma 0,5 a todas (Haldane–Anscombe)
+  const A = a + k, B = b + k, C = c + k, D = d + k, lor = Math.log(A * D / (B * C)), se = Math.sqrt(1 / A + 1 / B + 1 / C + 1 / D);
+  const or = (B * C) === 0 ? ((A * D) === 0 ? NaN : Infinity) : (A * D) / (B * C);
+  return {p: Math.min(1, p), or, corrected: zero, orLo: Number.isFinite(lor) ? Math.exp(lor - 1.959964 * se) : NaN, orHi: Number.isFinite(lor) ? Math.exp(lor + 1.959964 * se) : NaN};
 }
 function chiTable(T){ // T: filas × columnas de frecuencias
   const R = T.length, C = T[0].length, rs = T.map(r => r.reduce((a, b) => a + b, 0)), cs = T[0].map((_, j) => T.reduce((s, r) => s + r[j], 0)), N = rs.reduce((a, b) => a + b, 0);
@@ -681,22 +705,38 @@ function kdeAt(vals, xs, h){ const n = vals.length, k = 1 / (n * h * Math.sqrt(2
 
 /* ───────── Incertidumbre: bootstrap y Hodges–Lehmann ───────── */
 function quickStats(a){
-  const n = a.length, s = Float64Array.from(a).sort(); let t = 0; for (const v of a) t += v; const mean = t / n; let ss = 0, m3 = 0, m4 = 0;
-  for (const v of a){ const d = v - mean, d2 = d * d; ss += d2; m3 += d2 * d; m4 += d2 * d2; }
-  const m2 = ss / n, med = quantS(s, 0.5), q1 = quantS(s, 0.25), q3 = quantS(s, 0.75), k = Math.floor(0.1 * n); let tr = 0; for (let i = k; i < n - k; i++) tr += s[i];
-  return {mean, med, trim: n - 2 * k > 0 ? tr / (n - 2 * k) : mean, sd: n > 1 ? Math.sqrt(ss / (n - 1)) : NaN, madS: KMAD * quantS(Float64Array.from(a, v => Math.abs(v - med)).sort(), 0.5), iqr: q3 - q1, skew: m2 > 1e-300 ? (m3 / n) / Math.pow(m2, 1.5) : NaN, kurt: m2 > 1e-300 ? (m4 / n) / (m2 * m2) - 3 : NaN};
+  const n = a.length, s = Float64Array.from(a).sort(); let t = 0; for (const v of a) t += v; const mean = t / n; let ss = 0;
+  for (const v of a){ const d = v - mean; ss += d * d; }
+  const sh = shapeMoments(a, mean), med = quantS(s, 0.5), q1 = quantS(s, 0.25), q3 = quantS(s, 0.75), k = Math.floor(0.1 * n); let tr = 0; for (let i = k; i < n - k; i++) tr += s[i];
+  return {mean, med, trim: n - 2 * k > 0 ? tr / (n - 2 * k) : mean, sd: n > 1 ? Math.sqrt(ss / (n - 1)) : NaN, madS: KMAD * quantS(Float64Array.from(a, v => Math.abs(v - med)).sort(), 0.5), iqr: q3 - q1, skew: sh.g1, kurt: sh.g2};
 }
-function bootstrapDesc(a, B = 400, seed = 12345){
-  const n = a.length, r = rng(seed), out = {}, keys = ['mean', 'med', 'trim', 'sd', 'madS', 'iqr', 'skew', 'kurt'], buf = new Float64Array(n);
-  keys.forEach(k => { out[k] = []; });
-  for (let b = 0; b < B; b++){ for (let i = 0; i < n; i++) buf[i] = a[Math.floor(r() * n)]; const q = quickStats(buf); keys.forEach(k => { if (Number.isFinite(q[k])) out[k].push(q[k]); }); }
-  const ci = {}; keys.forEach(k => { const s = Float64Array.from(out[k]).sort(); ci[k] = s.length > 20 ? [quantS(s, 0.025), quantS(s, 0.975)] : [NaN, NaN]; });
-  return ci;
+const BOOT_KEYS = ['mean', 'med', 'trim', 'sd', 'madS', 'iqr', 'skew', 'kurt'];
+/* IC percentil 95 % de cada estadístico. Solo se ofrece si al menos el 90 % de las réplicas dio un valor calculable. [inferior, superior, réplicas válidas] */
+function bootCI(out, B){ const ci = {}; BOOT_KEYS.forEach(k => { const s = Float64Array.from(out[k]).sort(); ci[k] = s.length >= 0.9 * B && s.length > 20 ? [quantS(s, 0.025), quantS(s, 0.975), s.length] : [NaN, NaN, s.length]; }); return ci; }
+/* Remuestreo por lotes: cede el control a la interfaz entre lotes y se detiene si isCancelled() devuelve true. Semilla fija: mismo resultado con los mismos datos. */
+function bootstrapDescAsync(a, B, seed, isCancelled, onProgress, done){
+  const n = a.length, r = rng(seed), out = {}, buf = new Float64Array(n), batch = Math.max(1, Math.min(50, Math.floor(60000 / n))); let b = 0;
+  BOOT_KEYS.forEach(k => { out[k] = []; });
+  const step = () => { if (isCancelled()) return; const end = Math.min(B, b + batch);
+    for (; b < end; b++){ for (let i = 0; i < n; i++) buf[i] = a[Math.floor(r() * n)]; const q = quickStats(buf); BOOT_KEYS.forEach(k => { if (Number.isFinite(q[k])) out[k].push(q[k]); }); }
+    if (b < B){ onProgress(b / B); setTimeout(step, 0); } else done(bootCI(out, B)); };
+  setTimeout(step, 0);
 }
-function hodgesLehmann(x, y){ // mediana de todas las diferencias x_i − y_j, con IC 95 % sin supuestos (Bauer)
-  const n1 = x.length, n2 = y.length, m = n1 * n2; if (m > 4e6) return {est: NaN, lo: NaN, hi: NaN};
+/* Mediana de todas las diferencias x_i − y_j (desplazamiento de Hodges–Lehmann) e IC por inversión de la prueba de Mann–Whitney.
+   Sin empates y con n1, n2 < 50: IC exacto, con el nivel que realmente se alcanza (cover). Si no, aproximación normal con corrección de empates. */
+function hodgesLehmann(x, y){
+  const n1 = x.length, n2 = y.length, m = n1 * n2; if (m > 4e6) return {est: NaN, lo: NaN, hi: NaN, cover: NaN, method: ''};
   const d = new Float64Array(m); let k = 0; for (let i = 0; i < n1; i++) for (let j = 0; j < n2; j++) d[k++] = x[i] - y[j]; d.sort();
-  const est = quantS(d, 0.5), c = Math.floor(m / 2 - 1.959964 * Math.sqrt(m * (n1 + n2 + 1) / 12)); return {est, lo: c >= 0 ? d[c] : d[0], hi: c >= 0 ? d[m - 1 - c] : d[m - 1]};
+  const est = quantS(d, 0.5), ties = ranks(Array.from(x).concat(Array.from(y))).ties;
+  if (!ties.length && n1 < 50 && n2 < 50){
+    const c = uCounts(n1, n2); let tot = 0; for (const v of c) tot += v;
+    let cum = 0, qu = 0; for (let j = 0; j <= m; j++){ cum += c[j] / tot; if (cum >= 0.025 - 1e-12){ qu = j; break; } }
+    if (qu === 0) qu = 1;
+    let below = 0; for (let j = 0; j < qu; j++) below += c[j] / tot;
+    return {est, lo: d[qu - 1], hi: d[m - qu], cover: 1 - 2 * below, method: 'exacto'};
+  }
+  const N = n1 + n2, tc = ties.reduce((s, t) => s + (t * t * t - t), 0), sd = Math.sqrt(m / 12 * ((N + 1) - tc / (N * (N - 1)))), raw = Math.floor(m / 2 - 1.959964 * sd), c = Math.max(0, raw);
+  return {est, lo: d[c], hi: d[m - 1 - c], cover: raw >= 0 ? 0.95 : NaN, method: 'aproximación normal'};
 }
 
 /* ───────── Concentración (Gini, Lorenz) ───────── */
@@ -712,16 +752,16 @@ function kmeansOnce(X, n, p, k, r){
     let tot = 0; for (let i = 0; i < n; i++){ let d = 0; for (let j = 0; j < p; j++){ const t = X[i * p + j] - C[(c - 1) * p + j]; d += t * t; } if (d < d2[i]) d2[i] = d; tot += d2[i]; }
     let x = r() * tot, pick = n - 1; for (let i = 0; i < n; i++){ x -= d2[i]; if (x <= 0){ pick = i; break; } } for (let j = 0; j < p; j++) C[c * p + j] = X[pick * p + j];
   }
-  let inertia = 0;
+  let inertia = 0, conv = false;
   for (let it = 0; it < 100; it++){
     let ch = 0; inertia = 0;
     for (let i = 0; i < n; i++){ let bc = 0, bd = Infinity; for (let c = 0; c < k; c++){ let d = 0; for (let j = 0; j < p; j++){ const t = X[i * p + j] - C[c * p + j]; d += t * t; } if (d < bd){ bd = d; bc = c; } } if (lab[i] !== bc || it === 0){ ch++; lab[i] = bc; } inertia += bd; }
-    if (!ch) break;
+    if (!ch){ conv = true; break; }
     const S = new Float64Array(k * p), N = new Int32Array(k); for (let i = 0; i < n; i++){ N[lab[i]]++; for (let j = 0; j < p; j++) S[lab[i] * p + j] += X[i * p + j]; }
     for (let c = 0; c < k; c++){ if (N[c] === 0){ let bi = 0, bd = -1; for (let i = 0; i < n; i++){ let d = 0; for (let j = 0; j < p; j++){ const t = X[i * p + j] - C[lab[i] * p + j]; d += t * t; } if (d > bd){ bd = d; bi = i; } } for (let j = 0; j < p; j++) C[c * p + j] = X[bi * p + j]; } else for (let j = 0; j < p; j++) C[c * p + j] = S[c * p + j] / N[c]; }
   }
   inertia = 0; for (let i = 0; i < n; i++){ let d = 0; for (let j = 0; j < p; j++){ const t = X[i * p + j] - C[lab[i] * p + j]; d += t * t; } inertia += d; }
-  return {C, lab: Int32Array.from(lab), inertia};
+  return {C, lab: Int32Array.from(lab), inertia, conv};
 }
 function kmeans(X, n, p, k, seed, starts){
   const r = rng(seed); let best = null; const runs = [];
@@ -772,6 +812,8 @@ const pct = (v, d = 1) => nf(v * 100, d) + ' %';
 const pTxt = p => !Number.isFinite(p) ? '—' : p < 0.001 ? '< 0,001' : nf(p, 3);
 const pl = (n, a, b) => `${nf(n, 0)} ${n === 1 ? a : b}`;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const rangeOf = a => { let lo = Infinity, hi = -Infinity; for (const v of a){ if (v < lo) lo = v; if (v > hi) hi = v; } return [lo, hi]; };
+const maxOf = a => { let m = -Infinity; for (const v of a) if (v > m) m = v; return m; };
 
 /* ───────── Pseudoaleatorio con semilla ───────── */
 function rng(seed){ let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -780,7 +822,8 @@ function rng(seed){ let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F
 const MISSING = new Set(['', 'na', 'n/a', 'nan', 'null', 'none', '-', '.', '#n/a', 's/d', 'nd', '?']);
 function parseNum(raw){
   let s = String(raw).trim(); if (!s) return NaN;
-  s = s.replace(/[ \s€$£%]/g, '').replace('−', '-');
+  s = s.replace(/^[\s€$£%]+|[\s€$£%]+$/g, '').replace('−', '-');   // símbolos solo en los extremos
+  if (/\s/.test(s)){ if (!/^[+-]?\d{1,3}(?:\s\d{3})+(?:[.,]\d+)?$/.test(s)) return NaN; s = s.replace(/\s/g, ''); }   // «1 2» no es 12; «1 234» sí es 1234
   const m = s.match(/^([+-]?)([\d.,]+)((?:e[+-]?\d+)?)$/i); if (!m) return NaN;
   let b = m[2]; const dot = b.includes('.'), com = b.includes(',');
   if (dot && com){
@@ -811,23 +854,30 @@ function detectDelim(text){
   for (const d of [';', '\t', ',', '|']){ let c = 0, q = false; for (const ch of first){ if (ch === '"') q = !q; else if (!q && ch === d) c++; } if (c > bc){ bc = c; best = d; } }
   return best;
 }
+const MAX_ROWS = 200000;
+/* Devuelve los registros leídos (como máximo MAX_ROWS + 1: títulos y datos). rows.total cuenta todos los registros del archivo. */
 function parseRows(text, delim){
-  const rows = []; let row = [], cur = '', q = false, i = 0; const N = text.length;
+  const rows = []; let row = [], cur = '', q = false, qAt = 0, line = 1, total = 0, i = 0; const N = text.length;
+  const end = () => { row.push(cur); cur = ''; if (row.length > 1 || row[0].trim() !== ''){ total++; if (rows.length <= MAX_ROWS) rows.push(row); } row = []; };
   while (i < N){
     const ch = text[i];
-    if (q){ if (ch === '"'){ if (text[i + 1] === '"'){ cur += '"'; i++; } else q = false; } else cur += ch; }
-    else if (ch === '"' && cur === '') q = true;
+    if (q){ if (ch === '"'){ if (text[i + 1] === '"'){ cur += '"'; i++; } else q = false; } else { if (ch === '\n') line++; cur += ch; } }
+    else if (ch === '"' && cur === ''){ q = true; qAt = line; }
     else if (ch === delim){ row.push(cur); cur = ''; }
-    else if (ch === '\n' || ch === '\r'){ if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.length > 1 || row[0].trim() !== '') rows.push(row); row = []; if (rows.length > 200001) break; }
+    else if (ch === '\n' || ch === '\r'){ if (ch === '\r' && text[i + 1] === '\n') i++; line++; end(); }
     else cur += ch;
     i++;
   }
-  if (cur !== '' || row.length){ row.push(cur); if (row.length > 1 || row[0].trim() !== '') rows.push(row); }
-  return rows;
+  if (q) throw new Error('Unas comillas se abren en la línea ' + qAt + ' y no se cierran. Ciérrelas o elimínelas.');
+  if (cur !== '' || row.length) end();
+  rows.total = total; return rows;
 }
+let LAST_ENC = '';
 async function readFileText(file){
-  const buf = await file.arrayBuffer(); let text = new TextDecoder('utf-8').decode(buf);
-  if (text.includes('�')) text = new TextDecoder('windows-1252').decode(buf);
+  const buf = await file.arrayBuffer(), u = new Uint8Array(buf); let text;
+  if (u[0] === 0xFF && u[1] === 0xFE){ LAST_ENC = 'UTF-16 (little endian)'; text = new TextDecoder('utf-16le').decode(buf); }
+  else if (u[0] === 0xFE && u[1] === 0xFF){ LAST_ENC = 'UTF-16 (big endian)'; text = new TextDecoder('utf-16be').decode(buf); }
+  else { try { text = new TextDecoder('utf-8', {fatal: true}).decode(buf); LAST_ENC = 'UTF-8'; } catch (e){ text = new TextDecoder('windows-1252').decode(buf); LAST_ENC = 'Windows-1252 (el archivo no era UTF-8 válido)'; } }
   if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
   return text;
 }
@@ -846,7 +896,7 @@ const BOOL_PAIRS = [['true', 'false'], ['t', 'f'], ['verdadero', 'falso'], ['v',
 function inferVar(v){
   const vals = v.strs.filter(s => !MISSING.has(s.trim().toLowerCase())), m = vals.length, uniq = new Set(vals), k = uniq.size;
   v.m = m; v.k = k; v.note = '';
-  if (m === 0) return 'id';
+  if (m === 0){ v.note = 'Está vacía.'; return 'id'; }
   const low = new Set([...uniq].map(s => s.trim().toLowerCase()));
   if (k <= 2 && BOOL_PAIRS.some(([a, b]) => [...low].every(x => x === a || x === b))) return 'logical';
   let nNum = 0, nInt = 0, nDate = 0; for (const s of vals){ const x = parseNum(s); if (Number.isFinite(x)){ nNum++; if (Number.isInteger(x)) nInt++; } else if (Number.isFinite(parseDate(s))) nDate++; }
@@ -854,13 +904,15 @@ function inferVar(v){
   const nameId = /^(id|id[_ .-]|identificador|c[oó]digo|cod[_ .-]|n[uú]mero|num[_ .-]|cliente|client|folio)/i.test(v.name.trim()) || /(^|[_ .-])id$/i.test(v.name.trim());
   if (m >= 3 && nNum / m >= 0.9){
     const allInt = nInt === nNum;
-    if (k === m && m > 10 && allInt && nameId) return 'id';
+    if (vals.some(s => /[%€$£]/.test(s))) v.note = 'Los símbolos «%», «€», «$» y «£» se descartan: «12 %» se lee como 12 (puntos porcentuales).';
+    else if (vals.some(s => /^\d{1,3}([.,]\d{3})+$/.test(s.trim()))) v.note = 'Valores como «1,234» o «1.234» se leen como miles (1234). Si son decimales, escríbalos con un solo separador y menos de tres decimales.';
+    if (k === m && m > 10 && allInt && nameId){ v.note = 'Detectada como código: cada fila tiene un valor distinto y el título lo sugiere.'; return 'id'; }
     if (allInt && k <= 7 && k >= 3) v.note = 'Tiene solo ' + k + ' valores distintos. Puede tratarse como factor ordenado.';
     if (k === 2) return 'factor';
     return allInt ? 'integer' : 'double';
   }
-  if (k === m && m > 10) return 'id';
-  if (nameId && k > 0.9 * m && m > 10) return 'id';
+  if (k === m && m > 10){ v.note = 'Detectada como código o texto libre: cada fila tiene un valor distinto.'; return 'id'; }
+  if (nameId && k > 0.9 * m && m > 10){ v.note = 'Detectada como código: casi todas las filas tienen un valor distinto y el título lo sugiere.'; return 'id'; }
   if (k <= 20 || k / m <= 0.05){ if (k >= 3 && [...uniq].every(x => /^[<>≤≥]?\s*\d/.test(x.trim()))){ v.note = 'Las categorías parecen tener un orden natural.'; return 'ordered'; } return 'factor'; }
   return 'character';
 }
@@ -874,14 +926,19 @@ function materialize(v){
     const a = new Float64Array(n); for (let i = 0; i < n; i++){ const s = v.strs[i]; if (MISSING.has(s.trim().toLowerCase())) a[i] = NaN; else { const x = parseDate(s); a[i] = x; if (!Number.isFinite(x)) v.bad++; } }
     v.num = a;
   } else if (t === 'logical'){
-    const cat = new Int16Array(n).fill(-1); let tf = false;
+    const cat = new Int32Array(n).fill(-1); let tf = false;
     for (let i = 0; i < n; i++){ const s = v.strs[i].trim().toLowerCase(); if (MISSING.has(s)) continue; if (TRUE_T.has(s)){ cat[i] = 1; if (s === 'true' || s === 't' || s === 'verdadero' || s === 'v' || s === 'false') tf = true; } else if (FALSE_T.has(s)){ cat[i] = 0; if (s === 'false' || s === 'f' || s === 'falso') tf = true; } else v.bad++; }
     v.cat = cat; v.levels = tf ? ['Falso', 'Verdadero'] : ['No', 'Sí'];
   } else if (t === 'factor' || t === 'ordered'){
     const cnt = new Map(); for (const s of v.strs){ const x = s.trim(); if (MISSING.has(x.toLowerCase())) continue; cnt.set(x, (cnt.get(x) || 0) + 1); }
-    const lv = [...cnt.keys()]; if (t === 'ordered') lv.sort(natCmp); else lv.sort((a, b) => cnt.get(b) - cnt.get(a) || a.localeCompare(b, 'es'));
-    const ix = new Map(lv.map((l, i) => [l, i])), cat = new Int16Array(n).fill(-1);
-    for (let i = 0; i < n; i++){ const x = v.strs[i].trim(); if (ix.has(x)) cat[i] = Math.min(ix.get(x), 32000); }
+    const lv = [...cnt.keys()]; v.ordNote = '';
+    if (t === 'ordered'){
+      lv.sort(natCmp);
+      if (v.order){ const o = v.order.filter(l => cnt.has(l)); lv.sort((a, b) => { const ia = o.indexOf(a), ib = o.indexOf(b); return ia < 0 && ib < 0 ? natCmp(a, b) : ia < 0 ? 1 : ib < 0 ? -1 : ia - ib; }); }
+      else if (lv.some(l => !Number.isFinite(parseNum(l)))) v.ordNote = 'El orden de las categorías es alfabético porque no son números. Compruebe que es el correcto y, si no, corríjalo.';
+    } else lv.sort((a, b) => cnt.get(b) - cnt.get(a) || a.localeCompare(b, 'es'));
+    const ix = new Map(lv.map((l, i) => [l, i])), cat = new Int32Array(n).fill(-1);
+    for (let i = 0; i < n; i++){ const x = v.strs[i].trim(); if (ix.has(x)) cat[i] = ix.get(x); }
     v.cat = cat; v.levels = lv;
   }
   v.cache = {};
@@ -889,13 +946,18 @@ function materialize(v){
 function buildData(text, name, isSample){
   const delim = detectDelim(text), rows = parseRows(text, delim);
   if (rows.length < 3) throw new Error('El archivo necesita una fila de títulos y al menos dos filas de datos.');
-  const width = Math.max(...rows.slice(0, 200).map(r => r.length));
+  const width = rows[0].length; let short = 0;
+  for (let r = 1; r < rows.length; r++){ const L = rows[r].length; if (L > width) throw new Error(`La fila ${r + 1} tiene ${L} campos y la primera solo ${width}. Revise el separador y las comillas, o añada el título que falta.`); if (L < width) short++; }
   const isNumOrMissing = c => MISSING.has(c.trim().toLowerCase()) || Number.isFinite(parseNum(c));
   const hasHeader = !rows[0].every(isNumOrMissing);
   const used = new Set(), headers = Array.from({length: width}, (_, j) => { let h = hasHeader ? String(rows[0][j] ?? '').trim() : ''; if (!h) h = 'columna ' + (j + 1); let u = h, k = 2; while (used.has(u)) u = h + ' (' + (k++) + ')'; used.add(u); return u; });
-  const body = hasHeader ? rows.slice(1) : rows, vars = [];
+  let body = hasHeader ? rows.slice(1) : rows; const vars = [], warn = [];
+  if (body.length > MAX_ROWS) body = body.slice(0, MAX_ROWS);
+  const omitted = rows.total - (hasHeader ? 1 : 0) - body.length;
+  if (omitted > 0) warn.push(`Atención: el archivo tiene ${omitted.toLocaleString('es-ES')} filas de datos más que el límite de ${MAX_ROWS.toLocaleString('es-ES')}. Se han leído solo las primeras ${MAX_ROWS.toLocaleString('es-ES')}: los resultados no incluyen las demás.`);
+  if (short) warn.push(`${short.toLocaleString('es-ES')} ${short === 1 ? 'fila tiene' : 'filas tienen'} menos campos que los títulos. Sus huecos cuentan como datos faltantes.`);
   for (let j = 0; j < width; j++){ const v = {name: headers[j], strs: body.map(r => String(r[j] ?? '').trim())}; v.auto = inferVar(v); v.type = v.auto; v.idx = j; materialize(v); vars.push(v); }
-  return {name, delim, rows: body.length, vars, isSample: !!isSample, mask: null, nUsed: body.length, filter: null};
+  return {name, delim, rows: body.length, vars, isSample: !!isSample, mask: null, nUsed: body.length, filter: null, warn, omitted};
 }
 
 /* ───────── Datos de prueba (simulados, con semilla) ───────── */
@@ -1063,7 +1125,7 @@ function groupBoxes(host, gs, o = {}){
 /* ───────── Dispersión ───────── */
 function scatterChart(host, x, y, o){
   const W = wOf(host), H = Math.min(380, Math.max(280, W * 0.62)), m = {l: 56, r: 16, t: 24, b: 48}, pw = W - m.l - m.r, ph = H - m.t - m.b, n = x.length;
-  const [xa, xb] = padDom(Math.min(...x), Math.max(...x)), [ya, yb] = padDom(Math.min(...y), Math.max(...y)), sx = v => m.l + (v - xa) / (xb - xa) * pw, sy = v => m.t + ph - (v - ya) / (yb - ya) * ph, xt = niceTicks(xa, xb, W < 480 ? 4 : 7), yt = niceTicks(ya, yb, 5);
+  const [xa, xb] = padDom(...rangeOf(x)), [ya, yb] = padDom(...rangeOf(y)), sx = v => m.l + (v - xa) / (xb - xa) * pw, sy = v => m.t + ph - (v - ya) / (yb - ya) * ph, xt = niceTicks(xa, xb, W < 480 ? 4 : 7), yt = niceTicks(ya, yb, 5);
   let g = ''; yt.forEach(v => { g += `<line class="gl" x1="${m.l}" x2="${W - m.r}" y1="${sy(v)}" y2="${sy(v)}"/><text class="tk" x="${m.l - 8}" y="${sy(v) + 4}" text-anchor="end">${nf(v, tdec(yt))}</text>`; });
   xt.forEach(v => { g += `<text class="tk" x="${sx(v)}" y="${H - m.b + 18}" text-anchor="middle">${nf(v, tdec(xt))}</text>`; });
   g += `<line class="axis" x1="${m.l}" x2="${W - m.r}" y1="${m.t + ph}" y2="${m.t + ph}"/><text class="ax-lab" x="${m.l}" y="12">${esc(trunc(o.yLab, 50))}</text><text class="ax-lab" x="${W - m.r}" y="${H - 6}" text-anchor="end">${esc(trunc(o.xLab, 50))}</text>`;
@@ -1137,7 +1199,7 @@ const skewTxt = g => !Number.isFinite(g) ? 'No se puede calcular la asimetría' 
 const kurtTxt = g => !Number.isFinite(g) ? 'No se puede calcular la curtosis' : g > 0.5 ? 'Hay más datos lejanos que en una campana normal (colas pesadas, forma leptocúrtica)' : g < -0.5 ? 'Hay menos datos lejanos que en una campana normal (colas ligeras, forma platicúrtica)' : 'Los datos lejanos son tan frecuentes como en una campana normal (forma mesocúrtica)';
 const kurtName = g => !Number.isFinite(g) ? '—' : g > 0.5 ? 'colas pesadas' : g < -0.5 ? 'colas ligeras' : 'colas normales';
 const strength = r => { const a = Math.abs(r); return a < 0.1 ? 'prácticamente nula' : a < 0.3 ? 'débil' : a < 0.5 ? 'moderada' : a < 0.7 ? 'fuerte' : 'muy fuerte'; };
-const sigWord = p => p < 0.05 ? 'parece real: es poco probable que sea solo azar' : 'no se distingue del azar con estos datos';
+const sigWord = p => p < 0.05 ? 'es estadísticamente significativa: sería poco habitual si no hubiera nada detrás' : 'no se distingue del azar con estos datos';
 const B = {ink: t => `<b class="b-ink">${t}</b>`, red: t => `<b class="b-red">${t}</b>`};
 const card = (lab, def, val, cls = 'ink') => `<div class="card ${cls}"><div class="lbl"><span class="mark"></span>${lab}</div><div class="def">${def}</div><div class="v">${val}</div></div>`;
 const howD = (inner, title = 'Cómo leer este gráfico') => `<details class="rd"><summary><span class="lbl">${title}</span></summary><div class="rd-b">${inner}</div></details>`;
@@ -1173,7 +1235,7 @@ const logOf = (v, li) => ({...v, num: Float64Array.from(v.num, x => Number.isFin
 function maybeLog(v){ if (!isNumT(v.type) || !UI.logOn.has(v.idx)) return v; const li = logInfo(v); return li.ok ? logOf(v, li) : v; }
 function logBox(v0, li, on, cmpNote){
   if (!li.ok) return `<p class="hint">Transformación logarítmica: no procede. ${li.why}</p>`;
-  return `<div class="${li.rec === 'yes' ? 'take' : 'how'}" style="margin-top:24px"><span class="lbl">¿Procede el logaritmo?</span><p>${li.verdict}</p><label class="chk"><input type="checkbox" data-log="${v0.idx}"${on ? ' checked' : ''}><span>Analizar el logaritmo de «${esc(v0.name)}»</span></label>${on ? `<p class="note">Se analiza ${esc(li.name.replace('x', v0.name))}. Una diferencia de 0,1 en logaritmos equivale a una variación del 10,5 % en la escala original. Las pruebas basadas en rangos no cambian.</p>` : ''}${cmpNote || ''}</div>`;
+  return `<div class="${li.rec === 'yes' ? 'take' : 'how'}" style="margin-top:24px"><span class="lbl">¿Procede el logaritmo?</span><p>${li.verdict}</p><label class="chk"><input type="checkbox" data-log="${v0.idx}"${on ? ' checked' : ''}><span>Analizar el logaritmo de «${esc(v0.name)}»</span></label>${on ? `<p class="note">Se analiza ${esc(li.name.replace('x', v0.name))}. Una diferencia de 0,1 en logaritmos equivale a una variación del 10,5 % en la escala original. Las pruebas que comparan grupos o miden correlación por rangos (Mann–Whitney, Kruskal–Wallis, Spearman, Kendall) no cambian, porque el logaritmo no altera el orden de los datos. La prueba de Wilcoxon para medidas pareadas sí puede cambiar, porque trabaja con las diferencias entre las dos medidas.</p>` : ''}${cmpNote || ''}</div>`;
 }
 const parsePcts = s => { const a = String(s).split(/[;,\s]+/).map(x => Number(x)).filter(x => Number.isFinite(x) && x > 0 && x < 100); return [...new Set(a)].sort((x, y) => x - y).slice(0, 12); };
 const pctIn = id => `<div class="ctlrow"><label class="lbl" for="${id}">Percentiles a calcular (entre 0 y 100)</label><input class="sel pctin" id="${id}" value="${esc(UI.pct)}" inputmode="decimal" autocomplete="off" aria-describedby="${id}h"><span class="help" id="${id}h" style="margin:0">Separe con comas. Decimales con punto. Pulse Intro para aplicar.</span></div>`;
@@ -1200,7 +1262,7 @@ function viewOverview(){
     h += `<h3 style="margin-top:32px">Variables numéricas</h3>` + tbl(['Variable', 'n', 'Faltan', 'Media', 'Media recort.', 'Mediana', 'SD', 'MAD esc.', 'Mín.', 'Máx.', 'Asim.', 'Curt.'], rows, {right: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], min: 880, label: 'Resumen de variables numéricas'});
   }
   if (cats.length){
-    const rows = cats.map(v => { const {c, miss, n} = catCounts(v); const mx = c.indexOf(Math.max(...c)); return [esc(v.name), esc(TYPE_NAME[v.type]), nf(v.levels.length, 0), nf(n, 0), n ? esc(trunc(v.levels[mx], 24)) : '—', n ? pct(c[mx] / n) : '—']; });
+    const rows = cats.map(v => { const {c, miss, n} = catCounts(v); const mx = c.indexOf(maxOf(c)); return [esc(v.name), esc(TYPE_NAME[v.type]), nf(v.levels.length, 0), nf(n, 0), n ? esc(trunc(v.levels[mx], 24)) : '—', n ? pct(c[mx] / n) : '—']; });
     h += `<h3 style="margin-top:32px">Variables categóricas</h3>` + tbl(['Variable', 'Tipo', 'Categorías', 'n', 'Categoría más frecuente', '% de esa categoría'], rows, {right: [2, 3, 5], min: 640, label: 'Resumen de variables categóricas'});
   }
   $('#sumTbl').innerHTML = h || '';
@@ -1239,7 +1301,7 @@ function viewNum(v0){
     + fig('chQQ', 'Gráfico Q–Q normal. Si los puntos siguen la recta roja, la variable se parece a una campana normal.', howD('<p>Cada punto compara un dato real con el que tendría una campana normal. Los puntos sobre la recta indican forma normal. Una curva hacia arriba en el extremo derecho indica cola derecha larga. Puntos que se separan en ambos extremos indican colas pesadas.</p>'));
   const dd = f, r1 = d.madS > 0 ? d.sd / d.madS : NaN, nm = `«${esc(v.name)}»`, gap = d.mean - d.med, rel = d.sd > 0 ? gap / d.sd : 0, rd = [];
   rd.push(`<p><b>Los datos.</b> La variable ${nm} tiene ${nf(a.length, 0)} valores válidos de ${nf(nU, 0)} filas.${nU - a.length > 0 ? ` Faltan o no son numéricos ${nf(nU - a.length, 0)}. El análisis los ignora.` : ''}${a.length < 30 ? ' Con tan pocos datos, todas las medidas son poco fiables.' : a.length < 100 ? ' Con menos de 100 datos, la asimetría y la curtosis cambian mucho de una muestra a otra.' : ''}</p>`);
-  if (on) rd.push(`<p><b>Escala logarítmica.</b> Esta lectura usa ${esc(v.name)}. La media geométrica, que es la media en logaritmos devuelta a la escala original, vale ${fv(Math.exp(d.mean) - v.off)}. La mediana en la escala original vale ${fv(Math.exp(d.med) - v.off)}: no cambia con el logaritmo.</p>`);
+  if (on) rd.push(`<p><b>Escala logarítmica.</b> Esta lectura usa ${esc(v.name)}. ${v.off ? `La media de los logaritmos, devuelta a la escala original, vale ${fv(Math.exp(d.mean) - v.off)}. Es la media geométrica de x + 1 menos 1, no la media geométrica de x.` : `La media geométrica, que es la media en logaritmos devuelta a la escala original, vale ${fv(Math.exp(d.mean))}.`} La mediana en la escala original, calculada con los datos originales, vale ${fv(describe(a0).med)}.</p>`);
   if (discrete) rd.push(`<p><b>Tipo de variable.</b> Tiene solo ${uniq} valores distintos, todos enteros. Parece una escala (por ejemplo, de 1 a 5) o un recuento. La media y la SD sirven como resumen aproximado. Para contar mejor la historia, cambie su tipo a «Factor ordenado» en la sección 01 y use la tabla de frecuencias.</p>`);
   rd.push(`<p><b>Centro.</b> La media es ${dd(d.mean)} y la mediana ${dd(d.med)}. ${Math.abs(rel) < 0.1 ? 'Casi coinciden: los datos se reparten de forma bastante pareja a los dos lados.' : rel > 0 ? `La media queda ${dd(Math.abs(gap))} por encima de la mediana (${nf(Math.abs(rel) * 100, 0)} % de una SD). Es la señal típica de una cola larga a la derecha o de valores extremos altos.` : `La media queda ${dd(Math.abs(gap))} por debajo de la mediana (${nf(Math.abs(rel) * 100, 0)} % de una SD). Es la señal típica de una cola larga a la izquierda o de valores extremos bajos.`}</p>`);
   rd.push(`<p><b>Dispersión.</b> La SD es ${dd(d.sd)}, la MAD escalada ${dd(d.madS)} y el IQR ÷ 1,349 vale ${dd(d.iqrS)}. ${!Number.isFinite(r1) ? 'La MAD vale 0: más de la mitad de los datos son iguales.' : r1 > 1.5 ? 'La SD es mucho mayor que las medidas robustas: unos pocos datos lejanos la inflan.' : r1 < 0.8 ? 'La SD es menor que las medidas robustas. Es típico de formas planas o de dos grupos.' : (d.iqrS > 0 && (d.sd / d.iqrS > 1.4 || d.sd / d.iqrS < 0.7) ? 'La SD y la MAD son parecidas, pero el IQR ÷ 1,349 difiere: el centro de los datos y sus colas no se reparten igual.' : 'Las tres medidas dan valores parecidos: la dispersión es regular.')}${d.min >= 0 && d.mean > 0 ? ` El coeficiente de variación es ${nf(d.cv * 100, 0)} %: la SD equivale a ese porcentaje de la media.` : ''}</p>`);
@@ -1261,11 +1323,11 @@ function viewNum(v0){
     ['Media recortada (10 %)', f(d.trim), 'Media sin el 10 % más bajo ni el 10 % más alto. Resiste a los extremos.'], ['Error estándar de la media', f(d.se), 'Cuánto varía la media de una muestra a otra.'],
     ['IC 95 % de la media', `${f(d.ciLo)} a ${f(d.ciHi)}`, 'Intervalo donde probablemente está la media real.'], ['Varianza', nf(d.var, d.var >= 100 ? 1 : 3), 'La SD elevada al cuadrado.'], ['Coeficiente de variación', Number.isFinite(d.cv) ? pct(d.cv, 0) : '—', 'La SD como porcentaje de la media.'],
     ['MAD (sin escalar)', f(d.mad), 'Mediana de las distancias a la mediana.'], ['IQR ÷ 1,349', f(d.iqrS), 'Dispersión robusta en escala de SD.'], ['Asimetría de Bowley', nf(d.bowley, 2), 'Asimetría basada en cuartiles. Va de −1 a +1.'],
-    ...(on ? [['Media geométrica (escala original)', fv(Math.exp(d.mean) - v.off), 'Media de los logaritmos, devuelta a la escala original.']] : []), ['Valores extremos (Tukey)', `${nf(out.length, 0)} (${nf(out.length / d.n * 100, 1)} %)`, 'Datos a más de 1,5 IQR de la caja.'], ['Shapiro–Wilk', Number.isFinite(sw.p) ? `W = ${nf(sw.W, 3)} · p ${pTxt(sw.p)}` : '—', 'p < 0,05 sugiere que la forma no es normal.'], ['Jarque–Bera', Number.isFinite(jb.p) ? `p ${pTxt(jb.p)}` : '—', 'Contraste de normalidad basado en asimetría y curtosis.']];
+    ...(on ? [[v.off ? 'Media de ln(x + 1), en escala original' : 'Media geométrica (escala original)', fv(Math.exp(d.mean) - v.off), v.off ? 'Media geométrica de x + 1, menos 1. No es la media geométrica de x.' : 'Media de los logaritmos, devuelta a la escala original.']] : []), ['Valores extremos (Tukey)', `${nf(out.length, 0)} (${nf(out.length / d.n * 100, 1)} %)`, 'Datos a más de 1,5 IQR de la caja.'], ['Shapiro–Wilk', Number.isFinite(sw.p) ? `W = ${nf(sw.W, 3)} · p ${pTxt(sw.p)}` : '—', 'p < 0,05 sugiere que la forma no es normal.'], ['Jarque–Bera', Number.isFinite(jb.p) ? `p ${pTxt(jb.p)}` : '—', 'Contraste de normalidad basado en asimetría y curtosis.']];
   const bootable = d.n >= 10 && d.n <= 20000 && d.sd > 0, tok = ++UI.boot;
-  if (bootable) setTimeout(() => { if (tok !== UI.boot || !$('#bootBox')) return; const ci = bootstrapDesc(a, 400);
-    const rows2 = [[{key: 'mean'}, 'Media', d.mean, f], [{key: 'trim'}, 'Media recortada (10 %)', d.trim, f], [{key: 'med'}, 'Mediana', d.med, f], [{key: 'sd'}, 'SD', d.sd, f], [{key: 'madS'}, 'MAD escalada', d.madS, f], [{key: 'iqr'}, 'IQR', d.iqr, f], [{key: 'skew'}, 'Asimetría', d.skew, x => nf(x, 2)], [{key: 'kurt'}, 'Curtosis', d.kurt, x => nf(x, 2)]].map(([k, nm, e, g]) => [nm, g(e), Number.isFinite(ci[k.key][0]) ? `${g(ci[k.key][0])} a ${g(ci[k.key][1])}` : '—']);
-    $('#bootBox').innerHTML = tbl(['Estadístico', 'Estimación', 'Intervalo de confianza 95 %'], rows2, {right: [1, 2], min: 460, label: 'Incertidumbre de cada estadístico'}) + `<p class="hint">El intervalo muestra cuánto cambiaría cada número con otra muestra parecida. Sale de 400 remuestreos con reemplazo (método bootstrap). Con pocos datos o con extremos, es aproximado.</p>`; }, 30);
+  if (bootable) bootstrapDescAsync(a, 400, 12345, () => tok !== UI.boot || !$('#bootBox'), f2 => { const e = $('#bootBox'); if (e) e.innerHTML = `<p class="hint">Calculando… ${nf(f2 * 100, 0)} %</p>`; }, ci => {
+    const rows2 = [[{key: 'mean'}, 'Media', d.mean, f], [{key: 'trim'}, 'Media recortada (10 %)', d.trim, f], [{key: 'med'}, 'Mediana', d.med, f], [{key: 'sd'}, 'SD', d.sd, f], [{key: 'madS'}, 'MAD escalada', d.madS, f], [{key: 'iqr'}, 'IQR', d.iqr, f], [{key: 'skew'}, 'Asimetría', d.skew, x => nf(x, 2)], [{key: 'kurt'}, 'Curtosis', d.kurt, x => nf(x, 2)]].map(([k, nm, e, g]) => [nm, g(e), Number.isFinite(ci[k.key][0]) ? `${g(ci[k.key][0])} a ${g(ci[k.key][1])}` : 'no se pudo estimar']), fail = BOOT_KEYS.filter(k => !Number.isFinite(ci[k][0]));
+    const bb = $('#bootBox'); if (bb) bb.innerHTML = tbl(['Estadístico', 'Estimación', 'Intervalo de confianza 95 %'], rows2, {right: [1, 2], min: 460, label: 'Incertidumbre de cada estadístico'}) + `<p class="hint">El intervalo muestra cuánto cambiaría cada número con otra muestra parecida. Sale de 400 remuestreos con reemplazo (método bootstrap, semilla fija). Con pocos datos o con extremos, es aproximado.${fail.length ? ` «No se pudo estimar» significa que menos del 90 % de los remuestreos dio un valor calculable.` : ''}</p>`; });
   return cards + lbox + figs + `<div class="reading" id="reading1"><span class="lbl">Lectura en lenguaje sencillo</span>${rd.join('')}</div>` + `<h3 style="margin-top:32px">Todos los estadísticos</h3>` + tbl(['Estadístico', 'Valor', 'Qué significa'], rows, {min: 560, label: 'Estadísticos de ' + v.name}) + (bootable ? `<h3 style="margin-top:32px">Incertidumbre de los estadísticos</h3><div id="bootBox"><p class="hint">Calculando…</p></div>` : '') + pctSection(v, d, f) + concSection(v0, a0, discrete);
 }
 function viewDate(v){
@@ -1288,7 +1350,7 @@ function viewText(v){
 function viewCat(v){
   const {c, miss, n} = catCounts(v), lv = v.levels, k = lv.length, nU = DATA.nUsed; if (n < 1 || k < 1) return msgBox('Esta variable no tiene datos válidos.');
   let order = lv.map((l, i) => i); if (v.type === 'factor') order.sort((a, b) => c[b] - c[a] || a - b);
-  const mx = c.indexOf(Math.max(...c)), p = c.map(x => x / n), H = -p.reduce((s, x) => s + (x > 0 ? x * Math.log(x) : 0), 0), Hn = k > 1 ? H / Math.log(k) : 0, gs = 1 - p.reduce((s, x) => s + x * x, 0);
+  const mx = c.indexOf(maxOf(c)), p = c.map(x => x / n), H = -p.reduce((s, x) => s + (x > 0 ? x * Math.log(x) : 0), 0), Hn = k > 1 ? H / Math.log(k) : 0, gs = 1 - p.reduce((s, x) => s + x * x, 0);
   const chi = k > 1 && n >= 5 * k ? (() => { const e = n / k; let x = 0; c.forEach(o => { x += (o - e) ** 2 / e; }); return {x, p: chi2sf(x, k - 1)}; })() : null;
   let shown = order; let folded = '';
   if (order.length > 12){ shown = order.slice(0, 11); const rest = order.slice(11), s = rest.reduce((a, i) => a + c[i], 0); folded = `<p class="hint">El gráfico muestra las 11 categorías más frecuentes. Otras ${rest.length} categorías suman ${nf(s, 0)} datos (${pct(s / n)}). La tabla las incluye todas.</p>`; }
@@ -1332,31 +1394,36 @@ function testRows(rows){
   const body = rows.map(r => [r[0], r[1], pTxt(r[2]), cell(r[2], r[4]), r[3]]);
   const main = rows.find(r => r[4] === 'main'), cmp = rows.find(r => r[4] === 'cmp'); let disc = '';
   if (main && cmp && Number.isFinite(main[2]) && Number.isFinite(cmp[2]) && (main[2] < 0.05) !== (cmp[2] < 0.05)){
-    disc = main[2] < 0.05 ? '<div class="how"><span class="lbl">Las dos pruebas no coinciden</span><p>La prueba principal sí es significativa y la de comparación no. Es una situación habitual con valores extremos. La prueba paramétrica compara medias, y unos pocos datos muy altos inflan la dispersión y ocultan la diferencia. La prueba principal compara posiciones ordenadas y no se deja arrastrar por ellos. Confíe en la principal. Compruebe además la diferencia con la escala logarítmica, si procede.</p></div>'
-      : '<div class="how"><span class="lbl">Las dos pruebas no coinciden</span><p>Solo la prueba de comparación es significativa. La diferencia de medias puede deberse a unos pocos valores extremos. No la tome como concluyente. Confíe más en la prueba principal.</p></div>';
+    disc = main[2] < 0.05 ? '<div class="how"><span class="lbl">Las dos pruebas no coinciden</span><p>La prueba principal sí es significativa y la de comparación no. Las dos preguntan cosas distintas: una compara posiciones ordenadas y la otra compara medias, y unos pocos datos muy altos pueden ocultar una diferencia de medias. Decida qué pregunta le interesa antes de mirar los resultados; no elija la prueba que da la conclusión que prefiere. Informe ambos resultados, junto con el tamaño del efecto.</p></div>'
+      : '<div class="how"><span class="lbl">Las dos pruebas no coinciden</span><p>Solo la prueba de comparación es significativa. Puede deberse a unos pocos valores extremos que arrastran la media. Informe ambos resultados con el tamaño del efecto: no elija la prueba por su resultado.</p></div>';
   }
-  return tbl(['Prueba', 'Resultado', 'Valor p', '¿Significativo al 5 %?', 'Qué contrasta'], body, {min: 680, label: 'Contrastes estadísticos'}) + `<p class="hint" style="margin-top:8px">«Significativo al 5 %» significa p &lt; 0,05: es poco probable que el resultado sea solo azar. No mide su importancia.</p>` + disc;
+  return tbl(['Prueba', 'Resultado', 'Valor p', '¿Significativo al 5 %?', 'Qué contrasta'], body, {min: 680, label: 'Contrastes estadísticos'}) + `<p class="hint" style="margin-top:8px">«Significativo al 5 %» significa p &lt; 0,05: los datos serían poco habituales si no hubiera ninguna diferencia o relación. No mide su importancia, y un p mayor no demuestra que no haya diferencia.</p>` + disc;
 }
 function viewNN(vx0, vy0){
   const lx = logInfo(vx0), ly = logInfo(vy0), vx = maybeLog(vx0), vy = maybeLog(vy0), {x, y} = pairNums(vx, vy), n = x.length; if (n < 4) return msgBox(`Solo hay ${n} filas con datos en las dos variables. Se necesitan al menos 4.`);
   const pe = pearson(x, y), sp = spearman(x, y), ke = n <= 3000 ? kendall(x, y) : null, nm = [esc(vx.name), esc(vy.name)];
+  if (!Number.isFinite(pe.r)){ const cs = [[x, vx], [y, vy]].filter(([a]) => new Set(a).size < 2).map(([, v]) => `«${esc(v.name)}»`).join(' y '); return msgBox(`En las ${nf(n, 0)} filas con dato en las dos variables, ${cs || 'una de ellas'} toma siempre el mismo valor. Una variable constante no tiene correlación: no se puede calcular ni contrastar.`); }
   const cards = `<div class="cards k4">${card('Pearson r', 'Relación en línea recta', nf(pe.r, 2))}${card('Spearman ρ', 'Relación por rangos', nf(sp.rho, 2), 'red')}${card('Kendall τ', 'Concordancia de pares', ke ? nf(ke.tau, 2) : '—', 'red')}${card('R²', 'Parte de la variación compartida', pct(pe.r2, 0))}</div>`;
   const fz = a => { const d = describe(a); return {lo: d.q1 - 3 * d.iqr, hi: d.q3 + 3 * d.iqr, wide: d.iqr > 0 && d.range > 8 * d.iqr}; }, zx = fz(x), zy = fz(y), outP = x.filter((_, i) => x[i] < zx.lo || x[i] > zx.hi || y[i] < zy.lo || y[i] > zy.hi).length, canZ = outP > 0 && (zx.wide || zy.wide), zOn = canZ && (UI.zoom2 === null ? true : UI.zoom2);
   const sel = zOn ? x.map((_, i) => i).filter(i => !(x[i] < zx.lo || x[i] > zx.hi || y[i] < zy.lo || y[i] > zy.hi)) : null, xs = sel ? sel.map(i => x[i]) : x, ys = sel ? sel.map(i => y[i]) : y;
   after(() => scatterChart($('#chSc'), xs, ys, {xLab: vx.name, yLab: vy.name, xName: vx.name, yName: vy.name, line: pe, diag: UI.paired, label: `Dispersión de ${vx.name} y ${vy.name}`}));
-  const rows = [['Pearson', `r = ${nf(pe.r, 3)} · IC 95 %: ${nf(pe.lo, 2)} a ${nf(pe.hi, 2)}`, pe.p, 'Relación lineal. Sensible a valores extremos.', 'cmp'], ['Spearman', `ρ = ${nf(sp.rho, 3)} · IC 95 %: ${nf(sp.lo, 2)} a ${nf(sp.hi, 2)}`, sp.p, 'Relación que siempre sube o siempre baja. No paramétrica.', 'main'], ['Kendall', ke ? `τ = ${nf(ke.tau, 3)}` : 'No calculado (n > 3 000)', ke ? ke.p : NaN, 'Orden de los pares. No paramétrica. Resiste a los empates.', 'main']];
+  const rows = [['Pearson', `r = ${nf(pe.r, 3)} · IC 95 %: ${nf(pe.lo, 2)} a ${nf(pe.hi, 2)}`, pe.p, 'Relación lineal. Sensible a valores extremos.', 'cmp'], ['Spearman', `ρ = ${nf(sp.rho, 3)} · IC aprox. 95 %: ${nf(sp.lo, 2)} a ${nf(sp.hi, 2)}`, sp.p, 'Relación que siempre sube o siempre baja. No paramétrica. El valor p es aproximado.', 'main'], ['Kendall', ke ? `τ = ${nf(ke.tau, 3)}` : 'No calculado (n > 3 000)', ke ? ke.p : NaN, 'Orden de los pares. No paramétrica. Resiste a los empates.', 'main']];
   let pairedHTML = '', pairedRead = '';
-  if (UI.paired){ const wx = wilcoxon(x, y), dm = describe(x.map((v, i) => v - y[i])); rows.push(['Wilcoxon de rangos con signo', Number.isFinite(wx.p) ? `T = ${nf(wx.W, 1)} · efecto ${nf(wx.rb, 2)}` : '—', wx.p, 'Medidas pareadas: ¿difiere la mediana de las diferencias de 0?', 'main']);
-    pairedRead = `<p><b>Medidas pareadas.</b> La diferencia media (${esc(vx.name)} − ${esc(vy.name)}) es ${sg(dm.mean, 2)} y la mediana ${sg(dm.med, 2)}. ${Number.isFinite(wx.p) ? (wx.p < 0.05 ? `La prueba de Wilcoxon indica que esa diferencia ${sigWord(wx.p)}.` : 'La prueba de Wilcoxon no encuentra una diferencia distinta del azar.') : ''} Use esta lectura solo si ambas variables miden lo mismo (por ejemplo, antes y después).</p>`; }
+  if (UI.paired){ const wx = wilcoxon(x, y), dm = describe(x.map((v, i) => v - y[i])); rows.push(['Wilcoxon de rangos con signo', Number.isFinite(wx.p) ? `T = ${nf(wx.W, 1)} · efecto ${nf(wx.rb, 2)} · p ${wx.method === 'exacto' ? 'exacta' : 'aproximada'}` : '—', wx.p, 'Medidas pareadas: ¿difiere la mediana de las diferencias de 0?', 'main']);
+    pairedRead = `<p><b>Medidas pareadas.</b> La diferencia media (${esc(vx.name)} − ${esc(vy.name)}) es ${sg(dm.mean, 2)} y la mediana ${sg(dm.med, 2)}. ${Number.isFinite(wx.p) ? (wx.p < 0.05 ? `La prueba de Wilcoxon indica que esa diferencia ${sigWord(wx.p)}.` : 'La prueba de Wilcoxon no encuentra una diferencia distinta del azar.') : ''} Use esta lectura solo si ambas variables miden lo mismo (por ejemplo, antes y después).${vx.isLog || vy.isLog ? ' Con logaritmos, Wilcoxon compara diferencias de logaritmos, es decir, cocientes: no es la misma pregunta que en la escala original y su resultado puede cambiar.' : ''}</p>`; }
   const nonlin = Math.abs(pe.r - sp.rho) > 0.15;
-  const rd = `<p><b>Los datos.</b> Hay ${nf(n, 0)} filas con dato en ${nm[0]} y en ${nm[1]}.${n < 30 ? ' Con tan pocas filas, la correlación es poco fiable.' : ''}</p><p><b>Dirección y fuerza.</b> ${Math.abs(pe.r) < 0.1 ? `La relación lineal es prácticamente nula (r = ${nf(pe.r, 2)}).` : `La relación es ${pe.r > 0 ? 'positiva' : 'negativa'} y ${strength(pe.r)} (r = ${nf(pe.r, 2)}).`} ${pe.r > 0.1 ? 'Cuando una variable sube, la otra tiende a subir.' : pe.r < -0.1 ? 'Cuando una variable sube, la otra tiende a bajar.' : 'No hay una tendencia clara en línea recta.'} El intervalo de confianza del 95 % va de ${nf(pe.lo, 2)} a ${nf(pe.hi, 2)}.</p><p><b>¿Es real?</b> Con p ${pTxt(pe.p)}, la relación ${sigWord(pe.p)}. Esto no mide su importancia: con muchos datos, relaciones minúsculas salen significativas. Mire el tamaño de r.</p>${nonlin ? `<p class="note"><b>Ojo.</b> Pearson (${nf(pe.r, 2)}) y Spearman (${nf(sp.rho, 2)}) difieren bastante. Probablemente hay valores extremos o una relación curva. Confíe más en Spearman.</p>` : `<p><b>Pearson y Spearman.</b> Ambos coinciden (${nf(pe.r, 2)} y ${nf(sp.rho, 2)}). La relación parece estable.</p>`}${pairedRead}<p><b>Cuidado.</b> Una correlación no demuestra que una variable cause la otra.</p>`;
+  const rd = `<p><b>Los datos.</b> Hay ${nf(n, 0)} filas con dato en ${nm[0]} y en ${nm[1]}.${n < 30 ? ' Con tan pocas filas, la correlación es poco fiable.' : ''}</p><p><b>Dirección y fuerza.</b> ${Math.abs(pe.r) < 0.1 ? `La relación lineal es prácticamente nula (r = ${nf(pe.r, 2)}).` : `La relación es ${pe.r > 0 ? 'positiva' : 'negativa'} y ${strength(pe.r)} (r = ${nf(pe.r, 2)}).`} ${pe.r > 0.1 ? 'Cuando una variable sube, la otra tiende a subir.' : pe.r < -0.1 ? 'Cuando una variable sube, la otra tiende a bajar.' : 'No hay una tendencia clara en línea recta.'} El intervalo de confianza del 95 % va de ${nf(pe.lo, 2)} a ${nf(pe.hi, 2)}.</p><p><b>¿Es real?</b> Con p ${pTxt(pe.p)}, la relación ${sigWord(pe.p)}. Esto no mide su importancia: con muchos datos, relaciones minúsculas salen significativas. Mire el tamaño de r.</p>${nonlin ? `<p class="note"><b>Ojo.</b> Pearson (${nf(pe.r, 2)}) y Spearman (${nf(sp.rho, 2)}) difieren bastante. Puede haber valores extremos o una relación curva. Spearman resiste mejor los valores extremos.</p>` : `<p><b>Pearson y Spearman.</b> Ambos coinciden (${nf(pe.r, 2)} y ${nf(sp.rho, 2)}). Que coincidan no demuestra que la relación sea una recta: mire la nube de puntos.</p>`}${pairedRead}<p><b>Cuidado.</b> Una correlación no demuestra que una variable cause la otra.</p>`;
   return cards + logBox(vx0, lx, vx.isLog) + logBox(vy0, ly, vy.isLog) + `<div class="tog" style="margin-top:16px"><label class="chk"><input type="checkbox" id="paired"${UI.paired ? ' checked' : ''}><span>Son medidas pareadas (misma magnitud medida dos veces)</span></label>${canZ ? `<label class="chk"><input type="checkbox" id="zoom2"${zOn ? ' checked' : ''}><span>Ampliar la zona central (oculta los puntos muy lejanos)</span></label>` : ''}</div>${zOn ? `<p class="hint" style="margin-top:0">El gráfico oculta ${pl(outP, 'punto', 'puntos')} muy lejanos. Los cálculos los incluyen.</p>` : ''}` + fig('chSc', `Cada punto es una fila. La línea roja es la recta de ajuste: ${esc(vy.name)} = ${nf(pe.icpt, 2)} ${pe.slope >= 0 ? '+' : '−'} ${nf(Math.abs(pe.slope), 3)} × ${esc(vx.name)}.${UI.paired ? ' La línea gris punteada marca la igualdad (y = x).' : ''}`, howD('<p>Cada punto es una fila de los datos. Si la nube sube de izquierda a derecha, la relación es positiva. Si baja, es negativa. Si parece una mancha sin forma, no hay relación. La línea roja resume la tendencia.</p>'))
     + `<div class="reading" id="reading2"><span class="lbl">Lectura en lenguaje sencillo</span>${rd}</div>` + `<h3 style="margin-top:32px">Contrastes</h3>` + testRows(rows);
 }
+const hlCI = hl => !Number.isFinite(hl.est) ? '—' : Number.isFinite(hl.cover) ? `IC ${hl.method === 'exacto' ? 'exacto ' : 'aprox. '}del ${nf(hl.cover * 100, 1)} %: ${nf(hl.lo, 2)} a ${nf(hl.hi, 2)}` : `rango de todas las diferencias, sin nivel de confianza garantizado: ${nf(hl.lo, 2)} a ${nf(hl.hi, 2)}`;
 function effWord(v, lo, mid, hi, f){ return v < lo ? 'despreciable' : v < mid ? (f ? 'pequeña' : 'pequeño') : v < hi ? (f ? 'mediana' : 'mediano') : 'grande'; }
 function viewNC(vn0, vc){
-  const lg = logInfo(vn0), vn = maybeLog(vn0); let gs = groupsOf(vn, vc, 2); gs = gs.filter(g => g.vals.length >= 2); let note = '';
-  if (gs.length > 12){ gs.sort((a, b) => b.vals.length - a.vals.length); note = `<p class="hint">La variable tiene ${gs.length} categorías. Se comparan las 12 con más datos.</p>`; gs = gs.slice(0, 12); }
+  const lg = logInfo(vn0), vn = maybeLog(vn0), all0 = groupsOf(vn, vc, 1); let gs = all0.filter(g => g.vals.length >= 2), note = '', omitTxt = '';
+  const few = all0.filter(g => g.vals.length < 2), nm3 = a => a.slice(0, 5).map(g => `«${esc(g.label)}»`).join(', ') + (a.length > 5 ? '…' : '');
+  if (few.length) omitTxt += `${few.length === 1 ? 'Se omite' : 'Se omiten'} ${pl(few.length, 'categoría', 'categorías')} con un solo dato (${nm3(few)}; ${pl(few.length, 'fila', 'filas')}).`;
+  if (gs.length > 12){ gs.sort((a, b) => b.vals.length - a.vals.length); const over = gs.slice(12); omitTxt += `${omitTxt ? ' ' : ''}La variable tiene ${gs.length} categorías con datos suficientes. Se comparan las 12 con más datos y quedan fuera ${pl(over.length, 'categoría', 'categorías')} (${nm3(over)}; ${pl(over.reduce((s, g) => s + g.vals.length, 0), 'fila', 'filas')}).`; gs = gs.slice(0, 12); }
+  if (omitTxt) note = `<p class="hint">${omitTxt}</p>`;
   if (vc.type === 'ordered' || vc.type === 'logical') gs.sort((a, b) => vc.levels.indexOf(a.label) - vc.levels.indexOf(b.label)); else gs.sort((a, b) => b.vals.length - a.vals.length);
   if (gs.length < 2) return msgBox(`Se necesitan al menos 2 grupos de «${esc(vc.name)}» con 2 datos o más. Hay ${gs.length}.`);
   gs.forEach(g => { g.d = describe(g.vals); });
@@ -1368,23 +1435,23 @@ function viewNC(vn0, vc){
   const ps = parsePcts(UI.pct), gpct = `<h3 style="margin-top:32px">Percentiles por grupo</h3>` + pctIn('pctIn2') + (ps.length ? tbl([esc(vc.name)].concat(ps.map(p => 'P' + nf(p, p % 1 ? 1 : 0))), gs.map(g => [esc(g.label)].concat(ps.map(p => f(g.d.p(p / 100))))), {right: ps.map((_, i) => i + 1), min: 120 + ps.length * 70, label: 'Percentiles por grupo'}) : '<p class="hint">Escriba números entre 0 y 100.</p>');
   let tests, rd = '', small = gs.filter(g => g.vals.length < 10).length;
   const hiMed = gs.reduce((a, g) => g.d.med > a.d.med ? g : a, gs[0]), loMed = gs.reduce((a, g) => g.d.med < a.d.med ? g : a, gs[0]);
-  const intro = `<p><b>Los datos.</b> Se comparan ${pl(k, 'grupo', 'grupos')} de «${esc(vc.name)}» en la variable «${esc(vn.name)}». Hay ${nf(N, 0)} filas con dato en ambas.${note ? ' Se omiten categorías con menos de 2 datos o fuera del límite de 12.' : ''}</p>`;
+  const intro = `<p><b>Los datos.</b> Se comparan ${pl(k, 'grupo', 'grupos')} de «${esc(vc.name)}» en la variable «${esc(vn.name)}». Hay ${nf(N, 0)} filas con dato en ambas. ${omitTxt}</p>`;
   if (k === 2){
     const mw = mannWhitney(gs[0].vals, gs[1].vals), we = welch(gs[0].vals, gs[1].vals), hl = hodgesLehmann(gs[0].vals, gs[1].vals), cl = mw.cles, cles = Math.max(cl, 1 - cl);
-    tests = testRows([['Mann–Whitney (principal)', `U = ${nf(mw.U, 1)} · z = ${nf(mw.z, 2)}`, mw.p, 'No paramétrica: ¿tiende un grupo a dar valores más altos?', 'main'], ['Welch (comparación)', `t = ${nf(we.t, 2)} · gl = ${nf(we.df, 1)}`, we.p, 'Paramétrica: ¿difieren las medias? Supone formas razonables.', 'cmp']])
-      + tbl(['Medida del tamaño del efecto', 'Valor', 'Cómo leerla'], [['Probabilidad de superioridad', pct(cl, 0), `Si toma un dato al azar de cada grupo, en ${nf(cl * 100, 0)} de cada 100 casos el de «${esc(gs[0].label)}» es mayor. 50 % significa igualdad.`], ['Diferencia típica de medianas (Hodges–Lehmann)', Number.isFinite(hl.est) ? `${sg(hl.est, 2)} (IC 95 %: ${nf(hl.lo, 2)} a ${nf(hl.hi, 2)})` : '—', `Mediana de todas las diferencias «${esc(gs[0].label)}» − «${esc(gs[1].label)}». Si el intervalo no incluye 0, la diferencia parece real.`], ['Correlación biserial de rangos', nf(mw.rb, 2), `Va de −1 a +1. Efecto ${effWord(Math.abs(mw.rb), 0.1, 0.3, 0.5)}.`], ['d de Cohen', nf(we.d, 2), `Diferencia de medias en unidades de SD. Efecto ${effWord(Math.abs(we.d), 0.2, 0.5, 0.8)}.`]], {min: 560, label: 'Tamaños del efecto'});
-    rd = intro + `<p><b>Diferencia observada.</b> La mediana de «${esc(hiMed.label)}» (${f(hiMed.d.med)}) supera a la de «${esc(loMed.label)}» (${f(loMed.d.med)}). Las medias son ${f(gs[0].d.mean)} y ${f(gs[1].d.mean)}.</p><p><b>¿Es real?</b> La prueba de Mann–Whitney da p ${pTxt(mw.p)}. La diferencia ${sigWord(mw.p)}. ${mw.p < 0.05 !== we.p < 0.05 ? 'La prueba de Welch no coincide: la conclusión depende de la prueba. Dé más peso a la no paramétrica si hay valores extremos o formas muy asimétricas.' : 'La prueba de Welch llega a la misma conclusión.'}</p>${Number.isFinite(hl.est) ? `<p><b>Cuánto difieren.</b> La diferencia típica entre un dato de «${esc(gs[0].label)}» y uno de «${esc(gs[1].label)}» es ${sg(hl.est, 2)}. El intervalo del 95 % va de ${nf(hl.lo, 2)} a ${nf(hl.hi, 2)}${hl.lo > 0 || hl.hi < 0 ? ' y no incluye el 0.' : ' e incluye el 0: no se puede descartar que no haya diferencia.'}</p>` : ''}<p><b>¿Es importante?</b> La probabilidad de superioridad es ${pct(cl, 0)}. El efecto es ${effWord(Math.abs(mw.rb), 0.1, 0.3, 0.5)}. Un valor p pequeño con un efecto despreciable indica una diferencia real, pero sin interés práctico.</p>`;
+    tests = testRows([['Mann–Whitney (principal)', mw.method === 'exacto' ? `U = ${nf(mw.U, 1)} · p exacta` : `U = ${nf(mw.U, 1)} · z = ${nf(mw.z, 2)} · p aproximada`, mw.p, 'No paramétrica: ¿tiende un grupo a dar valores más altos?', 'main'], ['Welch (comparación)', `t = ${nf(we.t, 2)} · gl = ${nf(we.df, 1)}`, we.p, 'Paramétrica: ¿difieren las medias? Supone formas razonables.', 'cmp']])
+      + tbl(['Medida del tamaño del efecto', 'Valor', 'Cómo leerla'], [['Probabilidad de superioridad', pct(cl, 0), `Si toma un dato al azar de cada grupo, en ${nf(cl * 100, 0)} de cada 100 casos el de «${esc(gs[0].label)}» es mayor. 50 % significa igualdad.`], ['Desplazamiento típico (Hodges–Lehmann)', Number.isFinite(hl.est) ? `${sg(hl.est, 2)} (${hlCI(hl)})` : '—', `Mediana de todas las diferencias «${esc(gs[0].label)}» − «${esc(gs[1].label)}». Mide cuánto se desplaza un grupo respecto al otro; solo equivale a la diferencia de medianas si los dos grupos tienen una forma parecida. Si el intervalo no incluye 0, los datos son compatibles con un desplazamiento distinto de cero.`], ['Correlación biserial de rangos', nf(mw.rb, 2), `Va de −1 a +1. Efecto ${effWord(Math.abs(mw.rb), 0.1, 0.3, 0.5)}.`], ['d de Cohen', nf(we.d, 2), `Diferencia de medias en unidades de SD. Efecto ${effWord(Math.abs(we.d), 0.2, 0.5, 0.8)}.`]], {min: 560, label: 'Tamaños del efecto'});
+    rd = intro + `<p><b>Diferencia observada.</b> La mediana de «${esc(hiMed.label)}» (${f(hiMed.d.med)}) supera a la de «${esc(loMed.label)}» (${f(loMed.d.med)}). Las medias son ${f(gs[0].d.mean)} y ${f(gs[1].d.mean)}.</p><p><b>¿Es real?</b> La prueba de Mann–Whitney (${mw.method === 'exacto' ? 'p exacta' : 'aproximación normal'}) da p ${pTxt(mw.p)}. La diferencia ${sigWord(mw.p)}. ${mw.p < 0.05 !== we.p < 0.05 ? 'La prueba de Welch no coincide: la conclusión depende de la prueba, porque una compara posiciones ordenadas y la otra compara medias. Informe ambas.' : 'La prueba de Welch llega a la misma conclusión.'}</p>${Number.isFinite(hl.est) ? `<p><b>Cuánto se desplazan.</b> El desplazamiento típico entre un dato de «${esc(gs[0].label)}» y uno de «${esc(gs[1].label)}» es ${sg(hl.est, 2)}. ${Number.isFinite(hl.cover) ? `El intervalo ${hl.method === 'exacto' ? 'exacto ' : 'aproximado '}del ${nf(hl.cover * 100, 1)} % va de ${nf(hl.lo, 2)} a ${nf(hl.hi, 2)}${hl.cover < 0.949 ? ` (con tan pocos datos no se alcanza el 95 %; el nivel más cercano posible es ${nf(hl.cover * 100, 1)} %)` : ''}${hl.lo > 0 || hl.hi < 0 ? ' y no incluye el 0.' : ' e incluye el 0: no se puede descartar que no haya desplazamiento.'}` : `Con tan pocos datos no se puede construir un intervalo del 95 %. Solo se puede dar el rango de todas las diferencias, de ${nf(hl.lo, 2)} a ${nf(hl.hi, 2)}, sin nivel de confianza garantizado.`}</p>` : ''}<p><b>¿Es importante?</b> La probabilidad de superioridad es ${pct(cl, 0)}. El efecto es ${effWord(Math.abs(mw.rb), 0.1, 0.3, 0.5)}. Un valor p pequeño con un efecto despreciable indica una diferencia detectable, pero sin interés práctico.</p>`;
   } else {
     const an = anovaWelch(vals), lv = levene(vals), dn = dunn(vals, kw);
-    tests = testRows([['Kruskal–Wallis (principal)', `H = ${nf(kw.H, 2)} · gl = ${kw.df}`, kw.p, 'No paramétrica: ¿difiere al menos un grupo en su tendencia central?', 'main'], ['ANOVA de Welch (comparación)', `F = ${nf(an.Fw, 2)} · gl = ${kw.df}; ${nf(an.dfw, 1)}`, an.pw, 'Paramétrica: ¿difieren las medias? No exige varianzas iguales.', 'cmp'], ['Brown–Forsythe', `F = ${nf(lv.F, 2)}`, lv.p, '¿Es la dispersión igual en todos los grupos?', 'check']])
+    tests = testRows([['Kruskal–Wallis (principal)', `H = ${nf(kw.H, 2)} · gl = ${kw.df}`, kw.p, 'No paramétrica: ¿tienden unos grupos a dar valores más altos que otros? También reacciona a diferencias de forma y de dispersión.', 'main'], ['ANOVA de Welch (comparación)', `F = ${nf(an.Fw, 2)} · gl = ${kw.df}; ${nf(an.dfw, 1)}`, an.pw, 'Paramétrica: ¿difieren las medias? No exige varianzas iguales.', 'cmp'], ['Brown–Forsythe', `F = ${nf(lv.F, 2)}`, lv.p, '¿Es la dispersión igual en todos los grupos?', 'check']])
       + tbl(['Medida del tamaño del efecto', 'Valor', 'Cómo leerla'], [['ε² (épsilon cuadrado)', nf(kw.eps2, 3), `Parte de la variación en rangos explicada por el grupo. Efecto ${effWord(kw.eps2, 0.01, 0.06, 0.14)}.`], ['η² (eta cuadrado)', nf(an.eta2, 3), `Equivalente paramétrico. Efecto ${effWord(an.eta2, 0.01, 0.06, 0.14)}.`]], {min: 560, label: 'Tamaños del efecto'})
       + `<h3 style="margin-top:32px">Comparaciones por parejas (Dunn con corrección de Holm)</h3>` + tbl(['Pareja', 'z', 'p', 'p ajustada', '¿Difieren?'], dn.map(r => { const row = [`${esc(gs[r.i].label)} — ${esc(gs[r.j].label)}`, nf(r.z, 2), pTxt(r.p), pTxt(r.pAdj), r.pAdj < 0.05 ? 'Sí' : 'No']; row.hl = r.pAdj < 0.05; return row; }), {right: [1, 2, 3], min: 520, label: 'Comparaciones por parejas'});
     const sig = dn.filter(r => r.pAdj < 0.05);
-    rd = intro + `<p><b>Diferencia observada.</b> La mediana más alta es la de «${esc(hiMed.label)}» (${f(hiMed.d.med)}). La más baja es la de «${esc(loMed.label)}» (${f(loMed.d.med)}).</p><p><b>¿Es real?</b> La prueba de Kruskal–Wallis da p ${pTxt(kw.p)}. ${kw.p < 0.05 ? 'Al menos un grupo difiere de los demás: la diferencia ' + sigWord(kw.p) + '.' : 'Los grupos no se distinguen del azar con estos datos.'} ${kw.p < 0.05 !== an.pw < 0.05 ? 'La prueba paramétrica no coincide: dé más peso a la no paramétrica si hay valores extremos.' : 'La prueba paramétrica llega a la misma conclusión.'}</p>${kw.p < 0.05 ? `<p><b>¿Qué grupos difieren?</b> ${sig.length ? 'Tras corregir por comparaciones múltiples, difieren: ' + sig.map(r => `«${esc(gs[r.i].label)}» y «${esc(gs[r.j].label)}»`).join('; ') + '.' : 'Ninguna pareja destaca tras la corrección de Holm. La diferencia global es débil o está repartida.'}</p>` : ''}<p><b>¿Es importante?</b> El efecto ε² = ${nf(kw.eps2, 3)} es ${effWord(kw.eps2, 0.01, 0.06, 0.14)}.</p>${lv.p < 0.05 ? '<p class="note"><b>Ojo.</b> La dispersión no es igual en todos los grupos. Se nota en el ancho de las cajas. La prueba de Welch y la no paramétrica resisten mejor este problema.</p>' : ''}`;
+    rd = intro + `<p><b>Diferencia observada.</b> La mediana más alta es la de «${esc(hiMed.label)}» (${f(hiMed.d.med)}). La más baja es la de «${esc(loMed.label)}» (${f(loMed.d.med)}).</p><p><b>¿Es real?</b> La prueba de Kruskal–Wallis da p ${pTxt(kw.p)}. ${kw.p < 0.05 ? 'Al menos un grupo difiere de los demás: la diferencia ' + sigWord(kw.p) + '.' : 'Los grupos no se distinguen del azar con estos datos.'} ${kw.p < 0.05 !== an.pw < 0.05 ? 'La prueba paramétrica no coincide: una compara posiciones ordenadas y la otra medias. Informe ambas.' : 'La prueba paramétrica llega a la misma conclusión.'}</p>${kw.p < 0.05 ? `<p><b>¿Qué grupos difieren?</b> ${sig.length ? 'Tras corregir por comparaciones múltiples, difieren: ' + sig.map(r => `«${esc(gs[r.i].label)}» y «${esc(gs[r.j].label)}»`).join('; ') + '.' : 'Ninguna pareja destaca tras la corrección de Holm. La diferencia global es débil o está repartida.'}</p>` : ''}<p><b>¿Es importante?</b> El efecto ε² = ${nf(kw.eps2, 3)} es ${effWord(kw.eps2, 0.01, 0.06, 0.14)}.</p>${lv.p < 0.05 ? '<p class="note"><b>Ojo.</b> La dispersión no es igual en todos los grupos. Se nota en el ancho de las cajas. La prueba de Welch y la no paramétrica resisten mejor este problema.</p>' : ''}`;
     if (vc.type === 'ordered'){ const idx = [], yy = []; const m = DATA.mask; for (let i = 0; i < m.length; i++) if (m[i] && vc.cat[i] >= 0 && Number.isFinite(vn.num[i])){ idx.push(vc.cat[i]); yy.push(vn.num[i]); } const tr = spearman(idx, yy); rd += `<p><b>Tendencia.</b> Como «${esc(vc.name)}» tiene orden, Spearman con ese orden da ρ = ${nf(tr.rho, 2)} (p ${pTxt(tr.p)}). ${tr.p < 0.05 ? (tr.rho > 0 ? 'A mayor categoría, mayor valor.' : 'A mayor categoría, menor valor.') : 'No hay una tendencia clara.'}</p>`; }
   }
   if (small) rd += `<p class="note"><b>Ojo.</b> ${pl(small, 'grupo tiene', 'grupos tienen')} menos de 10 datos. Los resultados son orientativos.</p>`;
-  rd += '<p><b>Cuidado.</b> Un valor p pequeño no demuestra que una variable cause la otra. Solo indica que la diferencia es poco probable por azar.</p>';
+  rd += '<p><b>Cuidado.</b> Un valor p pequeño no demuestra que una variable cause la otra. Solo indica que los datos serían poco habituales si no hubiera diferencia. La prueba no dice si esa diferencia es de centro, de forma o de dispersión: mire el gráfico.</p>';
   return logBox(vn0, lg, vn.isLog) + (canG ? `<div class="tog" style="margin-top:24px"><label class="chk"><input type="checkbox" id="zoomG"${zG ? ' checked' : ''}><span>Ampliar la zona central (oculta los valores muy lejanos)</span></label></div>${zG ? `<p class="hint" style="margin-top:0">Hay ${pl(outG, 'dato', 'datos')} fuera de la zona visible. Los cálculos los incluyen.</p>` : ''}` : '') + `<div class="legend" style="margin-top:32px"><span><i class="sw band red" style="background:var(--a20);border:2px solid var(--accent)"></i>Caja: mitad central</span><span><i class="sw red"></i><span>${B.red('Raya roja')}: mediana</span></span><span><svg width="12" height="12" aria-hidden="true"><path d="M6 0l6 6l-6 6l-6 -6z" fill="var(--text)"/></svg><span>${B.ink('Rombo negro')}: media</span></span></div>` + fig('chGrp', `Cada fila es una categoría de «${esc(vc.name)}». Todas comparten la misma escala horizontal.`, howD('<p>Compare las cajas. Si están en posiciones distintas, los grupos difieren en su centro. Si tienen anchuras distintas, difieren en su dispersión. Los círculos son valores extremos.</p>')) + note
     + `<div class="reading" id="reading2"><span class="lbl">Lectura en lenguaje sencillo</span>${rd}</div>` + `<h3 style="margin-top:32px">Números por grupo</h3>` + gt + gpct + `<h3 style="margin-top:32px">Contrastes</h3>` + tests;
 }
@@ -1405,14 +1472,14 @@ function viewCC(v1, v2){
   after(() => heatmap($('#chHeat'), rl.map(s => s), cl, (i, j) => { const z = X.A[i][j]; return {s: clamp(z / 4, -1, 1), txt: `${sg(z, 1)}`, tip: `${v1.levels[r[i]]} · ${v2.levels[c[j]]}: ${M[i][j]} casos (esperados ${nf(X.E[i][j], 1)}) · residuo ${sg(z, 2)}`}; }, {ch: 42, label: 'Residuos ajustados de la tabla'}));
   const big = []; X.A.forEach((row, i) => row.forEach((z, j) => big.push({i, j, z}))); big.sort((a, b) => Math.abs(b.z) - Math.abs(a.z));
   const topc = big.filter(b => Math.abs(b.z) > 1.96).slice(0, 4);
-  const tests = testRows([['Ji-cuadrado de Pearson', `χ² = ${nf(X.chi, 2)} · gl = ${X.df}`, X.p, '¿Son independientes las dos variables?', 'main'], ['Razón de verosimilitud (G)', `G = ${nf(X.g, 2)} · gl = ${X.df}`, X.pG, 'Alternativa al ji-cuadrado. Resultados parecidos.', 'cmp']].concat(is22 ? [['Test exacto de Fisher', `razón de odds = ${Number.isFinite(fi.or) ? nf(fi.or, 2) : '∞'}`, fi.p, 'Exacto: válido con pocos datos. Solo para tablas 2 × 2.', 'main']] : []))
-    + tbl(['Medida de asociación', 'Valor', 'Cómo leerla'], [['V de Cramér (corregida)', nf(X.Vc, 2), `Va de 0 a 1. Asociación ${effWord(X.Vc / Math.sqrt(Math.min(r.length, c.length) - 1), 0.1, 0.3, 0.5, true)}.`], ['V de Cramér (sin corregir)', nf(X.V, 2), 'Tiende a exagerar con pocos datos.'], ['Coeficiente de contingencia', nf(X.cont, 2), 'Va de 0 a menos de 1.']].concat(is22 ? [['Phi (φ)', nf(X.phi, 2), 'Equivale a V en tablas 2 × 2.'], ['Razón de odds', `${Number.isFinite(fi.or) ? nf(fi.or, 2) : '∞'} (IC 95 %: ${nf(fi.orLo, 2)} a ${nf(fi.orHi, 2)})`, `Compara «${esc(v1.levels[r[0]])}» frente a «${esc(v1.levels[r[1]])}» en la probabilidad de «${esc(v2.levels[c[0]])}». 1 significa igualdad.`]] : []), {min: 560, label: 'Medidas de asociación'});
+  const tests = testRows([['Ji-cuadrado de Pearson', `χ² = ${nf(X.chi, 2)} · gl = ${X.df}`, X.p, '¿Son independientes las dos variables?', 'main'], ['Razón de verosimilitud (G)', `G = ${nf(X.g, 2)} · gl = ${X.df}`, X.pG, 'Alternativa al ji-cuadrado. Resultados parecidos.', 'cmp']].concat(is22 ? [['Test exacto de Fisher', `razón de odds = ${Number.isFinite(fi.or) ? nf(fi.or, 2) : '∞'}${fi.corrected ? ' (corregida)' : ''}`, fi.p, 'Exacto: válido con pocos datos. Solo para tablas 2 × 2.', 'main']] : []))
+    + tbl(['Medida de asociación', 'Valor', 'Cómo leerla'], [['V de Cramér (corregida)', nf(X.Vc, 2), `Va de 0 a 1. Asociación ${effWord(X.Vc / Math.sqrt(Math.min(r.length, c.length) - 1), 0.1, 0.3, 0.5, true)}.`], ['V de Cramér (sin corregir)', nf(X.V, 2), 'Tiende a exagerar con pocos datos.'], ['Coeficiente de contingencia', nf(X.cont, 2), 'Va de 0 a menos de 1.']].concat(is22 ? [['Phi (φ)', nf(X.phi, 2), 'Equivale a V en tablas 2 × 2.'], ['Razón de odds', `${Number.isFinite(fi.or) ? nf(fi.or, 2) : '∞'}${fi.corrected ? ' corregida' : ''} (IC 95 % aproximado: ${nf(fi.orLo, 2)} a ${nf(fi.orHi, 2)})`, `Compara «${esc(v1.levels[r[0]])}» frente a «${esc(v1.levels[r[1]])}» en la probabilidad de «${esc(v2.levels[c[0]])}». 1 significa igualdad.`]] : []), {min: 560, label: 'Medidas de asociación'});
   const lowPct = X.lowE / X.cells, vEff = X.Vc / Math.sqrt(Math.min(r.length, c.length) - 1);
   let rd = `<p><b>Los datos.</b> La tabla cruza «${esc(v1.name)}» (${r.length} categorías) con «${esc(v2.name)}» (${c.length} categorías). Hay ${nf(X.N, 0)} filas con dato en ambas.</p>`;
   rd += `<p><b>¿Hay relación?</b> El ji-cuadrado da p ${pTxt(X.p)}. ${X.p < 0.05 ? 'Las dos variables están relacionadas: la asociación ' + sigWord(X.p) + '.' : 'No hay evidencia de relación entre las dos variables con estos datos.'}</p>`;
   rd += `<p><b>¿Es importante?</b> La V de Cramér corregida vale ${nf(X.Vc, 2)}. La asociación es ${effWord(vEff, 0.1, 0.3, 0.5, true)}. ${X.p < 0.05 && vEff < 0.1 ? 'Con muchos datos, una asociación real puede ser pequeña. No la sobrevalore.' : ''}</p>`;
   if (topc.length) rd += `<p><b>Dónde está la diferencia.</b> Los residuos ajustados más fuertes son: ${topc.map(b => `«${esc(v1.levels[r[b.i]])}» con «${esc(v2.levels[c[b.j]])}» (${sg(b.z, 1)}; ${b.z > 0 ? 'más casos de los esperados' : 'menos casos de los esperados'})`).join('; ')}. Un residuo mayor que 2 (en valor absoluto) destaca. Uno mayor que 2,6 destaca mucho.</p>`;
-  if (is22) rd += `<p><b>Razón de odds.</b> Vale ${Number.isFinite(fi.or) ? nf(fi.or, 2) : '∞'}. ${fi.or > 1 ? 'La ventaja (odds) de' : 'La ventaja (odds) de'} «${esc(v2.levels[c[0]])}» en «${esc(v2.name)}» para «${esc(v1.levels[r[0]])}» equivale a ${Number.isFinite(fi.or) ? nf(fi.or, 2) : '∞'} veces la de «${esc(v1.levels[r[1]])}». Con p de Fisher ${pTxt(fi.p)}, ${fi.p < 0.05 ? 'esa diferencia ' + sigWord(fi.p) : 'no se distingue del azar'}.</p>`;
+  if (is22) rd += `<p><b>Razón de odds.</b> Vale ${Number.isFinite(fi.or) ? nf(fi.or, 2) : '∞'}${fi.corrected ? ' (corregida sumando 0,5 a cada celda, porque una celda está vacía)' : ''}, con un intervalo de confianza del 95 % de ${nf(fi.orLo, 2)} a ${nf(fi.orHi, 2)}. ${fi.or > 1 ? 'La ventaja (odds) de' : 'La ventaja (odds) de'} «${esc(v2.levels[c[0]])}» en «${esc(v2.name)}» para «${esc(v1.levels[r[0]])}» equivale a ${Number.isFinite(fi.or) ? nf(fi.or, 2) : '∞'} veces la de «${esc(v1.levels[r[1]])}». Con p de Fisher ${pTxt(fi.p)}, ${fi.p < 0.05 ? 'esa diferencia ' + sigWord(fi.p) : 'no se distingue del azar'}.</p>`;
   if (lowPct > 0.2 || X.minE < 1) rd += `<p class="note"><b>Ojo.</b> ${pl(X.lowE, 'celda tiene', 'celdas tienen')} una frecuencia esperada menor que 5 (${nf(lowPct * 100, 0)} % de la tabla). El ji-cuadrado pierde fiabilidad. ${is22 ? 'Use el test exacto de Fisher.' : 'Agrupe categorías raras o confíe menos en el valor p.'}</p>`;
   rd += '<p><b>Cuidado.</b> Una asociación no demuestra que una variable cause la otra.</p>';
   const sel = `<div class="ctlrow"><label class="lbl" for="ctMode">Valores de la tabla</label><select id="ctMode" class="sel">${[['cnt', 'Frecuencias'], ['row', '% por fila'], ['col', '% por columna'], ['tot', '% del total'], ['exp', 'Frecuencias esperadas'], ['res', 'Residuos ajustados']].map(([k, l]) => `<option value="${k}"${mode === k ? ' selected' : ''}>${l}</option>`).join('')}</select></div>`;
@@ -1424,14 +1491,14 @@ function viewCC(v1, v2){
 function viewCorr(){
   const nums = DATA.vars.filter(v => isNumT(v.type)).slice(0, 14), out = $('#corrOut'); POST = [];
   if (nums.length < 2){ out.innerHTML = scopeHTML() + msgBox('Se necesitan al menos 2 variables numéricas.'); return; }
-  const method = UI.corr, k = nums.length, R = nums.map(() => new Array(k).fill(null)), list = [];
-  for (let i = 0; i < k; i++) for (let j = i + 1; j < k; j++){ const {x, y} = pairNums(nums[i], nums[j]); if (x.length < 5){ continue; } const o = method === 'pearson' ? (q => ({r: q.r, p: q.p, n: q.n}))(pearson(x, y)) : (q => ({r: q.rho, p: q.p, n: q.n}))(spearman(x, y)); R[i][j] = R[j][i] = o; list.push({i, j, ...o}); }
+  const method = UI.corr, k = nums.length, R = nums.map(() => new Array(k).fill(null)), list = [], constPairs = [];
+  for (let i = 0; i < k; i++) for (let j = i + 1; j < k; j++){ const {x, y} = pairNums(nums[i], nums[j]); if (x.length < 5){ continue; } const o = method === 'pearson' ? (q => ({r: q.r, p: q.p, n: q.n}))(pearson(x, y)) : (q => ({r: q.rho, p: q.p, n: q.n}))(spearman(x, y)); if (!Number.isFinite(o.r)){ constPairs.push([i, j]); continue; } R[i][j] = R[j][i] = o; list.push({i, j, ...o}); }
   const ord = list.map((_, i) => i).sort((a, b) => list[a].p - list[b].p); let mx = 0; ord.forEach((ix, rank) => { mx = Math.max(mx, Math.min(1, (list.length - rank) * list[ix].p)); list[ix].pAdj = mx; });
   const adj = new Map(list.map(o => [o.i + '-' + o.j, o.pAdj]));
   after(() => heatmap($('#chCorr'), nums.map(v => v.name), nums.map(v => v.name), (i, j) => { if (i === j) return {s: 0, txt: '1', tip: nums[i].name}; const o = R[i][j]; if (!o) return null; const pa = adj.get(Math.min(i, j) + '-' + Math.max(i, j)); return {s: o.r, txt: nf(o.r, 2) + (pa < 0.05 ? '*' : ''), tip: `${nums[i].name} y ${nums[j].name}: ${method === 'pearson' ? 'r' : 'ρ'} = ${nf(o.r, 2)} · n = ${o.n} · p ajustada ${pTxt(pa)}`}; }, {ch: 40, label: 'Matriz de correlaciones'}));
   const top = list.slice().sort((a, b) => Math.abs(b.r) - Math.abs(a.r)).slice(0, 8);
   const nm = method === 'pearson' ? 'Pearson (r)' : 'Spearman (ρ)', sigN = list.filter(o => o.pAdj < 0.05).length;
-  const rd = `<p><b>Cómo leer la matriz.</b> Cada casilla muestra la correlación entre dos variables. Va de −1 a +1. El rojo indica que suben juntas. El gris intenso indica que una sube cuando la otra baja. El asterisco (*) marca las que siguen siendo distintas del azar tras corregir por hacer muchas comparaciones (método de Holm).</p><p><b>Resumen.</b> Se comparan ${nf(list.length, 0)} parejas. ${sigN ? `${pl(sigN, 'pareja sale', 'parejas salen')} significativas tras la corrección.` : 'Ninguna pareja sale significativa tras la corrección.'} ${top.length ? `La más fuerte une «${esc(nums[top[0].i].name)}» con «${esc(nums[top[0].j].name)}» (${nf(top[0].r, 2)}, ${strength(top[0].r)}).` : ''}</p><p class="note">Spearman es la opción por defecto. Funciona bien con escalas y con valores extremos. Pearson mide solo relaciones en línea recta.</p>`;
+  const rd = `<p><b>Cómo leer la matriz.</b> Cada casilla muestra la correlación entre dos variables. Va de −1 a +1. El rojo indica que suben juntas. El gris intenso indica que una sube cuando la otra baja. El asterisco (*) marca las que siguen siendo distintas del azar tras corregir por hacer muchas comparaciones (método de Holm).</p><p><b>Resumen.</b> Se comparan ${nf(list.length, 0)} parejas. ${sigN ? `${pl(sigN, 'pareja sale', 'parejas salen')} significativas tras la corrección.` : 'Ninguna pareja sale significativa tras la corrección.'} ${top.length ? `La más fuerte une «${esc(nums[top[0].i].name)}» con «${esc(nums[top[0].j].name)}» (${nf(top[0].r, 2)}, ${strength(top[0].r)}).` : ''}</p><p class="note">Spearman es la opción por defecto. Funciona bien con escalas y con valores extremos. Pearson mide solo relaciones en línea recta.</p>${constPairs.length ? `<p class="note"><b>Ojo.</b> ${pl(constPairs.length, 'pareja no se calcula', 'parejas no se calculan')} porque una de las dos variables toma siempre el mismo valor en esas filas: ${constPairs.slice(0, 6).map(([i, j]) => `«${esc(nums[i].name)}» y «${esc(nums[j].name)}»`).join('; ')}${constPairs.length > 6 ? '…' : ''}. Esas parejas no entran en la corrección de Holm.</p>` : ''}`;
   out.innerHTML = scopeHTML() + `<div class="ctlrow"><label class="lbl" for="corrM">Método</label><select id="corrM" class="sel"><option value="spearman"${method === 'spearman' ? ' selected' : ''}>Spearman (recomendado)</option><option value="pearson"${method === 'pearson' ? ' selected' : ''}>Pearson</option></select></div>` + fig('chCorr', `Matriz de correlaciones de ${nm}. Se usan las filas con dato en cada pareja.${DATA.vars.filter(v => isNumT(v.type)).length > 14 ? ' Se muestran las 14 primeras variables numéricas.' : ''}`, howD('<p>Busque casillas intensas fuera de la diagonal. Una casilla roja intensa indica dos variables que crecen juntas. Una gris intensa, que se mueven en sentido contrario. Las pálidas indican poca relación.</p>')) + `<div class="reading" id="reading3"><span class="lbl">Lectura en lenguaje sencillo</span>${rd}</div>` + `<h3 style="margin-top:32px">Las parejas más fuertes</h3>` + tbl(['Pareja', nm, 'n', 'p ajustada', 'Fuerza'], top.map(o => [`${esc(nums[o.i].name)} — ${esc(nums[o.j].name)}`, nf(o.r, 2), nf(o.n, 0), pTxt(o.pAdj), `${strength(o.r)} ${o.r > 0 ? '(positiva)' : '(negativa)'}`]), {right: [1, 2, 3], min: 560, label: 'Parejas con mayor correlación'});
   runPost(); const s = $('#corrM'); if (s) s.addEventListener('change', () => { UI.corr = s.value; viewCorr(); $('#corrM') && $('#corrM').focus(); });
 }
@@ -1471,6 +1538,8 @@ function viewSeg(){
 function segCompute(vars, useLog, kPick){
   const m = DATA.mask, rows = []; for (let i = 0; i < m.length; i++) if (m[i] && vars.every(v => Number.isFinite(v.num[i]))) rows.push(i);
   const n = rows.length, p = vars.length; if (n < 30) return {err: `Solo ${n} filas tienen datos en todas las variables elegidas. Se necesitan al menos 30.`};
+  const flat = vars.filter(v => new Set(rows.map(i => v.num[i])).size < 2); if (flat.length) return {err: `En las ${nf(n, 0)} filas con datos en todas las variables, ${flat.map(v => `«${v.name}»`).join(' y ')} toma siempre el mismo valor. Quítela de la selección.`};
+  if (new Set(rows.map(i => vars.map(v => v.num[i]).join('|'))).size < 10) return {err: 'Hay menos de 10 combinaciones distintas de valores: no se pueden formar grupos con sentido.'};
   const X = new Float64Array(n * p), logged = [];
   vars.forEach((v, j) => { let col = rows.map(i => v.num[i]); const d = describe(col); if (useLog && d.min >= 0 && d.skew > 1 && new Set(col).size > 10){ const off = d.min > 0 ? 0 : 1; col = col.map(x => Math.log(x + off)); logged.push(v.name); }
     let mu = 0; for (const x of col) mu += x; mu /= n; let ss = 0; for (const x of col) ss += (x - mu) ** 2; const sd = Math.sqrt(ss / (n - 1)) || 1; for (let i = 0; i < n; i++) X[i * p + j] = (col[i] - mu) / sd; });
@@ -1482,11 +1551,12 @@ function segCompute(vars, useLog, kPick){
   const fin = kmeans(Xf, nf2, p, k, 99, 25), sil = silhouetteMean(Xf, nf2, p, fin.lab, k, 800), lab0 = new Int32Array(n), cnt0 = new Array(k).fill(0);
   for (let i = 0; i < n; i++){ let bc = 0, bd = Infinity; for (let c = 0; c < k; c++){ let d = 0; for (let j = 0; j < p; j++){ const t = X[i * p + j] - fin.C[c * p + j]; d += t * t; } if (d < bd){ bd = d; bc = c; } } lab0[i] = bc; cnt0[bc]++; }
   const ord = cnt0.map((_, c) => c).sort((a, b) => cnt0[b] - cnt0[a]), map = new Array(k); ord.forEach((c, i) => { map[c] = i; });
+  if (cnt0.some(c => c === 0)) return {err: `Con estos datos no se pueden formar ${k} grupos distintos y no vacíos. Pruebe con menos grupos.`};
   const lab = Int32Array.from(lab0, c => map[c]), sizes = ord.map(c => cnt0[c]), cz = Array.from({length: k}, () => new Array(p).fill(0));
   for (let i = 0; i < n; i++) for (let j = 0; j < p; j++) cz[lab[i]][j] += X[i * p + j] / sizes[lab[i]];
   const meds = Array.from({length: k}, (_, c) => vars.map(v => { const a = []; for (let q = 0; q < n; q++) if (lab[q] === c) a.push(v.num[rows[q]]); return describe(a).med; }));
   const all = vars.map(v => describe(rows.map(i => v.num[i])));
-  return {rows, n, p, vars, logged, lab, k, kBest: best.k, kmax, table, sil, stab: fin.stability, sizes, cz, meds, all, pca: pca2(X, n, p), outl, sampled: n > NF, perSil: ord.map(c => sil.per[c])};
+  return {rows, n, p, vars, logged, lab, k, kBest: best.k, kmax, table, sil, stab: fin.stability, sizes, cz, meds, all, conv: fin.conv, pca: pca2(X, n, p), outl, sampled: n > NF, perSil: ord.map(c => sil.per[c])};
 }
 function renderSegRes(){
   const box = $('#segRes'); if (!box) return; const r = SEGC.res; POST = [];
@@ -1514,7 +1584,7 @@ function renderSegRes(){
     + `<span class="lbl" style="display:block;margin-top:32px">Perfil de cada grupo</span><div class="legend" style="margin-top:8px"><span><i class="sw band red"></i>Rojo: por encima de la media</span><span><i class="sw band" style="background:var(--text)"></i>Neutro intenso (gris): por debajo de la media</span></div>` + fig('chSegH', 'Cada casilla muestra cuántas desviaciones típicas (SD) queda el grupo por encima o por debajo de la media de todas las filas.', howD('<p>Cada fila es un grupo. Cada columna es una variable. Una casilla roja intensa indica que ese grupo tiene valores altos en esa variable. Una casilla gris intensa indica valores bajos. Las casillas pálidas indican valores cercanos a la media. Así se ve qué define a cada grupo.</p>'))
     + `<span class="lbl" style="display:block;margin-top:32px">Mapa de los grupos</span>` + (k <= 4 ? `<div class="legend" style="margin-top:8px">${sizes.map((c, i) => `<span>${markKey(i)}<span>Grupo ${i + 1}</span></span>`).join('')}<span><svg width="18" height="18" aria-hidden="true"><circle cx="9" cy="9" r="7" fill="none" stroke="var(--text)" stroke-width="2"/></svg><span>Centro del grupo</span></span></div>` + fig('chSegS', `Cada punto es una fila. Cada grupo tiene su color y su forma. El mapa resume las ${p} variables en dos ejes (análisis de componentes principales). Los dos ejes recogen el ${nf((r.pca.explained[0] + r.pca.explained[1]) * 100, 0)} % de la variación.`, howD('<p>Los puntos cercanos son filas parecidas. Si los grupos forman nubes separadas, la segmentación es clara. Si se mezclan, los grupos se solapan. Cada grupo tiene un color y una forma. El número marca el centro del grupo. Un mapa en dos ejes pierde parte de la información: úselo como orientación.</p>'))
       : `<p class="hint" style="margin-top:8px">Con 5 o más grupos, cada grupo tiene su propio panel. Los puntos grises son las filas de los demás grupos. Los dos ejes recogen el ${nf((r.pca.explained[0] + r.pca.explained[1]) * 100, 0)} % de la variación.</p><div class="facets">${sizes.map((c, i) => `<figure class="facet"><figcaption style="margin:0 0 4px;display:flex;align-items:center;gap:8px;color:var(--text)">${markKey(i)}<span>Grupo ${i + 1} · n = ${nf(c, 0)}</span></figcaption><div class="chart" id="chSegS${i}"></div></figure>`).join('')}</div>` + howD('<p>Cada panel destaca un grupo en color. Los puntos grises son las filas de los demás. Si el grupo ocupa una zona propia del mapa, está bien definido. Si se extiende por todo el mapa, se mezcla con los otros.</p>'))
-    + `<div class="reading" id="reading4"><span class="lbl">Lectura en lenguaje sencillo</span><p><b>Qué hace este análisis.</b> Agrupa filas parecidas en ${k} grupos con el método de k-medias. Cada grupo tiene un centro. Cada fila pasa al grupo de su centro más cercano. Las variables se estandarizan para que todas pesen igual${r.logged.length ? `; ${r.logged.map(esc).join(', ')} se pasó a logaritmos por su cola derecha larga` : ''}.</p>${desc}<p><b>Calidad.</b> Silueta ${nf(s, 2)}. Estabilidad ${nf(stab * 100, 0)} %.</p>${r.outl ? `<p class="note"><b>Ojo.</b> ${pl(r.outl, 'fila tiene', 'filas tienen')} algún valor a más de 4 SD de la media. Los valores extremos arrastran los centros de los grupos.</p>` : ''}${r.sampled ? '<p class="note"><b>Ojo.</b> Con más de 5 000 filas, los centros se calculan con una muestra de 5 000. Después se asignan todas las filas.</p>' : ''}<p class="note"><b>Cuidado.</b> Un grupo encontrado por el algoritmo no es un segmento real hasta que se valide. Compruebe que los grupos tengan sentido para el negocio, que sean estables con otra muestra y que se puedan accionar.</p></div>`
+    + `<div class="reading" id="reading4"><span class="lbl">Lectura en lenguaje sencillo</span><p><b>Qué hace este análisis.</b> Agrupa filas parecidas en ${k} grupos con el método de k-medias. Cada grupo tiene un centro. Cada fila pasa al grupo de su centro más cercano. Las variables se estandarizan para que todas pesen igual${r.logged.length ? `; ${r.logged.map(esc).join(', ')} se pasó a logaritmos por su cola derecha larga` : ''}.</p>${desc}<p><b>Calidad.</b> Silueta ${nf(s, 2)}. Estabilidad ${nf(stab * 100, 0)} %. La estabilidad solo mide si el algoritmo llega a una solución parecida desde distintos puntos de partida; no demuestra que los grupos se repitan con otra muestra.${r.conv ? '' : ' El algoritmo no llegó a converger en 100 iteraciones: los centros pueden no ser definitivos.'}</p>${r.outl ? `<p class="note"><b>Ojo.</b> ${pl(r.outl, 'fila tiene', 'filas tienen')} algún valor a más de 4 SD de la media. Los valores extremos arrastran los centros de los grupos.</p>` : ''}${r.sampled ? '<p class="note"><b>Ojo.</b> Con más de 5 000 filas, los centros se calculan con una muestra de 5 000. Después se asignan todas las filas.</p>' : ''}<p class="note"><b>Cuidado.</b> Un grupo encontrado por el algoritmo no es un segmento real hasta que se valide. Compruebe que los grupos tengan sentido para el negocio, que sean estables con otra muestra y que se puedan accionar.</p></div>`
     + `<h3 style="margin-top:32px">Tamaño y valores típicos de cada grupo</h3>` + tb + `<h3 style="margin-top:32px">Elección del número de grupos</h3>` + kt + `<p class="hint">La variación interna siempre baja al añadir grupos, así que no sirve sola. La silueta mide cuán separados están los grupos. Se elige el número con mayor silueta.</p>` + cmpHTML;
   runPost();
 }
@@ -1527,8 +1597,9 @@ function renderDict(){
   const D = DATA, cols = [['double', 'Decimal'], ['integer', 'Entero'], ['logical', 'Lógica'], ['factor', 'Factor'], ['ordered', 'Ordenado'], ['character', 'Texto'], ['date', 'Fecha'], ['id', 'Código']];
   $('#dictT').innerHTML = `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Diccionario de variables: marque la clase de cada variable"><table class="compact dict cgrid" style="min-width:680px"><thead><tr><th scope="col" class="stk">Variable</th>${cols.map(([k, l]) => `<th scope="col" class="c" title="${esc(TYPE_NAME[k])}">${l}</th>`).join('')}</tr></thead><tbody>` + D.vars.map((v, i) => {
     const ex = [...new Set(v.strs.filter(s => !MISSING.has(s.trim().toLowerCase())))].slice(0, 3).map(s => esc(trunc(s, 18))).join(' · '), changed = v.type !== v.auto, miss = v.strs.filter(s => MISSING.has(s.trim().toLowerCase())).length;
-    return `<tr><th scope="row" class="rh stk">${esc(v.name)}${changed ? `<span class="chip">Modificado</span>` : ''}<span class="def">${nf(v.k, 0)} distintos · ${nf(miss, 0)} sin dato · ${ex}</span>${v.note && !changed ? `<span class="def">${esc(v.note)}</span>` : ''}${v.bad ? `<span class="def">${nf(v.bad, 0)} valores no encajan con este tipo y se tratan como faltantes.</span>` : ''}</th>${cols.map(([k, l]) => `<td class="c"><label class="rc${k === v.auto ? ' auto' : ''}" title="${esc(TYPE_NAME[k])}${k === v.auto ? ' (detectado automáticamente)' : ''}"><input type="radio" name="vt${i}" value="${k}" data-i="${i}"${v.type === k ? ' checked' : ''} aria-label="Variable ${esc(v.name)}: ${esc(TYPE_NAME[k])}${k === v.auto ? ', detectado automáticamente' : ''}"></label></td>`).join('')}</tr>`; }).join('') + `</tbody></table></div><p class="hint" style="margin-top:8px">Marque la clase de cada variable. El recuadro de trazos indica lo que el programa detectó. Pase el cursor sobre un título de columna para ver su nombre completo.</p>`;
-  $$('#dictT input[type=radio]').forEach(s => s.addEventListener('change', () => { const i = +s.dataset.i, v = DATA.vars[i]; v.type = s.value; materialize(v); if (DATA.filter && DATA.filter.idx === i && !v.cat) DATA.filter = null; renderAll(); const b = $(`#dictT input[name="vt${i}"]:checked`); if (b) b.focus(); }));
+    return `<tr><th scope="row" class="rh stk">${esc(v.name)}${changed ? `<span class="chip">Modificado</span>` : ''}<span class="def">${nf(v.k, 0)} distintos · ${nf(miss, 0)} sin dato · ${ex}</span>${v.note && !changed ? `<span class="def">${esc(v.note)}</span>` : ''}${v.type === 'ordered' && v.levels ? `<span class="def">${v.ordNote ? esc(v.ordNote) : 'Orden actual, de menor a mayor. Puede cambiarlo:'}</span><input class="sel ordin" type="text" data-ord="${i}" value="${esc(v.levels.join('; '))}" autocomplete="off" aria-label="Orden de las categorías de ${esc(v.name)}, de menor a mayor, separadas por punto y coma" style="width:100%;max-width:34ch;margin-top:4px">` : ''}${v.bad ? `<span class="def">${nf(v.bad, 0)} valores no encajan con este tipo y se tratan como faltantes.</span>` : ''}</th>${cols.map(([k, l]) => `<td class="c"><label class="rc${k === v.auto ? ' auto' : ''}" title="${esc(TYPE_NAME[k])}${k === v.auto ? ' (detectado automáticamente)' : ''}"><input type="radio" name="vt${i}" value="${k}" data-i="${i}"${v.type === k ? ' checked' : ''} aria-label="Variable ${esc(v.name)}: ${esc(TYPE_NAME[k])}${k === v.auto ? ', detectado automáticamente' : ''}"></label></td>`).join('')}</tr>`; }).join('') + `</tbody></table></div><p class="hint" style="margin-top:8px">Marque la clase de cada variable. El recuadro de trazos indica lo que el programa detectó. Pase el cursor sobre un título de columna para ver su nombre completo.</p>`;
+  $$('#dictT input[type=radio]').forEach(s => s.addEventListener('change', () => { const i = +s.dataset.i, v = DATA.vars[i], msg = retype(v, () => { v.type = s.value; }); renderAll(); setLoadMsg(msg); const b = $(`#dictT input[name="vt${i}"]:checked`); if (b) b.focus(); }));
+  $$('#dictT input.ordin').forEach(s => s.addEventListener('change', () => { const i = +s.dataset.ord, v = DATA.vars[i], o = [...new Set(s.value.split(';').map(x => x.trim()).filter(Boolean))], msg = retype(v, () => { v.order = o; }); renderAll(); setLoadMsg(msg); const b = $(`#dictT input[data-ord="${i}"]`); if (b) b.focus(); }));
 }
 function fillSelect(sel, vars, key, filt, dflt){
   const s = $(sel), old = UI[key]; s.innerHTML = vars.map(v => `<option value="${v.idx}">${esc(v.name)} · ${esc(TYPE_NAME[v.type].replace(/ \(.*/, ''))}</option>`).join('');
@@ -1545,11 +1616,24 @@ function renderFilter(){
 }
 function onFilterVar(){ const i = +$('#fvar').value; DATA.filter = i < 0 ? null : {idx: i, levels: new Set(DATA.vars[i].levels.map((_, k) => k))}; renderAll(); }
 
+function setLoadMsg(extra){ const m = $('#loadMsg'); m.textContent = (DATA.baseMsg + (extra ? ' ' + extra : '')).trim(); m.classList.toggle('err', DATA.warn.length > 0 || !!extra); }
+/* Cambia la clase u orden de una variable sin alterar qué filas quedan seleccionadas en el filtro. Devuelve un aviso si el filtro se reinicia. */
+function retype(v, change){
+  const f = DATA.filter && DATA.filter.idx === v.idx ? DATA.filter : null, keep = f && v.levels ? [...f.levels].map(k => v.levels[k]) : null; let msg = '';
+  change(); materialize(v);
+  if (f){
+    if (!v.cat){ DATA.filter = null; msg = `Al cambiar la clase de «${v.name}» se ha quitado el filtro, porque ya no es una categoría.`; }
+    else { const s = new Set(); (keep || []).forEach(l => { const k = v.levels.indexOf(l); if (k >= 0) s.add(k); });
+      if (!s.size || s.size !== keep.length){ f.levels = new Set(v.levels.map((_, k) => k)); msg = `Al cambiar la clase de «${v.name}» las categorías ya no coinciden. El filtro se ha reiniciado: ahora incluye todas las filas.`; }
+      else f.levels = s; }
+  }
+  return msg;
+}
 function loadData(text, name, isSample){
   try {
     DATA = buildData(text, name, isSample); setMask(); UI.v1 = UI.x2 = UI.y2 = null; UI.logOn = new Set(); SEGC.sel = null; SEGC.cmp = null;
-    $('#loadMsg').textContent = `${name}: ${nf(DATA.rows, 0)} filas y ${nf(DATA.vars.length, 0)} variables. ${DATA.vars.length > 1 ? `Separador: «${DATA.delim === '\t' ? 'tabulador' : DATA.delim}».` : ''}`;
-    $('#loadMsg').classList.remove('err'); renderAll();
+    DATA.baseMsg = `${name}: ${nf(DATA.rows, 0)} filas y ${nf(DATA.vars.length, 0)} variables. ${DATA.vars.length > 1 ? `Separador: «${DATA.delim === '\t' ? 'tabulador' : DATA.delim}».` : ''}${isSample ? '' : ` Codificación: ${LAST_ENC}.`} ${DATA.warn.join(' ')}`.trim();
+    setLoadMsg(''); renderAll();
   } catch (e){ const m = $('#loadMsg'); m.textContent = 'No se pudo leer el archivo. ' + e.message; m.classList.add('err'); }
 }
 function bestPair(){ const vs = DATA.vars; const nums = vs.filter(v => isNumT(v.type)), cats = vs.filter(v => isCatT(v.type)); if (cats.length && nums.length) return [cats[0].idx, (nums.find(v => /gasto|ventas|import|precio/i.test(v.name)) || nums[0]).idx]; if (nums.length > 1) return [nums[0].idx, nums[1].idx]; if (cats.length > 1) return [cats[0].idx, cats[1].idx]; return [vs[0].idx, vs[Math.min(1, vs.length - 1)].idx]; }
@@ -1564,16 +1648,24 @@ function renderAll(keepFilter){
   viewUni(); viewBi(); viewCorr(); SEGC.res = null; viewSeg();
 }
 function downloadText(name, text, type){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type})); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
-const csvCell = s => { s = String(s); return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+/* Los textos que empiezan por = + - @ (o tabulador / retorno) se exportan con una comilla simple delante para que una hoja de cálculo no los ejecute como fórmula.
+   Los números tipados («-5,3», «1e-4») se dejan tal cual. */
+const csvCell = s => { s = String(s); if (/^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+(?:[.,]\d+)?(?:e[+-]?\d+)?$/i.test(s)) s = "'" + s; return /[",\r\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
 function summaryCSV(){
   const rows = [['variable', 'tipo', 'n_validos', 'faltantes', 'media', 'mediana', 'sd', 'mad_escalada', 'iqr', 'minimo', 'maximo', 'asimetria', 'curtosis_exceso', 'categoria_mas_frecuente', 'pct_categoria_mas_frecuente']];
   DATA.vars.forEach(v => { if (isNumT(v.type)){ const a = numOf(v); if (a.length >= 2){ const d = describe(a); rows.push([v.name, TYPE_NAME[v.type], d.n, DATA.nUsed - d.n, d.mean, d.med, d.sd, d.madS, d.iqr, d.min, d.max, d.skew, d.kurt, '', ''].map(x => typeof x === 'number' ? String(x).replace('.', ',') : x)); } }
-    else if (isCatT(v.type)){ const {c, n} = catCounts(v), mx = c.indexOf(Math.max(...c)); rows.push([v.name, TYPE_NAME[v.type], n, DATA.nUsed - n, '', '', '', '', '', '', '', '', '', v.levels[mx], n ? String(c[mx] / n * 100).replace('.', ',') : '']); } });
+    else if (isCatT(v.type)){ const {c, n} = catCounts(v), mx = c.indexOf(maxOf(c)); rows.push([v.name, TYPE_NAME[v.type], n, DATA.nUsed - n, '', '', '', '', '', '', '', '', '', v.levels[mx], n ? String(c[mx] / n * 100).replace('.', ',') : '']); } });
   return '﻿' + rows.map(r => r.map(csvCell).join(';')).join('\r\n');
 }
 function reportText(){
-  const L = [`INFORME DESCRIPTIVO`, DATA.name, `Filas analizadas: ${DATA.nUsed} de ${DATA.rows}`, ''];
-  [['#reading1', 'UNA VARIABLE'], ['#reading2', 'DOS VARIABLES'], ['#reading3', 'CORRELACIONES']].forEach(([s, t]) => { const e = $(s); if (e) L.push(t, '', ...[...e.querySelectorAll('p')].map(p => p.textContent), ''); });
+  const D = DATA, nm = i => (D.vars[i] || {}).name || '—', chg = D.vars.filter(v => v.type !== v.auto).map(v => `${v.name} → ${TYPE_NAME[v.type]}`), logs = [...UI.logOn].map(nm);
+  const L = [`INFORME DESCRIPTIVO`, D.name, `Filas leídas: ${D.rows}${D.omitted ? ` (el archivo tenía ${D.omitted} filas de datos más, no leídas)` : ''}. Filas analizadas: ${D.nUsed}.`,
+    `Filtro: ${D.filter ? `${nm(D.filter.idx)} = ${[...D.filter.levels].map(k => D.vars[D.filter.idx].levels[k]).join(', ')}` : 'ninguno'}.`,
+    `Clases de variable corregidas a mano: ${chg.length ? chg.join('; ') : 'ninguna'}.`, `Variables analizadas con logaritmo: ${logs.length ? logs.join(', ') : 'ninguna'}.`,
+    `Una variable: ${nm(UI.v1)}. Dos variables: ${nm(UI.x2)} y ${nm(UI.y2)}${UI.paired ? ' (medidas pareadas)' : ''}. Matriz de correlaciones: ${UI.corr === 'pearson' ? 'Pearson' : 'Spearman'}.`,
+    `Percentiles personalizados: ${UI.pct}. Remuestreo (bootstrap) y segmentación: semilla fija, resultado reproducible con los mismos datos.`,
+    `Secciones incluidas: lecturas en lenguaje sencillo de «Una variable», «Dos variables», «Correlaciones» y «Segmentación», tal como se ven en pantalla. No se incluyen tablas ni gráficos ni el panorama de datos.`, ''];
+  [['#reading1', 'UNA VARIABLE'], ['#reading2', 'DOS VARIABLES'], ['#reading3', 'CORRELACIONES'], ['#reading4', 'SEGMENTACIÓN']].forEach(([s, t]) => { const e = $(s); if (e) L.push(t, '', ...[...e.querySelectorAll('p')].map(p => p.textContent), ''); else L.push(t, '', '(sin resultados que mostrar con la selección actual)', ''); });
   L.push('Generado con el Panel de análisis descriptivo. Los valores p son orientativos.'); return L.join('\n');
 }
 

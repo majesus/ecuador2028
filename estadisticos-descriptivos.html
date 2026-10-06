@@ -180,8 +180,8 @@ figcaption{margin-top:16px;font-size:13px;line-height:1.5;color:var(--t3);max-wi
 .txt.red{fill:var(--accent-t)}
 .txt.muted{fill:var(--t2)}
 .read{min-height:3em;font-size:13px;line-height:1.5;color:var(--text);margin-top:8px;font-variant-numeric:tabular-nums}
-.pair{display:grid;gap:32px}
-@media(min-width:768px){.pair{grid-template-columns:1fr 1fr}}
+.pair{display:grid;gap:32px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:768px){.pair{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* ───────── Reading & table ───────── */
 .reading{border-top:1px solid var(--text);padding-top:16px;margin-top:32px}
@@ -305,8 +305,11 @@ details.opt .formulas{margin-top:32px}
 .gcard .nums div{border-top:1px solid var(--border);padding-top:8px}
 .gcard .nums b{display:block;font-weight:300;font-size:1.5rem;line-height:1.2}
 .gcard .btn{margin-top:auto}
-.four{display:grid;gap:32px}
-@media(min-width:768px){.four{grid-template-columns:1fr 1fr}}
+.four{display:grid;gap:32px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:768px){.four{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pair>*,.four>*{min-width:0}
+.chart{min-width:0;max-width:100%}
+.chart>svg{max-width:100%;height:auto}
 .bar-fill.mid{background:var(--accent);opacity:.6}
 .rtab td.l,.rtab th.l{text-align:left}
 .rtab td{vertical-align:top;font-size:14px;line-height:1.5;color:var(--t2)}
@@ -441,7 +444,7 @@ select{min-height:44px;max-width:100%;border:1px solid var(--text);background:va
         <h2 id="h-ej">Los siete números en un ejemplo</h2>
         <p class="body" style="margin-top:16px">Once clientes de una cafetería pagan su cuenta. El dato es el gasto de cada cliente, en euros. Los gastos son parecidos. Ahora imagine que el último cliente hace un pedido para toda su oficina y paga 45 €. Pulse el botón y mire cómo cambian los siete números.</p>
         <div class="tog">
-          <button type="button" class="btn" id="exBtn" aria-pressed="false">Cambiar la última espera a 45</button>
+          <button type="button" class="btn" id="exBtn" aria-pressed="false">Cambiar el último gasto a 45 €</button>
           <span class="hint" style="margin:0" id="exState"></span>
         </div>
       </div>
@@ -567,6 +570,16 @@ select{min-height:44px;max-width:100%;border:1px solid var(--text);background:va
             <button type="button" class="btn" id="b-reset">Restablecer</button>
           </div>
           <p class="hint" id="seedinfo"></p>
+          <details class="rd" id="edBox">
+            <summary><span class="lbl">Editar un dato con el teclado</span></summary>
+            <div class="rd-b">
+              <p class="hint" style="margin-top:0">Alternativa a arrastrar los puntos: elija el número del dato, escriba su nuevo valor y aplíquelo.</p>
+              <div class="field"><label class="lbl" for="edIdx">Dato número</label><select id="edIdx"></select></div>
+              <div class="field"><label class="lbl" for="edVal">Nuevo valor</label><input id="edVal" type="text" inputmode="decimal" autocomplete="off" style="min-height:44px;max-width:100%;width:100%;border:1px solid var(--text);background:var(--bg);color:var(--text);border-radius:0;padding:0 12px;font:inherit"></div>
+              <div class="btns"><button type="button" class="btn" id="edApply">Aplicar el valor</button><button type="button" class="btn" id="edUndo">Restaurar este dato</button></div>
+              <p class="hint" id="edMsg" role="status" aria-live="polite"></p>
+            </div>
+          </details>
           <p class="hint">Los puntos que mueva a mano afectan a la figura 1, a las tarjetas y a la tabla 2. Las figuras de las secciones 05 y 06 usan la muestra sin editar.</p>
         </div>
       </div>
@@ -626,6 +639,7 @@ select{min-height:44px;max-width:100%;border:1px solid var(--text);background:va
       <div class="c12 m9">
         <h2 id="h-gal">Cómo se ven las formas</h2>
         <p class="body" style="margin-top:16px">La asimetría y la curtosis son difíciles de imaginar solo con números. Esta galería muestra seis formas típicas. Cada una usa una muestra de 4000 datos, para que el azar pese poco. En las formas simétricas, la muestra se refleja respecto al centro: así su asimetría vale exactamente 0.</p>
+        <div class="mdl-warn" style="margin-top:16px"><p style="color:var(--t2);font-size:15px"><b>Un valor de 0 no prueba nada.</b> La asimetría y la curtosis son resúmenes, no la forma completa. Los datos −3, −1, −1, −1, −1, −1, 2, 2, 2, 2 tienen asimetría 0 y no son simétricos. Los datos −√3, 0, 0, 0, 0, √3 tienen curtosis en exceso 0 y son seis valores sueltos, no una campana normal. Mire siempre el gráfico.</p></div>
         <p class="body">Pulse «Probar en el laboratorio» para cargar una forma y añadirle extremos.</p>
       </div>
     </div>
@@ -717,7 +731,7 @@ select{min-height:44px;max-width:100%;border:1px solid var(--text);background:va
         <ol class="steps">
           <li><span><b>Un solo extremo.</b> Toda la dispersión extra viene de un dato. Un dato lejano manda, y la curtosis es muy positiva (leptocúrtica). Ejemplo: en una cafetería, casi todos toman un café y un cliente pide para toda la oficina.</span></li>
           <li><span><b>Más extremos.</b> Los pedidos grandes dejan de ser una rareza. Cuando son cerca de 21 % de los clientes, la curtosis cruza el 0: ya no hay más datos lejanos de lo normal.</span></li>
-          <li><span><b>Mitad y mitad.</b> Con 50 %, hay dos grupos del mismo tamaño. Todos los clientes están a la misma distancia del gasto medio, y ninguno es más raro que otro. La curtosis llega a su mínimo posible, −2 (platicúrtica).</span></li>
+          <li><span><b>Mitad y mitad.</b> Con 50 %, hay dos grupos del mismo tamaño. Todos los clientes están casi a la misma distancia del gasto medio, y ninguno es más raro que otro. La curtosis se acerca a su límite teórico, −2, que solo se alcanzaría si cada grupo fuera un único valor. Como cada grupo tiene su propia dispersión, el valor calculado queda algo por encima de −2 (platicúrtica).</span></li>
           <li><span><b>Más de 79 %.</b> Ahora los clientes normales son la rareza. Los datos lejanos vuelven a ser pocos, y la curtosis vuelve a ser positiva.</span></li>
         </ol>
         <div class="mdl-warn" style="margin-top:16px"><p style="color:var(--t2);font-size:15px"><b>Qué papel tiene la distancia d.</b> Con una d grande, los dos grupos quedan separados y la curva sigue siempre el mismo trazo: positiva hasta 21 %, mínima en 50 % y positiva desde 79 %. Con una d pequeña, los dos grupos se mezclan en una sola campana ancha y el efecto se atenúa. La distancia no cambia el signo: decide cuánto se acerca la muestra a ese trazo.</p></div>
@@ -1065,19 +1079,26 @@ const std = (P, fam, i) => (FAM[fam].f(P, i) - FAM[fam].m) / FAM[fam].s;
 
 /* ───────── Estadísticos ───────── */
 const quant = (s, p) => { const h = (s.length - 1) * p, lo = Math.floor(h), hi = Math.ceil(h); return s[lo] + (h - lo) * (s[hi] - s[lo]); };
+/* Asimetría (g1) y curtosis en exceso (g2) con centrado y escalado: no dependen de la unidad. NaN si todos los datos son iguales. */
+function shapeOf(a, mean){
+  const n = a.length; let sc = 0; for (const v of a){ const d = Math.abs(v - mean); if (d > sc) sc = d; }
+  if (!(sc > 0) || sc <= 1e-12 * Math.abs(mean)) return {g1: NaN, g2: NaN};
+  let s2 = 0, s3 = 0, s4 = 0; for (const v of a){ const z = (v - mean) / sc, z2 = z * z; s2 += z2; s3 += z2 * z; s4 += z2 * z2; }
+  s2 /= n; s3 /= n; s4 /= n; return {g1: s3 / Math.pow(s2, 1.5), g2: s4 / (s2 * s2) - 3};
+}
 function stats(a){
   const n = a.length, s = Float64Array.from(a).sort();
   let t = 0; for (const v of a) t += v;
   const mean = t / n, med = quant(s, 0.5), q1 = quant(s, 0.25), q3 = quant(s, 0.75);
   let m2 = 0, m3 = 0, m4 = 0;
   for (const v of a){ const d = v - mean, d2 = d * d; m2 += d2; m3 += d2 * d; m4 += d2 * d2; }
-  const ss = m2; m2 /= n; m3 /= n; m4 /= n;
+  const ss = m2; m2 /= n; m3 /= n; m4 /= n; const sh = shapeOf(a, mean);
   const sd = n > 1 ? Math.sqrt(ss / (n - 1)) : 0;
   const ad = Float64Array.from(a, v => Math.abs(v - med)).sort(), mad = quant(ad, 0.5);
   const iqr = q3 - q1;
   return {n, mean, med, q1, q3, iqr, iqrS: iqr / KI, sd, mad, madS: K * mad, m2, m3, m4, ss, min: s[0], max: s[n - 1],
-    skew: m2 > 1e-12 ? m3 / Math.pow(m2, 1.5) : NaN, kurt: m2 > 1e-12 ? m4 / (m2 * m2) - 3 : NaN,
-    bowley: iqr > 1e-12 ? (q3 + q1 - 2 * med) / iqr : NaN};
+    skew: sh.g1, kurt: sh.g2,
+    bowley: iqr > 0 ? (q3 + q1 - 2 * med) / iqr : NaN};
 }
 
 /* ───────── Estado ───────── */
@@ -1199,7 +1220,7 @@ function drawA(){
   const host = $('#chartA');
   host.addEventListener('pointerdown', e => {
     const t = e.target.closest('[data-i]'); if (!t || !host._A) return;
-    drag = {i: +t.dataset.i, dom: host._A.dom.slice()};
+    S.note = ''; drag = {i: +t.dataset.i, dom: host._A.dom.slice()};
     host.setPointerCapture(e.pointerId); e.preventDefault();
   });
   host.addEventListener('pointermove', e => {
@@ -1229,11 +1250,13 @@ function lineChart(host, o){
   xt.forEach(v => { g += `<text class="tk" x="${sx(v)}" y="${H - m.b + 18}" text-anchor="middle">${o.xFmt ? o.xFmt(v) : nf(v, xd)}</text><line class="gl" x1="${sx(v)}" x2="${sx(v)}" y1="${m.t}" y2="${m.t + ph}" opacity=".5"/>`; });
   g += `<line class="axis" x1="${m.l}" x2="${W - m.r}" y1="${m.t + ph}" y2="${m.t + ph}"/>`;
   g += `<text class="ax-lab" x="${m.l}" y="12">${o.yLab || ''}</text><text class="ax-lab" x="${W - m.r}" y="${H - 4}" text-anchor="end">${o.xLab || ''}</text>`;
+  let nout = 0, ext = 0; o.series.forEach(s => s.pts.forEach(q => { if (Number.isFinite(q[1]) && (q[1] > y1 || q[1] < y0)){ nout++; ext = Math.max(ext, Math.abs(q[1])); } }));
+  if (nout) g += `<text class="mk-t" x="${W - m.r}" y="${m.t - 6}" text-anchor="end">${nout} puntos fuera de la escala (hasta ${nf(ext)})</text>`;
   let body = '';
   (o.refs || []).forEach(r => { if (r.y >= y0 && r.y <= y1) body += `<line class="ref" x1="${m.l}" x2="${W - m.r}" y1="${sy(r.y)}" y2="${sy(r.y)}"/><text class="tk" x="${W - m.r - 4}" y="${sy(r.y) - 5}" text-anchor="end">${r.label}</text>`; });
   (o.markers || []).forEach(k => { if (k.x >= x0 && k.x <= x1) body += `<line class="mk" x1="${sx(k.x)}" x2="${sx(k.x)}" y1="${m.t}" y2="${m.t + ph}"/><text class="mk-t" x="${sx(k.x) + 4}" y="${m.t + 12}">${k.label}</text>`; });
   o.series.forEach(s => {
-    const d = s.pts.map((p, i) => (i ? 'L' : 'M') + sx(p[0]).toFixed(1) + ' ' + sy(p[1]).toFixed(1)).join('');
+    let d = '', pen = false; s.pts.forEach(p => { if (!Number.isFinite(p[1])){ pen = false; return; } d += (pen ? 'L' : 'M') + sx(p[0]).toFixed(1) + ' ' + sy(p[1]).toFixed(1); pen = true; });
     body += `<path class="ln ${s.cls}${s.dash ? ' dash' : ''}" d="${d}" clip-path="url(#${id})"/>`;
   });
   let hv = `<line class="hv" id="${id}l" y1="${m.t}" y2="${m.t + ph}" visibility="hidden"/>`;
@@ -1245,16 +1268,28 @@ function lineChart(host, o){
   if (cap) cap.dataset.def = o.capDefault || '';
   if (!host._hook){
     host._hook = true;
+    const show = bi => {
+      const L = host._L; if (!L) return; const pts = L.o.series[0].pts;
+      const lx = L.sx(pts[bi][0]), ln = host.querySelector('#' + L.id + 'l');
+      ln.setAttribute('x1', lx); ln.setAttribute('x2', lx); ln.setAttribute('visibility', 'visible');
+      L.o.series.forEach((s, i) => { const c = host.querySelector('#' + L.id + 'c' + i); if (!Number.isFinite(s.pts[bi][1])){ c.setAttribute('visibility', 'hidden'); return; } c.setAttribute('cx', lx); c.setAttribute('cy', clamp(L.sy(s.pts[bi][1]), L.m.t, L.m.t + (L.o.h || 250) - L.m.t - L.m.b)); c.setAttribute('visibility', 'visible'); });
+      const c = L.o.cap ? $(L.o.cap) : null; if (c) c.textContent = L.o.hover(bi);
+    };
     host.addEventListener('pointermove', e => {
       const L = host._L; if (!L) return;
       const r = host.getBoundingClientRect(), px = e.clientX - r.left;
       const pts = L.o.series[0].pts; let bi = 0, bd = 1e9;
       for (let i = 0; i < pts.length; i++){ const dd = Math.abs(L.sx(pts[i][0]) - px); if (dd < bd){ bd = dd; bi = i; } }
-      const lx = L.sx(pts[bi][0]), ln = host.querySelector('#' + L.id + 'l');
-      ln.setAttribute('x1', lx); ln.setAttribute('x2', lx); ln.setAttribute('visibility', 'visible');
-      L.o.series.forEach((s, i) => { const c = host.querySelector('#' + L.id + 'c' + i); c.setAttribute('cx', lx); c.setAttribute('cy', clamp(L.sy(s.pts[bi][1]), L.m.t, L.m.t + (L.o.h || 250) - L.m.t - L.m.b)); c.setAttribute('visibility', 'visible'); });
-      const c = L.o.cap ? $(L.o.cap) : null; if (c) c.textContent = L.o.hover(bi);
+      show(bi);
     });
+    // Teclado: Tab entra en el gráfico; flechas, Inicio y Fin recorren los valores y el pie de figura los anuncia.
+    host.tabIndex = 0;
+    host.addEventListener('keydown', e => {
+      const L = host._L; if (!L) return; const n = L.o.series[0].pts.length; let i = host._cur == null ? -1 : host._cur;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') i = Math.min(n - 1, i + 1); else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') i = Math.max(0, i < 0 ? 0 : i - 1); else if (e.key === 'Home') i = 0; else if (e.key === 'End') i = n - 1; else return;
+      e.preventDefault(); host._cur = i; const c = L.o.cap ? $(L.o.cap) : null; if (c) c.setAttribute('aria-live', 'polite'); show(i);
+    });
+    host.addEventListener('blur', () => { host._cur = null; const L = host._L; if (!L) return; const c = L.o.cap ? $(L.o.cap) : null; if (c){ c.removeAttribute('aria-live'); c.textContent = c.dataset.def || ''; } host.querySelectorAll('[visibility=visible]').forEach(n => n.setAttribute('visibility', 'hidden')); });
     host.addEventListener('pointerleave', () => {
       const L = host._L; if (!L) return;
       host.querySelectorAll('[visibility=visible]').forEach(n => n.setAttribute('visibility', 'hidden'));
@@ -1302,7 +1337,7 @@ function drawReadouts(){
   $('#o-k').textContent = `${S.k} (${nf(100 * S.k / S.n, 0)} %)`;
   $('#o-d').textContent = nf(S.d, 1) + SIG;
   $('#famHelp').textContent = FAM[S.fam].help;
-  $('#seedinfo').textContent = `Semilla ${S.seed}.` + (S.over.size ? ` Movió ${[...S.over.keys()].filter(i => i < S.n).length} dato(s) a mano.` : '');
+  $('#seedinfo').textContent = `Semilla ${S.seed}.` + (S.note ? ' ' + S.note : '') + (S.over.size ? ` Movió ${[...S.over.keys()].filter(i => i < S.n).length} dato(s) a mano. Las figuras de las secciones 05 y 06 no los incluyen.` : '');
 }
 
 /* ───────── Ejemplo guiado ───────── */
@@ -1345,7 +1380,7 @@ function drawEx(){
   $('#exGSkew').innerHTML = gaugeHTML(st.skew, b0.skew, -3, 3, 'Cola izquierda larga', 'Cola derecha larga');
   $('#exGKurt').innerHTML = gaugeHTML(st.kurt, b0.kurt, -2, 10, 'Platicúrtica · colas ligeras', 'Leptocúrtica · colas pesadas');
   $('#exBtn').setAttribute('aria-pressed', exOn);
-  $('#exBtn').textContent = exOn ? 'Volver al gasto original (12 €)' : 'Cambiar la última espera a 45';
+  $('#exBtn').textContent = exOn ? `Volver al gasto original (${nf(EX[10], 0)} €)` : 'Cambiar el último gasto a 45 €';
   $('#exState').textContent = exOn ? 'El cliente 11 gasta 45 €.' : 'Los once gastos son parecidos.';
 
   const rs = st.sd / b0.sd, rm = st.madS / b0.madS;
@@ -1440,7 +1475,7 @@ function drawGallery(){
 
 /* ───────── Figuras 2 y 3: cuatro paneles ───────── */
 function fourPanels(pre, X, rows, o){
-  const ser = f => X.map((x, i) => [x, Number.isFinite(f(rows[i])) ? f(rows[i]) : 0]);
+  const ser = f => X.map((x, i) => [x, f(rows[i])]);   // un valor no calculable (NaN) deja un hueco en la línea
   const ext = (arr, lo0, hi0) => { const l = Math.min(...arr, lo0), h = Math.max(...arr, hi0); return [l, h]; };
   const sg = S.sigma, mu = S.mu;
   // Panel 1
@@ -1454,10 +1489,10 @@ function fourPanels(pre, X, rows, o){
   const [l4, h4] = ext(rows.map(r => r.kurt).filter(Number.isFinite), 0, 0);
   const base = {xDom: o.xDom, xTicks: o.xTicks, xFmt: o.xFmt, xLab: o.xLab, markers: o.markers, h: 240, yLab: 'Valor'};
   const hov = (i, t) => `${o.hdr(i)} ${t}`;
-  lineChart($(`#ch${pre}1`), {...base, yDom: pad(l1, h1), series: [{cls: 'ink', pts: ser(r => r.mean)}, {cls: 'red', pts: ser(r => r.med)}], refs: [{y: mu, label: 'μ'}], cap: `#cp${pre}1`, capDefault: 'Mueva el puntero sobre el gráfico.', hover: i => hov(i, `Media: ${nf(rows[i].mean)}. Mediana: ${nf(rows[i].med)}.`)});
-  lineChart($(`#ch${pre}2`), {...base, yDom: [0, h2 * 1.08], series: [{cls: 'ink', pts: ser(r => r.sd)}, {cls: 'red', pts: ser(r => r.madS)}, {cls: 'red', dash: true, pts: ser(r => r.iqrS)}], refs: [{y: sg, label: 'σ'}], cap: `#cp${pre}2`, capDefault: 'Mueva el puntero sobre el gráfico.', hover: i => hov(i, `SD: ${nf(rows[i].sd)}. MAD escalada: ${nf(rows[i].madS)}. IQR ÷ 1,349: ${nf(rows[i].iqrS)}.`)});
-  lineChart($(`#ch${pre}3`), {...base, yDom: pad(l3, h3, 0.12), series: [{cls: 'ink', pts: ser(r => r.skew)}, {cls: 'red', pts: ser(r => r.bowley)}], refs: [{y: 0, label: '0 = simétrica'}], cap: `#cp${pre}3`, capDefault: 'Mueva el puntero sobre el gráfico.', hover: i => hov(i, `Asimetría: ${nf(rows[i].skew)}. Bowley: ${nf(rows[i].bowley)}.`)});
-  lineChart($(`#ch${pre}4`), {...base, yDom: pad(l4, h4, 0.12), series: [{cls: 'ink', pts: ser(r => r.kurt)}], refs: [{y: 0, label: '0 = campana normal'}], cap: `#cp${pre}4`, capDefault: 'Mueva el puntero sobre el gráfico.', hover: i => hov(i, `Curtosis: ${nf(rows[i].kurt)}.`)});
+  lineChart($(`#ch${pre}1`), {...base, yDom: pad(l1, h1), series: [{cls: 'ink', pts: ser(r => r.mean)}, {cls: 'red', pts: ser(r => r.med)}], refs: [{y: mu, label: 'μ'}], cap: `#cp${pre}1`, capDefault: 'Mueva el puntero sobre el gráfico o, con el teclado, enfóquelo y use las flechas.', hover: i => hov(i, `Media: ${nf(rows[i].mean)}. Mediana: ${nf(rows[i].med)}.`)});
+  lineChart($(`#ch${pre}2`), {...base, yDom: [0, h2 * 1.08], series: [{cls: 'ink', pts: ser(r => r.sd)}, {cls: 'red', pts: ser(r => r.madS)}, {cls: 'red', dash: true, pts: ser(r => r.iqrS)}], refs: [{y: sg, label: 'σ'}], cap: `#cp${pre}2`, capDefault: 'Mueva el puntero sobre el gráfico o, con el teclado, enfóquelo y use las flechas.', hover: i => hov(i, `SD: ${nf(rows[i].sd)}. MAD escalada: ${nf(rows[i].madS)}. IQR ÷ 1,349: ${nf(rows[i].iqrS)}.`)});
+  lineChart($(`#ch${pre}3`), {...base, yDom: pad(l3, h3, 0.12), series: [{cls: 'ink', pts: ser(r => r.skew)}, {cls: 'red', pts: ser(r => r.bowley)}], refs: [{y: 0, label: '0 = simétrica'}], cap: `#cp${pre}3`, capDefault: 'Mueva el puntero sobre el gráfico o, con el teclado, enfóquelo y use las flechas.', hover: i => hov(i, `Asimetría: ${nf(rows[i].skew)}. Bowley: ${nf(rows[i].bowley)}.`)});
+  lineChart($(`#ch${pre}4`), {...base, yDom: pad(l4, h4, 0.12), series: [{cls: 'ink', pts: ser(r => r.kurt)}], refs: [{y: 0, label: '0 = campana normal'}], cap: `#cp${pre}4`, capDefault: 'Mueva el puntero sobre el gráfico o, con el teclado, enfóquelo y use las flechas.', hover: i => hov(i, `Curtosis: ${nf(rows[i].kurt)}.`)});
 }
 let LB = null, LC = null;
 function drawB(){
@@ -1514,8 +1549,8 @@ function drawKurt(){
   $('#kt').value = kt;
   $('#o-kt').textContent = `${nf(k)} · ${ty}`;
   const card = (nm, v, sub, big) => `<div class="card ink"><div class="lbl"><span class="mark"></span>${nm}</div><div class="v${big ? ' sm' : ''}">${v}</div><div class="s">${sub}</div></div>`;
-  $('#kCards').innerHTML = card('Curtosis en exceso', nf(k), 'Campana normal: 0') + card('Tipo', ty[0].toUpperCase() + ty.slice(1), 'Colas ' + (ty === 'leptocúrtica' ? 'pesadas' : ty === 'platicúrtica' ? 'ligeras' : 'como la campana normal'), true) + card('Datos a más de 3 SD', p < 1e-6 ? '≈ 0 %' : nf(p * 100, 2) + ' %', `${oneIn(p)} · Normal: ${nf(P_NORM3 * 100, 2)} %`);
-  $('#kTake').innerHTML = `<span class="lbl">Qué muestra esta forma</span><p>${ty === 'leptocúrtica' ? 'Los datos lejanos aparecen más a menudo que en una campana normal. Un valor extremo no sorprende. La SD es la misma, pero esa SD se reparte entre un centro más agudo y colas más largas.' : ty === 'platicúrtica' ? 'Los datos lejanos son más raros que en una campana normal. Casi todos caen a una distancia parecida del centro. Con la misma SD, la curva es más ancha y no tiene colas.' : 'Los datos lejanos aparecen con la misma frecuencia que en una campana normal. Esta forma sirve de referencia para las demás.'}</p>`;
+  $('#kCards').innerHTML = card('Curtosis en exceso', nf(k), 'Campana normal: 0') + card('Tipo', ty[0].toUpperCase() + ty.slice(1), 'Colas ' + (ty === 'leptocúrtica' ? 'pesadas' : ty === 'platicúrtica' ? 'ligeras' : 'similares a las de la campana normal'), true) + card('Datos a más de 3 SD', p < 1e-6 ? '≈ 0 %' : nf(p * 100, 2) + ' %', `${oneIn(p)} · Normal: ${nf(P_NORM3 * 100, 2)} %`);
+  $('#kTake').innerHTML = `<span class="lbl">Qué muestra esta forma</span><p>${ty === 'leptocúrtica' ? 'Los datos lejanos aparecen más a menudo que en una campana normal. Un valor extremo no sorprende. La SD es la misma, pero esa SD se reparte entre un centro más agudo y colas más largas.' : ty === 'platicúrtica' ? 'Los datos lejanos son más raros que en una campana normal. Casi todos caen a una distancia parecida del centro. Con la misma SD, la curva es más ancha y no tiene colas.' : 'Dentro de esta familia de formas, los datos lejanos aparecen con la misma frecuencia que en una campana normal, y sirve de referencia. Fuera de ella, una curtosis cercana a 0 no garantiza que la forma sea normal.'}</p>`;
   const xs1 = [], xs2 = [];
   for (let x = -5; x <= 5.0001; x += 0.05) xs1.push(+x.toFixed(2));
   for (let x = 2; x <= 5.0001; x += 0.02) xs2.push(+x.toFixed(2));
@@ -1524,10 +1559,10 @@ function drawKurt(){
   const y1 = Math.max(...s1.map(q => q[1]), 0.4) * 1.1, y2 = Math.max(s2[0][1], n2[0][1]) * 1.1;
   const xF = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + ' SD';
   lineChart($('#chK1'), {h: 260, xDom: [-5, 5], yDom: [0, y1], xTicks: [-4, -2, 0, 2, 4], xFmt: xF, xLab: 'Distancia a la media', yLab: 'Densidad',
-    series: [{cls: 'ink', pts: s1}, {cls: 'ink', dash: true, pts: n1}], cap: '#cpK1', capDefault: 'Mueva el puntero sobre el gráfico.',
+    series: [{cls: 'ink', pts: s1}, {cls: 'ink', dash: true, pts: n1}], cap: '#cpK1', capDefault: 'Mueva el puntero sobre el gráfico o, con el teclado, enfóquelo y use las flechas.',
     hover: i => `A ${sgn(xs1[i], 1)} SD de la media. Densidad de la forma: ${nf(s1[i][1], 3)}. Densidad normal: ${nf(n1[i][1], 3)}.`});
   lineChart($('#chK2'), {h: 260, xDom: [2, 5], yDom: [0, y2], xTicks: [2, 3, 4, 5], xFmt: xF, xLab: 'Distancia a la media', yLab: 'Densidad',
-    yFmt: v => nf(v, 3), series: [{cls: 'ink', pts: s2}, {cls: 'ink', dash: true, pts: n2}], cap: '#cpK2', capDefault: 'Mueva el puntero sobre el gráfico.',
+    yFmt: v => nf(v, 3), series: [{cls: 'ink', pts: s2}, {cls: 'ink', dash: true, pts: n2}], cap: '#cpK2', capDefault: 'Mueva el puntero sobre el gráfico o, con el teclado, enfóquelo y use las flechas.',
     hover: i => `A ${nf(xs2[i], 1)} SD de la media. Densidad de la forma: ${nf(s2[i][1], 4)}. Densidad normal: ${nf(n2[i][1], 4)}.`});
 }
 const mixKurt = (eps, d) => { const w = [1 - eps, eps], m = [0, d], v = [1, Math.pow(0.06 * d, 2)], M = w[1] * d; let m2 = 0, m4 = 0; for (let i = 0; i < 2; i++){ const a = m[i] - M; m2 += w[i] * (a * a + v[i]); m4 += w[i] * (Math.pow(a, 4) + 6 * a * a * v[i] + 3 * v[i] * v[i]); } return m4 / (m2 * m2) - 3; };
@@ -1536,8 +1571,8 @@ function drawKMix(){
   const xs = KMIX.xs, big = xs.map(x => [x, mixKurt(x / 100, 30)]), sml = xs.map(x => [x, mixKurt(x / 100, 2)]);
   KMIX.big = big; KMIX.sml = sml;
   lineChart($('#chK3'), {h: 280, xDom: [0, 100], yDom: [-2.6, 12], xTicks: [0, 21, 50, 79, 100], xFmt: v => v + ' %', xLab: 'Proporción de valores extremos', yLab: 'Curtosis',
-    series: [{cls: 'ink', pts: big}, {cls: 'ink', dash: true, pts: sml}], refs: [{y: 0, label: '0 = campana normal'}, {y: -2, label: '−2: mínimo posible'}],
-    markers: [{x: 21, label: '21 %'}, {x: 50, label: '50 %'}, {x: 79, label: '79 %'}], cap: '#cpK3', capDefault: 'Mueva el puntero sobre el gráfico.',
+    series: [{cls: 'ink', pts: big}, {cls: 'ink', dash: true, pts: sml}], refs: [{y: 0, label: '0 = campana normal'}, {y: -2, label: '−2: límite teórico'}],
+    markers: [{x: 21, label: '21 %'}, {x: 50, label: '50 %'}, {x: 79, label: '79 %'}], cap: '#cpK3', capDefault: 'Mueva el puntero sobre el gráfico o, con el teclado, enfóquelo y use las flechas.',
     hover: i => `Con ${xs[i]} % de extremos: curtosis ${nf(big[i][1])} si d = 30 σ, y ${nf(sml[i][1])} si d = 2 σ.`});
 }
 function drawKTri(){
@@ -1809,7 +1844,8 @@ const CSV = {name: '', cols: [], body: 0, delim: ',', sel: -1, grp: -1, zoom: fa
 const MISSING = new Set(['', 'na', 'n/a', 'nan', 'null', 'none', '-', '.', '#n/a', 's/d', 'nd']);
 function parseNum(raw){
   let s = String(raw).trim(); if (!s) return NaN;
-  s = s.replace(/[ \s€$£%]/g, '').replace('−', '-');
+  s = s.replace(/^[\s€$£%]+|[\s€$£%]+$/g, '').replace('−', '-');   // símbolos solo en los extremos
+  if (/\s/.test(s)){ if (!/^[+-]?\d{1,3}(?:\s\d{3})+(?:[.,]\d+)?$/.test(s)) return NaN; s = s.replace(/\s/g, ''); }   // «1 2» no es 12; «1 234» sí es 1234
   const m = s.match(/^([+-]?)([\d.,]+)((?:e[+-]?\d+)?)$/i); if (!m) return NaN;
   let b = m[2];
   const dot = b.includes('.'), com = b.includes(',');
@@ -1832,39 +1868,51 @@ function detectDelim(text){
   for (const d of [';', '\t', ',', '|']){ let c = 0, q = false; for (const ch of first){ if (ch === '"') q = !q; else if (!q && ch === d) c++; } if (c > bc){ bc = c; best = d; } }
   return best;
 }
+const MAX_ROWS = 200000;
+/* Devuelve los registros leídos (como máximo MAX_ROWS + 1: títulos y datos). rows.total cuenta todos los registros del archivo. */
 function parseRows(text, delim){
-  const rows = []; let row = [], cur = '', q = false, i = 0; const N = text.length;
+  const rows = []; let row = [], cur = '', q = false, qAt = 0, line = 1, total = 0, i = 0; const N = text.length;
+  const end = () => { row.push(cur); cur = ''; if (row.length > 1 || row[0].trim() !== ''){ total++; if (rows.length <= MAX_ROWS) rows.push(row); } row = []; };
   while (i < N){
     const ch = text[i];
-    if (q){ if (ch === '"'){ if (text[i + 1] === '"'){ cur += '"'; i++; } else q = false; } else cur += ch; }
-    else if (ch === '"' && cur === '') q = true;
+    if (q){ if (ch === '"'){ if (text[i + 1] === '"'){ cur += '"'; i++; } else q = false; } else { if (ch === '\n') line++; cur += ch; } }
+    else if (ch === '"' && cur === ''){ q = true; qAt = line; }
     else if (ch === delim){ row.push(cur); cur = ''; }
-    else if (ch === '\n' || ch === '\r'){ if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.length > 1 || row[0].trim() !== '') rows.push(row); row = []; if (rows.length > 200000) break; }
+    else if (ch === '\n' || ch === '\r'){ if (ch === '\r' && text[i + 1] === '\n') i++; line++; end(); }
     else cur += ch;
     i++;
   }
-  if (cur !== '' || row.length){ row.push(cur); if (row.length > 1 || row[0].trim() !== '') rows.push(row); }
-  return rows;
+  if (q) throw new Error('Unas comillas se abren en la línea ' + qAt + ' y no se cierran. Ciérrelas o elimínelas.');
+  if (cur !== '' || row.length) end();
+  rows.total = total; return rows;
 }
 function buildModel(text, name){
   const delim = detectDelim(text), rows = parseRows(text, delim);
   if (rows.length < 2) throw new Error('El archivo necesita una fila de títulos y al menos una fila de datos.');
-  const width = Math.max(...rows.slice(0, 200).map(r => r.length));
+  const width = rows[0].length; let short = 0;
+  for (let q = 1; q < rows.length; q++){ const L = rows[q].length; if (L > width) throw new Error(`La fila ${q + 1} tiene ${L} campos y la primera solo ${width}. Revise el separador y las comillas, o añada el título que falta.`); if (L < width) short++; }
   const isNumOrMissing = c => MISSING.has(c.trim().toLowerCase()) || Number.isFinite(parseNum(c));
   const hasHeader = !rows[0].every(isNumOrMissing);
   const used = new Set(), headers = Array.from({length: width}, (_, j) => { let h = hasHeader ? String(rows[0][j] ?? '').trim() : ''; if (!h) h = 'columna ' + (j + 1); let u = h, k = 2; while (used.has(u)) u = h + ' (' + (k++) + ')'; used.add(u); return u; });
-  const body = hasHeader ? rows.slice(1) : rows, cols = [];
+  let body = hasHeader ? rows.slice(1) : rows; const cols = [], warn = [];
+  if (body.length > MAX_ROWS) body = body.slice(0, MAX_ROWS);
+  const omitted = rows.total - (hasHeader ? 1 : 0) - body.length;
+  if (omitted > 0) warn.push(`Atención: el archivo tiene ${omitted.toLocaleString('es-ES')} filas de datos más que el límite de ${MAX_ROWS.toLocaleString('es-ES')}. Se han leído solo las primeras ${MAX_ROWS.toLocaleString('es-ES')}: los resultados no incluyen las demás.`);
+  if (short) warn.push(`${short.toLocaleString('es-ES')} ${short === 1 ? 'fila tiene' : 'filas tienen'} menos campos que los títulos. Sus huecos cuentan como datos faltantes.`);
   for (let j = 0; j < width; j++){
-    const strs = body.map(r => String(r[j] ?? '').trim()), vals = [], uniq = new Set(); let nonMissing = 0;
-    for (const s of strs){ if (MISSING.has(s.toLowerCase())) continue; nonMissing++; if (uniq.size <= 5000) uniq.add(s); const v = parseNum(s); if (Number.isFinite(v)) vals.push(v); }
-    const num = nonMissing >= 3 && vals.length / nonMissing >= 0.9;
-    cols.push({name: headers[j], strs, nonMissing, uniq: uniq.size, num, vals: num ? vals : [], nBad: num ? nonMissing - vals.length : 0, idLike: num && uniq.size === nonMissing && nonMissing > 5 && vals.every(Number.isInteger)});
+    const strs = body.map(r => String(r[j] ?? '').trim()), vals = [], uniq = new Set(), badEx = []; let nonMissing = 0;
+    for (const s of strs){ if (MISSING.has(s.toLowerCase())) continue; nonMissing++; if (uniq.size <= 5000) uniq.add(s); const v = parseNum(s); if (Number.isFinite(v)) vals.push(v); else if (badEx.length < 5 && !badEx.includes(s)) badEx.push(s); }
+    const num = nonMissing >= 3 && vals.length / nonMissing >= 0.9, loose = !num && vals.length >= 3 && vals.length / nonMissing >= 0.5;   // «loose»: entre el 50 % y el 90 % son números; se ofrece con aviso
+    cols.push({name: headers[j], strs, nonMissing, uniq: uniq.size, num, loose, vals: num || loose ? vals : [], nBad: num || loose ? nonMissing - vals.length : 0, badEx, idLike: num && uniq.size === nonMissing && nonMissing > 5 && vals.every(Number.isInteger)});
   }
-  return {name, delim, body: body.length, cols, hasHeader};
+  return {name, delim, body: body.length, cols, hasHeader, warn, omitted};
 }
+let LAST_ENC = '';
 async function csvRead(file){
-  const buf = await file.arrayBuffer(); let text = new TextDecoder('utf-8').decode(buf);
-  if (text.includes('�')) text = new TextDecoder('windows-1252').decode(buf);
+  const buf = await file.arrayBuffer(), u = new Uint8Array(buf); let text;
+  if (u[0] === 0xFF && u[1] === 0xFE){ LAST_ENC = 'UTF-16 (little endian)'; text = new TextDecoder('utf-16le').decode(buf); }
+  else if (u[0] === 0xFE && u[1] === 0xFF){ LAST_ENC = 'UTF-16 (big endian)'; text = new TextDecoder('utf-16be').decode(buf); }
+  else { try { text = new TextDecoder('utf-8', {fatal: true}).decode(buf); LAST_ENC = 'UTF-8'; } catch (e){ text = new TextDecoder('windows-1252').decode(buf); LAST_ENC = 'Windows-1252 (el archivo no era UTF-8 válido)'; } }
   if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
   return text;
 }
@@ -1883,16 +1931,34 @@ function sampleCSV(){
   return lines.join('\n');
 }
 
+/* Jarque–Bera. Hasta n = 2000 el valor p se calibra por simulación (muestras normales del mismo tamaño, semilla fija), porque la referencia ji-cuadrado solo es fiable con muchos datos. */
+const JB_CACHE = new Map();
+function jbTest(st, n){
+  if (n < 8 || !Number.isFinite(st.skew) || !Number.isFinite(st.kurt)) return {stat: NaN, p: NaN, method: ''};
+  const jb = n / 6 * (st.skew * st.skew + st.kurt * st.kurt / 4);
+  if (n > 2000) return {stat: jb, p: Math.exp(-jb / 2), method: 'aproximación asintótica (ji-cuadrado con 2 grados de libertad)'};
+  let sim = JB_CACHE.get(n);
+  if (!sim){
+    const B = n <= 500 ? 2000 : 1000, r = rng(9000 + n), buf = new Float64Array(n); sim = new Float64Array(B);
+    for (let b = 0; b < B; b++){
+      for (let i = 0; i < n; i += 2){ const u1 = Math.max(r(), 1e-12), u2 = r(), mm = Math.sqrt(-2 * Math.log(u1)); buf[i] = mm * Math.cos(2 * Math.PI * u2); if (i + 1 < n) buf[i + 1] = mm * Math.sin(2 * Math.PI * u2); }
+      let t = 0; for (let i = 0; i < n; i++) t += buf[i]; const sh = shapeOf(buf, t / n); sim[b] = n / 6 * (sh.g1 * sh.g1 + sh.g2 * sh.g2 / 4);
+    }
+    sim.sort(); JB_CACHE.set(n, sim);
+  }
+  let c = 0; for (let b = sim.length - 1; b >= 0 && sim[b] >= jb; b--) c++;
+  return {stat: jb, p: (c + 1) / (sim.length + 1), method: `simulación con ${sim.length} muestras normales del mismo tamaño`};
+}
 /* Análisis de una variable */
 function analyzeVar(vals){
   const a = Float64Array.from(vals), s = Float64Array.from(a).sort(), n = a.length, st = stats(a);
   const f1 = st.q1 - 1.5 * st.iqr, f2 = st.q3 + 1.5 * st.iqr, uniq = new Set(a).size, allInt = a.every(Number.isInteger);
   const lows = s.filter(v => v < f1), highs = s.filter(v => v > f2), inl = s.filter(v => v >= f1 && v <= f2);
   let c2 = 0, c3 = 0; if (st.sd > 0) for (const v of a){ const z = Math.abs(v - st.mean) / st.sd; if (z > 2) c2++; if (z > 3) c3++; }
-  const jb = n / 6 * (Math.pow(st.skew || 0, 2) + Math.pow(st.kurt || 0, 2) / 4);
-  const sc = Math.max(Math.abs(st.mean), st.sd), dg = sc >= 1000 ? 0 : sc >= 100 ? 1 : 2;
+  const jbr = jbTest(st, n);
+  const sc = Math.max(Math.abs(st.mean), st.sd), dg = sc >= 1000 ? 0 : sc >= 100 ? 1 : sc >= 1 || !(sc > 0) ? 2 : Math.min(12, 2 + Math.ceil(-Math.log10(sc)));   // más decimales cuando la escala es pequeña
   return {a, s, n, st, f1, f2, uniq, allInt, discrete: allInt && uniq <= 10 && uniq >= 2, lows, highs, stIn: (lows.length + highs.length) > 0 && inl.length >= 3 ? stats(inl) : null,
-    frac2: c2 / n, frac3: c3 / n, jb, pJB: Math.exp(-jb / 2), perc: [1, 5, 10, 25, 50, 75, 90, 95, 99].map(p => quant(s, p / 100)), dg,
+    frac2: c2 / n, frac3: c3 / n, jb: jbr.stat, pJB: jbr.p, jbMethod: jbr.method, perc: [1, 5, 10, 25, 50, 75, 90, 95, 99].map(p => quant(s, p / 100)), dg,
     cv: st.mean !== 0 ? st.sd / Math.abs(st.mean) : NaN};
 }
 const csvKinds = (st, dg) => [['Media', st.mean, 'ink', 'El promedio'], ['Mediana', st.med, 'red', 'El dato del medio'], ['SD', st.sd, 'ink', 'Dispersión clásica'], ['MAD escalada', st.madS, 'red', 'Dispersión robusta'], ['IQR', st.iqr, 'red', 'Anchura de la mitad central'], ['Asimetría', st.skew, 'ink', 'Hacia dónde se alarga la cola'], ['Curtosis', st.kurt, 'ink', 'Peso de las colas · ' + kurtType(st.kurt)]];
@@ -1919,7 +1985,8 @@ function csvNarrative(an, name, total){
     out.push(`<p><b>Extremos.</b> Según la regla de Tukey (más de 1,5 veces el IQR por fuera de la caja), hay ${pl(outs, 'valor extremo', 'valores extremos')} (${nf(outs / n * 100, 1)} % de los datos): ${pl(an.highs.length, 'alto', 'altos')} y ${pl(an.lows.length, 'bajo', 'bajos')}. ${an.highs.length ? `El mayor vale ${nf(st.max, d)}. ` : ''}${an.lows.length ? `El menor vale ${nf(st.min, d)}. ` : ''}${tail} Examine la causa de cada uno antes de borrarlo: puede ser un error de registro o un cliente real muy importante.</p>`);
   }
   if (an.discrete) out.push('<p><b>Normalidad.</b> Con tan pocos valores distintos, una prueba de normalidad no es informativa. Use la tabla de frecuencias.</p>');
-  else out.push(`<p><b>Normalidad (orientativo).</b> La prueba de Jarque–Bera da p ${an.pJB < 0.001 ? '< 0,001' : '= ' + nf(an.pJB, 3)}. ${an.pJB < 0.05 ? 'Hay indicios de que la forma se aleja de una campana normal.' : 'No hay indicios claros de que la forma se aleje de una campana normal.'} Con n grande, esta prueba detecta diferencias pequeñas sin importancia práctica. Con n pequeño, casi no detecta nada. Use el gráfico Q–Q para juzgar.</p>`);
+  else if (!Number.isFinite(an.pJB)) out.push(`<p><b>Normalidad.</b> ${n < 8 ? 'Con menos de 8 datos no se calcula una prueba de normalidad.' : 'No se puede calcular la prueba de normalidad: la asimetría y la curtosis no son calculables con estos datos.'} Use el gráfico Q–Q.</p>`);
+  else out.push(`<p><b>Normalidad (orientativo).</b> La prueba de Jarque–Bera da p ${an.pJB < 0.001 ? '< 0,001' : '= ' + nf(an.pJB, 3)} (calculado por ${an.jbMethod}). ${an.pJB < 0.05 ? 'Hay indicios de que la forma se aleja de una campana normal.' : 'No hay indicios claros de que la forma se aleje de una campana normal. Eso no demuestra que sea normal.'} Con n grande, esta prueba detecta diferencias pequeñas sin importancia práctica. Con n pequeño, casi no detecta nada. Use el gráfico Q–Q para juzgar.</p>`);
   let rec;
   if (an.discrete) rec = 'Informe la tabla de frecuencias y la mediana. Use la media y la SD solo como resumen aproximado.';
   else if (Math.abs(st.skew) < 0.5 && Math.abs(st.kurt) < 1 && outs / n < 0.01) rec = 'La forma es bastante regular. Informe media y SD, y añada la mediana como contraste.';
@@ -1977,7 +2044,7 @@ function csvBoot(an, token){
   const key = CSV.sel + '|' + an.n + '|' + an.st.mean;
   if (CSV.boot && CSV.boot.key === key){ el.innerHTML = CSV.boot.html; return; }
   if (an.n < 10){ el.innerHTML = '<p class="hint">Con menos de 10 datos no se calculan intervalos de confianza.</p>'; return; }
-  if (an.n > 20000){ el.innerHTML = '<p class="hint">Con más de 20 000 datos, los intervalos son muy estrechos y no se calculan.</p>'; return; }
+  if (an.n > 20000){ el.innerHTML = '<p class="hint">Con más de 20 000 datos no se calculan los intervalos, para no bloquear la página. La anchura de un intervalo no depende solo del tamaño: también de la dispersión y de la forma de los datos.</p>'; return; }
   const B = 400, r = rng(12345), keys = ['mean', 'med', 'sd', 'madS', 'iqr', 'skew', 'kurt'], res = keys.map(() => []), buf = new Float64Array(an.n);
   let done = 0; el.innerHTML = '<p class="hint prog">Calculando los intervalos…</p>';
   const step = () => {
@@ -1987,16 +2054,20 @@ function csvBoot(an, token){
     if (done < B){ const p = el.querySelector('.prog'); if (p) p.textContent = `Calculando los intervalos… ${Math.round(done / B * 100)} %`; setTimeout(step, 0); } else finish();
   };
   const finish = () => {
-    const ci = res.map(a => { const s = Float64Array.from(a.filter(Number.isFinite)).sort(); return s.length ? [quant(s, 0.025), quant(s, 0.975)] : [NaN, NaN]; }), d = an.dg, st = an.st;
+    const ci = res.map(a => { const s = Float64Array.from(a.filter(Number.isFinite)).sort(); return s.length >= 0.9 * B && s.length > 20 ? [quant(s, 0.025), quant(s, 0.975), s.length] : [NaN, NaN, s.length]; }), d = an.dg, st = an.st;   // solo se ofrece un intervalo si al menos el 90 % de los remuestreos dio un valor calculable
+    const okc = i => Number.isFinite(ci[i][0]), fail = keys.filter((_, i) => !okc(i));
     const nms = ['Media', 'Mediana', 'SD', 'MAD escalada', 'IQR', 'Asimetría', 'Curtosis'], dgs = [d, d, d, d, d, 2, 2], td = 'padding:12px 16px 12px 0';
-    const rows = keys.map((k, i) => `<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--border)">${nms[i]}</th><td class="r" style="${td}">${nf(st[k], dgs[i])}</td><td class="r" style="${td}">${nf(ci[i][0], dgs[i])} a ${nf(ci[i][1], dgs[i])}</td></tr>`).join('');
+    const rows = keys.map((k, i) => `<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);font-weight:500;padding:12px 16px 12px 0;border-bottom:1px solid var(--border)">${nms[i]}</th><td class="r" style="${td}">${nf(st[k], dgs[i])}</td><td class="r" style="${td}">${okc(i) ? nf(ci[i][0], dgs[i]) + ' a ' + nf(ci[i][1], dgs[i]) : 'no se pudo estimar'}</td></tr>`).join('');
     const incl = i => ci[i][0] <= 0 && ci[i][1] >= 0;
+    const sk = !okc(5) ? 'No se pudo estimar un intervalo para la asimetría: menos del 90 % de los remuestreos dio un valor calculable. ' : incl(5) ? 'El intervalo de la asimetría incluye el 0: con estos datos no se puede afirmar que la forma sea asimétrica. ' : 'El intervalo de la asimetría no incluye el 0: los datos sugieren una asimetría distinta de cero. ';
+    const ku = !okc(6) ? 'No se pudo estimar un intervalo para la curtosis: menos del 90 % de los remuestreos dio un valor calculable.' : incl(6) ? 'El intervalo de la curtosis incluye el 0: no se puede afirmar que las colas sean distintas de las de una campana normal.' : 'El intervalo de la curtosis no incluye el 0: los datos sugieren colas distintas de las de una campana normal.';
     const html = `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla de intervalos de confianza" style="margin-top:8px"><table class="compact" style="min-width:460px"><thead><tr><th scope="col">Número</th><th scope="col" class="r">Estimación</th><th scope="col" class="r">Intervalo de confianza 95 %</th></tr></thead><tbody>${rows}</tbody></table></div>` +
-      `<p>El intervalo muestra cuánto cambiaría cada número con otra muestra parecida. ${incl(5) ? 'El intervalo de la asimetría incluye el 0: con estos datos no se puede afirmar que la forma sea asimétrica. ' : 'El intervalo de la asimetría no incluye el 0: la asimetría parece real. '}${incl(6) ? 'El intervalo de la curtosis incluye el 0: no se puede afirmar que las colas sean distintas de las de una campana normal.' : 'El intervalo de la curtosis no incluye el 0: las colas parecen distintas de las de una campana normal.'}</p><p class="hint" style="max-width:70ch">Los intervalos salen de 400 remuestreos con reemplazo (método bootstrap). Son aproximados: con pocos datos o con extremos, pueden ser poco fiables.</p>`;
+      `<p>El intervalo muestra cuánto cambiaría cada número con otra muestra parecida. ${sk}${ku}</p><p class="hint" style="max-width:70ch">Los intervalos salen de 400 remuestreos con reemplazo (método bootstrap percentil, semilla fija). Réplicas útiles: ${keys.map((k, i) => `${nms[i].toLowerCase()} ${ci[i][2]}`).join(', ')}. Son aproximados: con pocos datos o con extremos, pueden ser poco fiables.${fail.length ? ' «No se pudo estimar» significa que menos del 90 % de los remuestreos dio un valor calculable.' : ''}</p>`;
     el.innerHTML = html; CSV.boot = {key, html};
   };
   setTimeout(step, 0);
 }
+const trunc0 = s => String(s).length > 30 ? String(s).slice(0, 28) + '…' : String(s);
 function csvDrawCharts(){
   const an = CSV.an; if (!an) return;
   const dom = CSV.zoom && an.st.iqr > 0 ? csvDomain(an, true) : null;
@@ -2055,7 +2126,8 @@ function renderCsv(focusTab){
   let tabs = '';
   if (hasGrp) tabs = `<div class="tabs" role="tablist" aria-label="Qué analizar">${[['all', 'Muestra completa'], ['grp', 'Por ' + esc(CSV.cols[CSV.grp].name)]].map(([v, t]) => `<button type="button" role="tab" id="tab-${v}" aria-controls="csvPanel" class="tab-b" data-view="${v}" aria-selected="${CSV.view === v}" tabindex="${CSV.view === v ? 0 : -1}">${t}</button>`).join('')}</div>`;
   const body = CSV.view === 'grp' && hasGrp ? csvGroupView(an, col, zoomBox) : csvAllView(an, col, zoomBox, hasGrp);
-  out.innerHTML = tabs + `<div role="tabpanel" id="csvPanel" ${hasGrp ? `aria-labelledby="tab-${CSV.view}"` : ''}>${body}</div><div class="btns" style="max-width:420px"><button type="button" class="btn" id="csvSave">Descargar este análisis (.txt)</button></div>`;
+  const badNote = col.nBad ? `<div class="mdl-warn" style="margin:16px 0 0"><p><b>Datos no numéricos.</b> ${nf(col.nBad, 0)} de ${nf(col.nonMissing, 0)} valores no se pudieron leer como número y el análisis los ignora${col.badEx.length ? `. Ejemplos: ${col.badEx.map(x => `«${esc(trunc0(x))}»`).join(', ')}` : ''}. ${col.loose ? 'Menos del 90 % de la columna son números: compruebe que es la columna correcta.' : ''}</p></div>` : '';
+  out.innerHTML = tabs + `<div role="tabpanel" id="csvPanel" ${hasGrp ? `aria-labelledby="tab-${CSV.view}"` : ''}>${badNote}${body}</div><div class="btns" style="max-width:420px"><button type="button" class="btn" id="csvSave">Descargar este análisis (.txt)</button></div>`;
   const z = $('#csvZoom'); if (z) z.addEventListener('change', () => { CSV.zoom = z.checked; CSV.zoomSet = true; csvDrawCharts(); });
   out.querySelectorAll('details.rd').forEach(el => el.addEventListener('toggle', () => { CSV.readOpen = el.open; }));
   out.querySelectorAll('[data-view]').forEach(b => {
@@ -2063,18 +2135,18 @@ function renderCsv(focusTab){
     b.addEventListener('keydown', e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft'){ e.preventDefault(); CSV.view = CSV.view === 'all' ? 'grp' : 'all'; renderCsv(true); } });
   });
   if (focusTab){ const t = out.querySelector('[role=tab][aria-selected=true]'); if (t) t.focus(); }
-  const sv = $('#csvSave'); if (sv) sv.addEventListener('click', () => { const vista = CSV.view === 'grp' && hasGrp ? `por «${CSV.cols[CSV.grp].name}»` : 'muestra completa'; const blob = new Blob([`Análisis de «${col.name}» (${vista})\n\n` + out.innerText], {type: 'text/plain;charset=utf-8'}), a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'analisis_' + col.name.replace(/[^\w]+/g, '_') + '.txt'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); });
+  const sv = $('#csvSave'); if (sv) sv.addEventListener('click', () => { const vista = CSV.view === 'grp' && hasGrp ? `por «${CSV.cols[CSV.grp].name}»` : 'muestra completa'; const pend = !!$('#csvBoot .prog'), head = `Análisis de «${col.name}» (${vista})\nDatos válidos: ${nf(an.n, 0)} de ${nf(CSV.body, 0)} filas${col.nBad ? `; ${nf(col.nBad, 0)} valores no numéricos ignorados` : ''}. Intervalos: bootstrap percentil, 400 remuestreos, semilla fija.\n${pend ? 'ATENCIÓN: los intervalos de confianza aún se estaban calculando al descargar; este informe está incompleto.\n' : ''}\n`, blob = new Blob([head + out.innerText], {type: 'text/plain;charset=utf-8'}), a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'analisis_' + col.name.replace(/[^\w]+/g, '_') + '.txt'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); });
   csvDrawCharts(); if (!(CSV.view === 'grp' && hasGrp)) csvBoot(an, CSV.token);
 }
 function csvPopulate(){
-  const m = CSV.model; CSV.cols = m.cols; CSV.body = m.body; const nums = m.cols.map((c, j) => [c, j]).filter(([c]) => c.num);
-  $('#csvInfo').textContent = `${m.name} · ${nf(m.body, 0)} filas · ${m.cols.length} columnas · separador «${m.delim === '\t' ? 'tabulador' : m.delim}» · ${nums.length} numéricas.`;
+  const m = CSV.model; CSV.cols = m.cols; CSV.body = m.body; const nums = m.cols.map((c, j) => [c, j]).filter(([c]) => c.num || c.loose);
+  $('#csvInfo').textContent = `${m.name} · ${nf(m.body, 0)} filas · ${m.cols.length} columnas · separador «${m.delim === '\t' ? 'tabulador' : m.delim}»${m.enc ? ' · codificación ' + m.enc : ''} · ${nums.length} numéricas. ${m.warn.join(' ')}`.trim();
   const pv = $('#csvPrevT'); pv.innerHTML = `<thead><tr>${m.cols.map(c => `<th scope="col">${esc(c.name)}</th>`).join('')}</tr></thead><tbody>${Array.from({length: Math.min(5, m.body)}, (_, i) => `<tr>${m.cols.map(c => `<td style="padding:8px 12px 8px 0;font-size:13px">${esc(c.strs[i])}</td>`).join('')}</tr>`).join('')}</tbody>`;
   $('#csvPrev').hidden = false;
   if (!nums.length){ $('#csvPick').hidden = true; $('#csvOut').innerHTML = m.body < 3 ? '<p>El archivo tiene menos de 3 filas de datos. Se necesitan más para analizar una variable.</p>' : '<p>No se encontró ninguna columna numérica. Compruebe el separador y el formato de los números.</p>'; return; }
   const sel = $('#csvVar'), grp = $('#csvGrp');
-  sel.innerHTML = nums.map(([c, j]) => `<option value="${j}">${esc(c.name)} (${nf(c.vals.length, 0)} valores${c.nBad ? ', ' + c.nBad + ' no numéricos' : ''}${c.idLike ? '; parece un identificador' : ''})</option>`).join('');
-  const first = nums.find(([c]) => !c.idLike) || nums[0]; CSV.sel = first[1]; sel.value = CSV.sel; CSV.grp = -1;
+  sel.innerHTML = nums.map(([c, j]) => `<option value="${j}">${esc(c.name)} (${nf(c.vals.length, 0)} valores${c.nBad ? ', ' + c.nBad + ' no numéricos' : ''}${c.loose ? '; solo ' + Math.round(c.vals.length / c.nonMissing * 100) + ' % son números, revise los valores no numéricos' : ''}${c.idLike ? '; parece un identificador' : ''})</option>`).join('');
+  const first = nums.find(([c]) => c.num && !c.idLike) || nums.find(([c]) => c.num) || nums[0]; CSV.sel = first[1]; sel.value = CSV.sel; CSV.grp = -1;
   const refresh = () => { grp.innerHTML = '<option value="-1">Sin grupos</option>' + m.cols.map((c, j) => [c, j]).filter(([c, j]) => j !== CSV.sel && c.uniq >= 2 && c.uniq <= 12 && c.nonMissing >= 5).map(([c, j]) => `<option value="${j}">${esc(c.name)} (${c.uniq} grupos)</option>`).join(''); grp.value = '-1'; CSV.grp = -1; };
   refresh();
   sel.onchange = () => { CSV.sel = +sel.value; CSV.zoomSet = false; CSV.view = 'all'; refresh(); renderCsv(); };
@@ -2084,10 +2156,10 @@ function csvPopulate(){
 async function csvLoad(file){
   try {
     if (file.size > 30 * 1024 * 1024) throw new Error('El archivo supera 30 MB.');
-    const text = await csvRead(file); CSV.model = buildModel(text, file.name); csvPopulate();
+    const text = await csvRead(file); CSV.model = buildModel(text, file.name); CSV.model.enc = LAST_ENC; csvPopulate();
   } catch (e) { $('#csvInfo').textContent = 'No se pudo leer el archivo: ' + e.message; $('#csvPick').hidden = true; $('#csvOut').innerHTML = ''; }
 }
-function csvLoadText(text, name){ try { CSV.model = buildModel(text, name); csvPopulate(); } catch (e) { $('#csvInfo').textContent = 'No se pudo leer el archivo: ' + e.message; } }
+function csvLoadText(text, name){ try { CSV.model = buildModel(text, name); CSV.model.enc = ''; csvPopulate(); } catch (e) { $('#csvInfo').textContent = 'No se pudo leer el archivo: ' + e.message; } }
 const csvDlg = $('#csvDlg'); let csvOpener = null;
 function openCsv(btn){ csvOpener = btn; document.body.style.overflow = 'hidden'; csvDlg.showModal(); csvDlg.scrollTop = 0; $('#csvX').focus(); }
 document.addEventListener('click', e => { const b = e.target.closest('[data-csv]'); if (b) openCsv(b); });
@@ -2127,26 +2199,47 @@ g_2&=\frac{m_4}{m_2^{2}}-3=\frac{${t(a.m4)}}{${t(a.m2 * a.m2)}}-3=${t(a.kurt)}
 \end{aligned}`;
   try { katex.render(tex, $('#texLive'), {displayMode: true, throwOnError: false}); } catch (e) {}
 }
+/* Edición de un dato sin arrastrar: elegir el número del dato, escribir su valor y aplicar. */
+function syncEditor(){
+  const sel = $('#edIdx'), val = $('#edVal'); if (!sel || !cur) return;
+  const keep = sel.value; if (sel.options.length !== S.n) sel.innerHTML = Array.from({length: S.n}, (_, i) => `<option value="${i}"></option>`).join('');
+  Array.from(sel.options).forEach((o, i) => { o.textContent = `${i + 1}${S.over.has(i) ? ' (movido a mano)' : ''}`; });
+  sel.value = keep && +keep < S.n ? keep : '0';
+  if (document.activeElement !== val) val.value = String(+cur.data[+sel.value].toFixed(4)).replace('.', ',');
+}
+function editorEvents(){
+  const sel = $('#edIdx'), val = $('#edVal'), msg = $('#edMsg');
+  sel.addEventListener('change', () => { val.value = String(+cur.data[+sel.value].toFixed(4)).replace('.', ','); msg.textContent = ''; });
+  $('#edApply').addEventListener('click', () => {
+    const x = Number(String(val.value).trim().replace(',', '.')); if (!Number.isFinite(x)){ msg.textContent = 'Escriba un número válido.'; val.focus(); return; }
+    const i = +sel.value; S.over.set(i, x); S.note = ''; render();
+    msg.textContent = `Dato ${i + 1} fijado en ${nf(x)}. Media ${nf(cur.st.mean)}, mediana ${nf(cur.st.med)}, SD ${nf(cur.st.sd)}, MAD escalada ${nf(cur.st.madS)}.`;
+  });
+  $('#edUndo').addEventListener('click', () => { const i = +sel.value; S.over.delete(i); render(); msg.textContent = `Dato ${i + 1} restaurado a ${nf(cur.data[i])}.`; });
+}
 function render(){
-  raf = 0; compute(); drawReadouts(); drawA(); drawEx();
+  raf = 0; compute(); syncEditor(); drawReadouts(); drawA(); drawEx();
   drawReading(); drawTable(); drawTex();
   if (!light){ if (staticDirty){ drawKMix(); drawKZ(); drawKurt(); drawKTri(); staticDirty = false; } drawB(); drawC(); }
 }
 
 /* ───────── Eventos ───────── */
+editorEvents();
 $('#famBtns').innerHTML = Object.keys(FAM).map(f => `<button type="button" class="btn" data-f="${f}" aria-pressed="false">${FAM[f].name}</button>`).join('');
-$('#famBtns').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (!b) return; S.fam = b.dataset.f; S.over.clear(); syncControls(); light = false; schedule(); });
-const bind = (id, key) => $(id).addEventListener('input', e => { S[key] = +e.target.value; syncControls(); light = false; schedule(); });
+$('#famBtns').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (!b) return; S.fam = b.dataset.f; dropEdits(); syncControls(); light = false; schedule(); });
+/* Cualquier cambio del modelo (n, k, d, lado, familia) descarta los datos movidos a mano, y se avisa. */
+const dropEdits = () => { if (S.over.size){ S.over.clear(); S.note = 'Se descartaron los datos movidos a mano porque ha cambiado el modelo.'; } };
+const bind = (id, key) => $(id).addEventListener('input', e => { S[key] = +e.target.value; dropEdits(); syncControls(); light = false; schedule(); });
 bind('#n', 'n'); bind('#k', 'k'); bind('#d', 'd');
-document.querySelectorAll('input[name=side]').forEach(r => r.addEventListener('change', e => { S.side = e.target.value; light = false; schedule(); }));
+document.querySelectorAll('input[name=side]').forEach(r => r.addEventListener('change', e => { S.side = e.target.value; dropEdits(); light = false; schedule(); }));
 document.querySelectorAll('[data-p]').forEach(b => b.addEventListener('click', () => {
-  const p = b.dataset.p; S.k = p === 'one' ? 1 : Math.round(+p * S.n); S.over.clear(); syncControls(); light = false; schedule();
+  const p = b.dataset.p; S.k = p === 'one' ? 1 : Math.round(+p * S.n); dropEdits(); syncControls(); light = false; schedule();
 }));
 $('#kt').addEventListener('input', e => { kt = +e.target.value; drawKurt(); });
 $('#kPresets').addEventListener('click', e => { const b = e.target.closest('[data-b]'); if (!b) return; kt = tOf(+b.dataset.b); drawKurt(); });
 $('#exBtn').addEventListener('click', () => { exOn = !exOn; drawEx(); });
-$('#b-new').addEventListener('click', () => { S.seed = 1 + Math.floor(Math.random() * 99999); pool = makePool(S.seed, 400); S.over.clear(); light = false; schedule(); });
-$('#b-reset').addEventListener('click', () => { Object.assign(S, DEF); S.over.clear(); pool = makePool(S.seed, 400); syncControls(); light = false; schedule(); });
+$('#b-new').addEventListener('click', () => { S.seed = 1 + Math.floor(Math.random() * 99999); pool = makePool(S.seed, 400); S.over.clear(); S.note = ''; light = false; schedule(); });
+$('#b-reset').addEventListener('click', () => { Object.assign(S, DEF); S.over.clear(); S.note = ''; pool = makePool(S.seed, 400); syncControls(); light = false; schedule(); });
 new ResizeObserver(es => { const w = es[0].contentRect.width; if (Math.abs(w - lastW) > 1){ lastW = w; light = false; staticDirty = true; schedule(); } }).observe($('#chartA'));
 
 function typeset(){
