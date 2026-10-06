@@ -454,6 +454,7 @@ fieldset{border:0;margin:24px 0 0;padding:0;min-width:0}
   <span class="lbl">Qué gráfico corresponde</span>
   <div class="tbl-wrap" tabindex="0" role="region" aria-label="Guía de gráficos según la pregunta y el tipo de variable"><table class="compact" style="min-width:720px"><thead><tr><th scope="col">Pregunta</th><th scope="col">Variables</th><th scope="col">Gráfico recomendado</th><th scope="col">Alternativas</th></tr></thead><tbody>
     <tr><th scope="row" class="rh">¿Cómo se reparten los valores?</th><td>Una numérica</td><td>Histograma</td><td>Densidad, acumulada, Q–Q</td></tr>
+    <tr><th scope="row" class="rh">¿Qué forma tiene la distribución?</th><td>Una o varias numéricas</td><td>Asimetría y curtosis (con anotación en el histograma)</td><td>Q–Q normal, densidad con curva normal</td></tr>
     <tr><th scope="row" class="rh">¿Difieren los grupos en una medida?</th><td>Numérica y categórica</td><td>Caja con los datos visibles</td><td>Violín, puntos, crestas, medias con intervalo</td></tr>
     <tr><th scope="row" class="rh">¿Cuántas filas hay en cada categoría?</th><td>Una categórica</td><td>Barras horizontales ordenadas</td><td>Pirulí, diagrama de Pareto</td></tr>
     <tr><th scope="row" class="rh">¿Cómo se combinan dos categorías?</th><td>Dos categóricas</td><td>Barras apiladas al 100 %</td><td>Mosaico, mapa de calor con residuos</td></tr>
@@ -471,6 +472,8 @@ fieldset{border:0;margin:24px 0 0;padding:0;min-width:0}
     <div><dt>Incertidumbre visible</dt><dd>Las medias admiten intervalo de confianza del 95 %. Los porcentajes admiten intervalo de Wilson. Las medianas, intervalo por remuestreo.</dd></div>
     <div><dt>Misma escala entre paneles</dt><dd>Para comparar paneles, todos comparten ejes. Puede desactivarlo para ver mejor cada panel por separado.</dd></div>
     <div><dt>Intervalo de confianza</dt><dd>Margen donde probablemente está el valor real de la población. Un intervalo estrecho indica una estimación precisa.</dd></div>
+    <div><dt>Asimetría</dt><dd>Mide si la distribución se inclina hacia un lado. Vale 0 si es simétrica. Un valor positivo indica una cola larga de valores altos y uno negativo, de valores bajos. Por encima de 1 en valor absoluto, la asimetría es fuerte y la media se aleja de la mediana.</dd></div>
+    <div><dt>Curtosis en exceso</dt><dd>Mide el peso de las colas respecto a una campana normal, que vale 0. Un valor positivo indica más valores extremos de lo normal (colas pesadas) y uno negativo, menos (colas ligeras). No mide si la distribución es «puntiaguda».</dd></div>
     <div><dt>LOESS</dt><dd>Curva suave que sigue la tendencia local de los datos sin suponer una recta. El parámetro de suavizado indica qué fracción de los datos usa cada punto de la curva.</dd></div>
     <div><dt>Residuo ajustado</dt><dd>Distancia de una casilla a lo esperado si no hubiera relación entre dos categorías. Un valor mayor que 2 en valor absoluto destaca.</dd></div>
   </dl>
@@ -1273,7 +1276,7 @@ function makeCtx(cfg){
     if (role.k === 'cat'){ const cv = catView(vv); if (!cv) return {err: `La variable «${vv.name}» no es categórica. Cambie su tipo en el diccionario o elija otra.`}; specs.push({kind: 'cat', cv}); }
     else specs.push({kind: role.k === 'date' ? 'date' : 'num', v: vv, pos: !!(role.log && cfg[role.log]), min: role.lim ? lim(cfg, role.lim[0]) : null, max: role.lim ? lim(cfg, role.lim[1]) : null});
   }
-  if (def.multi){ const ms = (cfg.m || []).map(i => V[i]).filter(v => v && isKind(v, 'num')); if (ms.length < def.multi[0]) return {err: `Elija al menos ${def.multi[0]} variables numéricas.`}; ctx.M = ms.slice(0, def.multi[1]); ctx.M.forEach(v => specs.push({kind: 'num', v})); }
+  if (def.multi){ const ms = (cfg.m || []).map(i => V[i]).filter(v => v && isKind(v, 'num')); if (ms.length < def.multi[0]) return {err: `Elija al menos ${def.multi[0]} variables numéricas.`}; ctx.M = ms.slice(0, def.multi[1]); if (!def.perVar) ctx.M.forEach(v => specs.push({kind: 'num', v})); }
   const vr = validRows(specs); ctx.vr = vr;
   if (vr.rows.length < (def.minN || 3)) return {err: `Quedan solo ${vr.rows.length} filas con datos completos para las variables elegidas. Se necesitan al menos ${def.minN || 3}.`};
   ctx.rows = vr.rows; ctx.col = colorSpec(ctx.Cv, ctx.rows, cfg, ctx.notes); ctx.panels = panelsOf(ctx);
@@ -1286,6 +1289,16 @@ function makeCtx(cfg){
   if (ctx.col.has && ctx.autoSub) ctx.autoSub += ` · color: ${pretty(ctx.Cv.v.name)}`;
   if (ctx.Fv) ctx.autoSub += ` · paneles: ${pretty(ctx.Fv.v.name)}`;
   return ctx;
+}
+
+
+/* ───────── Asimetría y curtosis: palabras y anotación ───────── */
+const skewWord = g => !Number.isFinite(g) ? 'sin dato' : Math.abs(g) < 0.5 ? 'aproximadamente simétrica' : g > 0 ? (g > 1 ? 'muy asimétrica, con cola larga a la derecha' : 'asimétrica, con cola a la derecha') : (g < -1 ? 'muy asimétrica, con cola larga a la izquierda' : 'asimétrica, con cola a la izquierda');
+const kurtWord = g => !Number.isFinite(g) ? 'sin dato' : Math.abs(g) < 0.5 ? 'colas como las de una normal' : g > 0 ? (g > 3 ? 'colas muy pesadas (muchos valores extremos)' : 'colas pesadas (más valores extremos que una normal)') : 'colas ligeras (menos valores extremos que una normal)';
+const shapeSentence = d => Number.isFinite(d.skew) ? `Forma: asimetría <b>${nf(d.skew, 2)}</b> (${skewWord(d.skew)}) y curtosis en exceso <b>${nf(d.kurt, 2)}</b> (${kurtWord(d.kurt)}).` : 'No hay variación suficiente para medir la forma.';
+function shapeAnnot(cfg, P, d, W){
+  if (!cfg.shape || P.c || !Number.isFinite(d.skew)) return '';
+  const x = W - P.m.r - 4, y = P.m.t + 12; return `<text class="txt" x="${x}" y="${y}" text-anchor="end">Asimetría ${nf(d.skew, 2)}: ${skewWord(d.skew).split(',')[0]}</text><text class="txt" x="${x}" y="${y + 15}" text-anchor="end">Curtosis ${nf(d.kurt, 2)}: ${kurtWord(d.kurt).split(' (')[0]}</text>`;
 }
 
 /* ───────── Histograma ───────── */
@@ -1301,7 +1314,7 @@ function histEdges(t, isInt, mode, kManual){
 }
 CH.hist = {
   id: 'hist', group: 'dist', label: 'Histograma', roles: {x: {k: 'num', l: 'Variable numérica', req: 1, log: 'logv', lim: ['vmin', 'vmax']}, c: {k: 'cat', l: 'Color (apila los grupos)'}, f: {k: 'cat', l: 'Paneles (un gráfico por grupo)'}},
-  opts: ['logv', 'bins', 'binsN', 'hnorm', 'kde', 'normal', 'showMean', 'showMedian', 'ref', 'shared'], dflt: {hnorm: 'count'},
+  opts: ['logv', 'bins', 'binsN', 'hnorm', 'kde', 'normal', 'showMean', 'showMedian', 'shape', 'ref', 'shared'], dflt: {hnorm: 'count', showMean: true, showMedian: true},
   how: {q: 'Reparte los valores en intervalos iguales y cuenta cuántos caen en cada uno. Muestra la forma de la distribución: dónde se concentran los datos, si es simétrica y si hay valores aislados.', w: 'Con una variable numérica y al menos unas decenas de datos.', r: 'Cuanto más alta la barra, más datos en ese intervalo. Una cola larga a la derecha indica unos pocos valores muy altos. La curva es una estimación suave de la misma forma.', c: 'El aspecto cambia con el número de intervalos. Pruebe varios. Con pocos datos, el histograma es inestable.'},
   prep(ctx){
     const cfg = ctx.cfg, X = ctx.X, log = !!cfg.logv, T = log ? Math.log10 : (v => v), U = log ? (t => Math.pow(10, t)) : (t => t), all = arrOf(ctx.rows, X, T), isInt = X.type === 'integer' && !log;
@@ -1317,7 +1330,7 @@ CH.hist = {
     if (Number.isFinite(d.skew) && d.skew > 1 && !log && d.min > 0) ctx.notes.push(`La distribución tiene una cola larga a la derecha (asimetría ${nf(d.skew, 2)}). La escala logarítmica puede mostrar mejor su forma.`);
     ctx.tbl = {head: [...(ctx.panels.length > 1 ? ['Panel'] : []), 'Desde', 'Hasta', ...(L > 1 ? ctx.col.names : ['Datos']), 'Total', norm === 'count' ? '% del total' : norm === 'pct' ? '% del total' : 'Densidad'], rows: []};
     ctx.panels.forEach((p, k) => { for (let b = 0; b < nb; b++){ let s = 0; const cs = []; for (let j = 0; j < L; j++){ cs.push(cnt[k][j][b]); s += cnt[k][j][b]; } ctx.tbl.rows.push([...(ctx.panels.length > 1 ? [p.label] : []), fv(U(edges[b])), fv(U(edges[b + 1])), ...cs, s, norm === 'dens' ? nf(tot[k][b], 4) : nf(s / nP[k] * 100, 1) + ' %']); } });
-    ctx.rd = [`Hay <b>${nf(d.n, 0)}</b> valores. La mediana es <b>${fv(d.med)}</b> y la media <b>${fv(d.mean)}</b>.`, Number.isFinite(d.skew) && Math.abs(d.skew) > 0.5 ? (d.mean > d.med ? 'La media supera a la mediana: unos pocos valores altos tiran de ella hacia arriba. La mediana describe mejor al caso típico.' : 'La media queda por debajo de la mediana: unos pocos valores bajos tiran de ella hacia abajo.') : 'La media y la mediana son parecidas: la distribución es bastante simétrica.', `La mitad central de los datos está entre <b>${fv(d.q1)}</b> y <b>${fv(d.q3)}</b>.`];
+    ctx.rd = [`Hay <b>${nf(d.n, 0)}</b> valores. La mediana es <b>${fv(d.med)}</b> y la media <b>${fv(d.mean)}</b>.`, Number.isFinite(d.skew) && Math.abs(d.skew) > 0.5 ? (d.mean > d.med ? 'La media supera a la mediana: unos pocos valores altos tiran de ella hacia arriba. La mediana describe mejor al caso típico.' : 'La media queda por debajo de la mediana: unos pocos valores bajos tiran de ella hacia abajo.') : 'La media y la mediana son parecidas: la distribución es bastante simétrica.', `La mitad central de los datos está entre <b>${fv(d.q1)}</b> y <b>${fv(d.q3)}</b>.`, shapeSentence(d)];
   },
   draw(ctx, k, W, H, o){
     const cfg = ctx.cfg, h = ctx.h, P = mkP(W, H, o), m = P.m, L = ctx.col.L, norm = cfg.hnorm, c = clipDef(P);
@@ -1340,6 +1353,7 @@ CH.hist = {
     if (cfg.showMean) g += vline(dr.mean, 'var(--text)', false, 'Media ' + fv(dr.mean), 12);
     if (cfg.showMedian) g += vline(dr.med, 'var(--accent)', true, 'Mediana ' + fv(dr.med), cfg.showMean && close ? 27 : 12);
     const rv = lim(cfg, 'ref'); if (rv != null) g += vline(rv, 'var(--t2)', true, 'Referencia ' + fv(rv), 42);
+    g += shapeAnnot(cfg, P, dr, W);
     return g + '</g>' + `<defs>${c.def}</defs>`;
   }
 };
@@ -1347,7 +1361,7 @@ CH.hist = {
 /* ───────── Densidad ───────── */
 CH.dens = {
   id: 'dens', group: 'dist', label: 'Densidad', roles: {x: {k: 'num', l: 'Variable numérica', req: 1, log: 'logv', lim: ['vmin', 'vmax']}, c: {k: 'cat', l: 'Color (superpone los grupos)'}, f: {k: 'cat', l: 'Paneles (un gráfico por grupo)'}},
-  opts: ['logv', 'bw', 'fill', 'rug', 'showMean', 'showMedian', 'ref', 'shared'], dflt: {fill: true},
+  opts: ['logv', 'bw', 'fill', 'rug', 'showMean', 'showMedian', 'shape', 'ref', 'shared'], dflt: {fill: true, showMean: true, showMedian: true},
   how: {q: 'Curva suave que estima cómo se reparten los datos. El área bajo la curva vale 1. Permite superponer grupos y compararlos sin el efecto de los intervalos del histograma.', w: 'Para comparar la forma de la distribución de 2 a 4 grupos.', r: 'Donde la curva es alta hay más datos. Dos picos indican dos subgrupos mezclados. La curva solo se dibuja dentro del rango observado.', c: 'El suavizado importa: demasiado bajo da una curva dentada, demasiado alto borra detalles. Con pocos datos la curva engaña.'},
   prep(ctx){
     const cfg = ctx.cfg, X = ctx.X, log = !!cfg.logv, T = log ? Math.log10 : (v => v), U = log ? (t => Math.pow(10, t)) : (t => t), L = ctx.col.L, all = arrOf(ctx.rows, X, T);
@@ -1360,7 +1374,7 @@ CH.dens = {
     ctx.tbl = {head: [...(ctx.panels.length > 1 ? ['Panel'] : []), ...(L > 1 ? ['Grupo'] : []), 'n', 'Media', 'Mediana', 'DE', 'Q1', 'Q3'], rows: []};
     ctx.panels.forEach((p, k) => curves[k].forEach((q, j) => { if (!q.a.length) return; const d = describe(q.a.map(U)); ctx.tbl.rows.push([...(ctx.panels.length > 1 ? [p.label] : []), ...(L > 1 ? [ctx.col.names[j]] : []), d.n, fv(d.mean), fv(d.med), fv(d.sd), fv(d.q1), fv(d.q3)]); }));
     const smallN = curves.some(c => c.some(q => q.a.length > 0 && q.a.length < 5)); if (smallN) ctx.notes.push('Algún grupo tiene menos de 5 datos y no se dibuja su curva.');
-    ctx.rd = [`La curva sube donde hay más datos. La mediana global es <b>${fv(ctx.d.med)}</b>.`, L > 1 ? 'Compare dónde queda el pico de cada grupo y cuánto se solapan las curvas: cuanto más solapadas, más parecidos son los grupos.' : 'Un solo pico indica un grupo homogéneo. Dos picos sugieren dos tipos de casos mezclados.'];
+    ctx.rd = [`La curva sube donde hay más datos. La mediana global es <b>${fv(ctx.d.med)}</b> y la media <b>${fv(ctx.d.mean)}</b>.`, shapeSentence(ctx.d), L > 1 ? 'Compare dónde queda el pico de cada grupo y cuánto se solapan las curvas: cuanto más solapadas, más parecidos son los grupos.' : 'Un solo pico indica un grupo homogéneo. Dos picos sugieren dos tipos de casos mezclados.'];
   },
   draw(ctx, k, W, H, o){
     const cfg = ctx.cfg, h = ctx.h, P = mkP(W, H, o), m = P.m, c = clipDef(P), xa = h.U(h.lo), xb = h.U(h.hi), pad = (h.log ? 1 : 0), dx = h.log ? [xa / 1.05, xb * 1.05] : [xa - (xb - xa) * 0.03, xb + (xb - xa) * 0.03];
@@ -1373,6 +1387,7 @@ CH.dens = {
     const raw = Array.from(arrOf(ctx.panels[k].rows, ctx.X)), dr = describe(raw), vl = (v, col, dash, lab, dy) => { if (!(v >= dx[0] && v <= dx[1])) return ''; const x = sx(v); return `<line x1="${x}" x2="${x}" y1="${m.t}" y2="${m.t + P.ph}" stroke="${col}" stroke-width="1.6" ${dash ? 'stroke-dasharray="6 4"' : ''}/>` + (P.c ? '' : `<text class="txt" x="${clamp(x + (x > W - 150 ? -6 : 6), m.l + 2, W - m.r - 2)}" y="${m.t + dy}" text-anchor="${x > W - 150 ? 'end' : 'start'}">${lab}</text>`); };
     if (cfg.showMean) g += vl(dr.mean, 'var(--text)', false, 'Media ' + fv(dr.mean), 12); if (cfg.showMedian) g += vl(dr.med, 'var(--accent)', true, 'Mediana ' + fv(dr.med), 27);
     const rv = lim(cfg, 'ref'); if (rv != null) g += vl(rv, 'var(--t2)', true, 'Referencia ' + fv(rv), 42);
+    g += shapeAnnot(cfg, P, dr, W);
     return g + '</g>' + `<defs>${c.def}</defs>`;
   },
   swatch: (ctx, j) => swLine(ctx.col.line(j))
@@ -1428,6 +1443,49 @@ CH.qq = {
     pts.forEach(p => { g += `<circle cx="${sx(p[0]).toFixed(1)}" cy="${sy(p[1]).toFixed(1)}" r="3" fill="var(--text)" opacity=".6" stroke="var(--bg)" stroke-width="1" data-tip="${esc('Valor ' + fv(U(p[1])) + ' · esperado ' + nf(p[0], 2) + ' σ')}"/>`; });
     return g + '</g>' + `<defs>${c.def}</defs>`;
   }
+};
+
+
+/* ───────── Asimetría y curtosis ───────── */
+CH.shape = {
+  id: 'shape', group: 'dist', label: 'Asimetría y curtosis', roles: {c: {k: 'cat', l: 'Grupos de la primera variable (opcional)'}}, multi: [1, 8], perVar: true, minN: 8,
+  opts: ['logv', 'labels'], dflt: {labels: true}, limKeys: ['xmin', 'xmax', 'ymin', 'ymax'],
+  how: {q: 'Sitúa cada variable (o cada grupo) por su asimetría, en horizontal, y su curtosis en exceso, en vertical. El punto (0, 0) es la forma de una campana normal. Las cruces son el intervalo de confianza del 95 % por remuestreo.', w: 'Para ver de un vistazo qué variables se alejan de la normalidad y en qué sentido, antes de elegir entre media y mediana o decidir un logaritmo.', r: 'A la derecha del 0, cola larga de valores altos; a la izquierda, de valores bajos. Por encima del 0, colas pesadas (más valores extremos); por debajo, colas ligeras. La franja central indica asimetría pequeña (menor que 0,5 en valor absoluto). La zona gris es matemáticamente imposible.', c: 'Con pocos datos, ambas medidas son muy inestables: observe la longitud de las cruces. Un solo valor extremo puede mover mucho la curtosis.'},
+  prep(ctx){
+    const cfg = ctx.cfg, log = !!cfg.logv, T = log ? Math.log10 : (v => v), E = [];
+    const take = (v, filt) => { const a = []; for (const i of (filt || ctx.rows)){ const x = v.num[i]; if (Number.isFinite(x) && (!log || x > 0)) a.push(T(x)); } return a; };
+    if (ctx.col.has){ const v = ctx.M[0]; for (let j = 0; j < ctx.col.L; j++){ const rows = []; for (const i of ctx.rows) if (ctx.col.idx(i) === j) rows.push(i); E.push({label: ctx.col.names[j], j, vals: take(v, rows)}); } ctx.autoTitle = `Forma de ${pretty(v.name)} por ${pretty(ctx.Cv.v.name)}`; }
+    else { ctx.M.forEach(v => E.push({label: pretty(v.name), j: 0, vals: take(v)})); ctx.autoTitle = ctx.M.length === 1 ? `Forma de ${pretty(ctx.M[0].name)}` : `Forma de ${ctx.M.length} variables`; }
+    const ok = E.filter(e => e.vals.length >= 8), skipped = E.length - ok.length; if (skipped) ctx.notes.push(`${skipped} ${skipped === 1 ? 'entrada tiene' : 'entradas tienen'} menos de 8 datos y no se muestra${skipped === 1 ? '' : 'n'}.`);
+    if (!ok.length) return void (ctx.shapeErr = true);
+    ok.forEach(e => { const d = describe(e.vals), vs = e.vals.length > 3000 ? sample(e.vals, 3000) : e.vals, b = bootstrapDesc(vs, 300, 777); e.g1 = d.skew; e.g2 = d.kurt; e.c1 = b.skew; e.c2 = b.kurt; e.n = d.n; });
+    if (ok.some(e => e.n > 3000)) ctx.notes.push('Los intervalos de confianza se calculan sobre una muestra de 3 000 datos. Las medidas usan todos.');
+    if (ok.some(e => e.n < 30)) ctx.notes.push('Alguna entrada tiene menos de 30 datos. Su asimetría y su curtosis son muy inestables.');
+    ctx.h = {E: ok, log}; ctx.autoSub = (log ? 'escala logarítmica · ' : '') + `n por entrada: ${ok.map(e => nf(e.n, 0)).join(', ')}`;
+    if (ctx.col.has) ctx.legend = ctx.col.names.map((nm, j) => ({label: nm, sw: swMark(j, ctx.col.fill(j))}));
+    ctx.tbl = {head: ['Entrada', 'n', 'Asimetría (g₁)', 'IC 95 % de g₁', 'Curtosis en exceso (g₂)', 'IC 95 % de g₂', 'Lectura'], rows: ok.map(e => [e.label, e.n, nf(e.g1, 2), `${nf(e.c1[0], 2)} a ${nf(e.c1[1], 2)}`, nf(e.g2, 2), `${nf(e.c2[0], 2)} a ${nf(e.c2[1], 2)}`, `${skewWord(e.g1)}; ${kurtWord(e.g2)}`])};
+    ctx.rd = ok.slice(0, 3).map(e => `<b>${esc(e.label)}</b>: asimetría ${nf(e.g1, 2)} (${skewWord(e.g1)}); curtosis ${nf(e.g2, 2)} (${kurtWord(e.g2)}).`);
+    const bad = ok.filter(e => e.g1 > 1 && !log && e.vals.every(v => v > 0)); if (bad.length) ctx.rd.push('Las variables con asimetría mayor que 1 suelen mejorar con la escala logarítmica. Actívela y compare.'); ctx.rd.push('Con asimetría fuerte, la mediana describe mejor al caso típico que la media.');
+  },
+  height(ctx, pw){ return clamp(Math.round(pw * 0.62), 300, 440); },
+  draw(ctx, k, W, H, o){
+    const h = ctx.h; if (!h) return ''; const P = mkP(W, H, o), m = P.m, c = clipDef(P), E = h.E;
+    let x0 = Math.min(-1, ...E.map(e => Math.min(e.g1, e.c1[0]))), x1 = Math.max(1, ...E.map(e => Math.max(e.g1, e.c1[1]))), y0 = Math.min(-1.5, ...E.map(e => Math.min(e.g2, e.c2[0]))), y1 = Math.max(2, ...E.map(e => Math.max(e.g2, e.c2[1])));
+    const px = (x1 - x0) * 0.08, py = (y1 - y0) * 0.08; const xd = domainOf(x0 - px, x1 + px, false, {min: lim(ctx.cfg, 'xmin'), max: lim(ctx.cfg, 'xmax')}), yd = domainOf(y0 - py, y1 + py, false, {min: lim(ctx.cfg, 'ymin'), max: lim(ctx.cfg, 'ymax')}), sx = mkScale('lin', xd[0], xd[1], m.l, m.l + P.pw), sy = mkScale('lin', yd[0], yd[1], m.t + P.ph, m.t);
+    let g = frameXY(P, sx, sy, {xlab: 'Asimetría g₁ (← cola a la izquierda · 0 · cola a la derecha →)', ylab: 'Curtosis en exceso g₂ (colas ligeras ↓ · 0 · colas pesadas ↑)', vgrid: true, xfmt: v => nf(v, tdec(niceTicks(xd[0], xd[1], 7))), yfmt: v => nf(v, tdec(niceTicks(yd[0], yd[1], 5)))});
+    g += `<g clip-path="url(#${c.id})">`;
+    const par = Array.from({length: 61}, (_, i) => xd[0] + (xd[1] - xd[0]) * i / 60); g += `<path d="M${par.map(x => sx(x).toFixed(1) + ' ' + sy(x * x - 2).toFixed(1)).join('L')}L${sx(xd[1])} ${sy(yd[0])}L${sx(xd[0])} ${sy(yd[0])}Z" fill="var(--surface-2)" opacity=".9"/>`;
+    g += `<rect x="${sx(-0.5)}" y="${m.t}" width="${sx(0.5) - sx(-0.5)}" height="${P.ph}" fill="var(--a10)"/><line x1="${sx(0)}" x2="${sx(0)}" y1="${m.t}" y2="${m.t + P.ph}" class="ref"/><line x1="${m.l}" x2="${m.l + P.pw}" y1="${sy(0)}" y2="${sy(0)}" class="ref"/>`;
+    if (!P.c){ g += `<text class="tk" x="${sx(0)}" y="${m.t + 12}" text-anchor="middle">asimetría pequeña</text>`; if (sy(-2) < m.t + P.ph - 6 || true) g += `<text class="tk" x="${m.l + 6}" y="${m.t + P.ph - 8}">combinación imposible</text>`; }
+    g += `<circle cx="${sx(0)}" cy="${sy(0)}" r="6" fill="var(--bg)" stroke="var(--text)" stroke-width="2"/>` + (P.c ? '' : `<text class="txt muted" x="${sx(0) + 9}" y="${sy(0) + 16}">normal</text>`);
+    E.forEach((e, i) => { const col = ctx.col.has ? ctx.col.fill(e.j) : 'var(--text)', x = sx(e.g1), y = sy(e.g2);
+      g += `<line x1="${sx(e.c1[0])}" x2="${sx(e.c1[1])}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="2" stroke-opacity=".7"/><line x1="${x}" x2="${x}" y1="${sy(e.c2[0])}" y2="${sy(e.c2[1])}" stroke="${col}" stroke-width="2" stroke-opacity=".7"/>`;
+      const tip = `${e.label}: asimetría ${nf(e.g1, 2)} [${nf(e.c1[0], 2)}; ${nf(e.c1[1], 2)}] · curtosis ${nf(e.g2, 2)} [${nf(e.c2[0], 2)}; ${nf(e.c2[1], 2)}] · n = ${e.n}`;
+      g += (ctx.col.has ? ctx.col.mk(e.j, x.toFixed(1), y.toFixed(1), 6.5, `stroke="var(--bg)" stroke-width="1.5" class="bar" tabindex="0" data-tip="${esc(tip)}"`) : `<circle cx="${x}" cy="${y}" r="6" fill="var(--text)" stroke="var(--bg)" stroke-width="1.5" class="bar" tabindex="0" data-tip="${esc(tip)}"/>`);
+      if (ctx.cfg.labels && !P.c) g += `<text class="txt" x="${x + (x > m.l + P.pw - 120 ? -10 : 10)}" y="${y - 9}" text-anchor="${x > m.l + P.pw - 120 ? 'end' : 'start'}">${esc(trunc(e.label, 22))}</text>`; });
+    return g + `</g><defs>${c.def}</defs>`;
+  },
+  swatch: (ctx, j) => swMark(j, ctx.col.fill(j))
 };
 
 /* ═════════ Categorías × valor: caja, violín, puntos, medias, crestas ═════════ */
@@ -1497,7 +1555,7 @@ CH.box = {
 
 CH.violin = {
   id: 'violin', group: 'comp', label: 'Violín', roles: cvRoles(),
-  opts: ['logv', 'orient', 'order', 'topN', 'bw', 'vscale', 'showMean', 'ref', 'shared'], dflt: {orient: 'v', order: 'nat', vscale: 'width', showMean: false},
+  opts: ['logv', 'orient', 'order', 'topN', 'bw', 'vscale', 'showMean', 'ref', 'shared'], dflt: {orient: 'v', order: 'nat', vscale: 'width', showMean: true},
   how: {q: 'Dibuja la forma completa de la distribución de cada grupo como una curva simétrica. Cuanto más ancho el violín, más datos hay en ese valor. Dentro se marca la caja de cuartiles y la mediana.', w: 'Para ver si un grupo tiene dos picos o una forma distinta, algo que una caja no muestra.', r: 'La barra gruesa interior va del primer al tercer cuartil. El punto blanco es la mediana. La forma exterior es la densidad.', c: 'Con menos de 10 datos por grupo, la forma es poco fiable. La curva no sale del rango observado.'},
   prep(ctx){ prepCV(ctx, 'median'); const cv = ctx.cv; cv.dens = cv.A.map(p => p.map(c => c.map(a => { if (a.length < 5) return null; const t = a.map(cv.T); return kdeCurve(t, Math.min(...t), Math.max(...t), 70, ctx.cfg.bw); }))); let mx = 0; cv.dens.forEach(p => p.forEach(c => c.forEach(q => { if (q) mx = Math.max(mx, ...q.Y); }))); cv.maxD = mx;
     ctx.autoTitle = `Forma de ${pretty(ctx.Y.name)}` + (ctx.Xc ? ` según ${pretty(ctx.X.name)}` : ''); cvTable(ctx); ctx.rd = cvRead(ctx); if (cv.dens.some(p => p.some(c => c.some(q => q === null)))) ctx.notes.push('Algún grupo tiene menos de 5 datos y no se dibuja su violín.'); },
@@ -1519,7 +1577,7 @@ CH.violin = {
 
 CH.strip = {
   id: 'strip', group: 'comp', label: 'Puntos', roles: cvRoles(),
-  opts: ['logv', 'orient', 'order', 'topN', 'swarm', 'alpha', 'psize', 'showMean', 'showMedian', 'ref', 'shared'], dflt: {orient: 'v', order: 'nat', swarm: 'swarm', showMedian: true, showMean: false, alpha: 0.6, psize: 3},
+  opts: ['logv', 'orient', 'order', 'topN', 'swarm', 'alpha', 'psize', 'showMean', 'showMedian', 'ref', 'shared'], dflt: {orient: 'v', order: 'nat', swarm: 'swarm', showMedian: true, showMean: true, alpha: 0.6, psize: 3},
   how: {q: 'Dibuja cada dato como un punto, agrupado por categoría. No resume nada: enseña todos los datos.', w: 'Con pocos o medianos volúmenes de datos (hasta unos cientos por grupo), para ver agrupaciones, huecos y valores aislados.', r: 'La raya marca la mediana. En «enjambre» los puntos se reparten a los lados sin tapar el valor. En «azar» se reparten sin orden.', c: 'Con miles de datos, los puntos se solapan. Se dibujan como máximo 600 por grupo; los resúmenes usan todos.'},
   prep(ctx){ prepCV(ctx, 'median'); ctx.autoTitle = `Datos de ${pretty(ctx.Y.name)}` + (ctx.Xc ? ` según ${pretty(ctx.X.name)}` : ''); cvTable(ctx); ctx.rd = cvRead(ctx); if (ctx.cv.A.some(p => p.some(c => c.some(a => a.length > 600)))) ctx.notes.push('Se dibujan como máximo 600 puntos por grupo, elegidos al azar. Las medianas usan todos los datos.'); },
   height: CH.box.height,
@@ -1540,16 +1598,16 @@ CH.strip = {
 
 CH.means = {
   id: 'means', group: 'comp', label: 'Medias e intervalos', roles: cvRoles(),
-  opts: ['stat', 'ci', 'logv', 'orient', 'order', 'topN', 'pts', 'zero', 'labels', 'ref', 'shared'], dflt: {orient: 'h', order: 'val', stat: 'mean', ci: 'ci', pts: false, labels: true, zero: false},
+  opts: ['stat', 'ci', 'other', 'logv', 'orient', 'order', 'topN', 'pts', 'zero', 'labels', 'ref', 'shared'], dflt: {orient: 'h', order: 'val', stat: 'mean', ci: 'ci', pts: false, labels: true, zero: false, other: true},
   how: {q: 'Marca un punto por grupo con su media o su mediana y una barra con su incertidumbre: el intervalo de confianza del 95 %, la desviación típica o el error estándar.', w: 'Para comparar el valor típico de varios grupos y ver cuánta confianza merece cada estimación.', r: 'Si los intervalos de dos grupos no se solapan, es probable que difieran. Si se solapan mucho, la diferencia puede ser azar. Una barra más larga indica una estimación más incierta.', c: 'El intervalo de la media supone datos poco asimétricos; con valores extremos, use la mediana (intervalo por remuestreo). Solapar no equivale a «no significativo»: confirme con una prueba.'},
   prep(ctx){
     const cfg = ctx.cfg, stat = cfg.stat === 'median' ? 'median' : 'mean'; prepCV(ctx, stat); const cv = ctx.cv, err = cfg.ci || 'ci';
-    cv.est = cv.A.map(p => p.map(c => c.map(a => { if (!a.length) return null; const e = aggStat(a, stat), ci = a.length >= 2 ? ciOf(a, e, {stat, err: err === 'sd' ? (stat === 'mean' ? 'sd' : 'iqr') : err === 'se' ? (stat === 'mean' ? 'se' : 'iqr') : 'ci'}) : [NaN, NaN]; return {e, lo: ci[0], hi: ci[1], n: a.length}; })));
-    let lo = Infinity, hi = -Infinity; cv.est.forEach(p => p.forEach(c => c.forEach(q => { if (!q) return; for (const v of [q.e, q.lo, q.hi]) if (Number.isFinite(v)){ lo = Math.min(lo, v); hi = Math.max(hi, v); } }))); if (cfg.pts){ lo = Math.min(lo, cv.lo); hi = Math.max(hi, cv.hi); }
+    cv.est = cv.A.map(p => p.map(c => c.map(a => { if (!a.length) return null; const e = aggStat(a, stat), ci = a.length >= 2 ? ciOf(a, e, {stat, err: err === 'sd' ? (stat === 'mean' ? 'sd' : 'iqr') : err === 'se' ? (stat === 'mean' ? 'se' : 'iqr') : 'ci'}) : [NaN, NaN]; return {e, lo: ci[0], hi: ci[1], n: a.length, o: aggStat(a, stat === 'mean' ? 'median' : 'mean')}; })));
+    let lo = Infinity, hi = -Infinity; cv.est.forEach(p => p.forEach(c => c.forEach(q => { if (!q) return; for (const v of [q.e, q.lo, q.hi, cfg.other ? q.o : NaN]) if (Number.isFinite(v)){ lo = Math.min(lo, v); hi = Math.max(hi, v); } }))); if (cfg.pts){ lo = Math.min(lo, cv.lo); hi = Math.max(hi, cv.hi); }
     cv.elo = lo; cv.ehi = hi; const en = stat === 'mean' ? 'Media' : 'Mediana', ci = err === 'ci' ? (stat === 'mean' ? 'IC 95 % (t)' : 'IC 95 % (remuestreo)') : err === 'sd' ? (stat === 'mean' ? '±1 DE' : 'Q1–Q3') : (stat === 'mean' ? '±1 EE' : 'Q1–Q3');
     ctx.autoTitle = `${en} de ${pretty(ctx.Y.name)}` + (ctx.Xc ? ` según ${pretty(ctx.X.name)}` : ''); ctx.autoSub += ` · barras: ${ci}`;
-    const L = cv.L, np = ctx.panels.length; ctx.tbl = {head: [...(np > 1 ? ['Panel'] : []), 'Categoría', ...(L > 1 ? ['Grupo'] : []), 'n', en, 'Límite inferior', 'Límite superior'], rows: []};
-    ctx.panels.forEach((p, k) => cv.cats.forEach((c, i) => { for (let j = 0; j < L; j++){ const q = cv.est[k][i][j]; if (q) ctx.tbl.rows.push([...(np > 1 ? [p.label] : []), c.label, ...(L > 1 ? [ctx.col.names[j]] : []), q.n, fv(q.e), fv(q.lo), fv(q.hi)]); } }));
+    const L = cv.L, np = ctx.panels.length, on = stat === 'mean' ? 'Mediana' : 'Media'; if (cfg.other) ctx.legend = [...(ctx.col.has ? ctx.col.names.map((nm, j) => ({label: nm, sw: swMark(0, ctx.col.fill(j))})) : [{label: en, sw: swCirc(ctx.col.base.line)}]), {label: on + ' (rombo)', sw: (x, y) => `<path d="M${x + 7} ${y - 6}l6 6l-6 6l-6 -6z" fill="var(--bg)" stroke="var(--text)" stroke-width="1.8"/>`}]; ctx.tbl = {head: [...(np > 1 ? ['Panel'] : []), 'Categoría', ...(L > 1 ? ['Grupo'] : []), 'n', en, 'Límite inferior', 'Límite superior', on], rows: []};
+    ctx.panels.forEach((p, k) => cv.cats.forEach((c, i) => { for (let j = 0; j < L; j++){ const q = cv.est[k][i][j]; if (q) ctx.tbl.rows.push([...(np > 1 ? [p.label] : []), c.label, ...(L > 1 ? [ctx.col.names[j]] : []), q.n, fv(q.e), fv(q.lo), fv(q.hi), fv(q.o)]); } }));
     const flat = []; cv.cats.forEach((c, i) => { const q = cv.est[0][i][0]; if (q) flat.push({l: c.label, ...q}); }); flat.sort((a, b) => b.e - a.e);
     ctx.rd = flat.length > 1 ? [`El valor más alto es el de <b>${esc(flat[0].l)}</b> (${fv(flat[0].e)}) y el más bajo el de <b>${esc(flat[flat.length - 1].l)}</b> (${fv(flat[flat.length - 1].e)}).`, Number.isFinite(flat[0].lo) && Number.isFinite(flat[flat.length - 1].hi) ? (flat[0].lo > flat[flat.length - 1].hi ? 'Los intervalos de esos dos grupos no se solapan: la diferencia es probablemente real.' : 'Los intervalos de esos dos grupos se solapan: la diferencia puede deberse al azar.') : ''].filter(Boolean) : [`${en}: <b>${fv(flat[0] ? flat[0].e : NaN)}</b>.`];
     if (stat === 'mean'){ let sk = false; cv.A.forEach(p => p.forEach(c => c.forEach(a => { if (a.length >= 8){ const d = describe(a); if (Math.abs(d.skew) > 1.5) sk = true; } }))); if (sk) ctx.notes.push('Algún grupo es muy asimétrico. La media puede engañar: pruebe la mediana o la escala logarítmica.'); }
@@ -1561,6 +1619,7 @@ CH.means = {
       const q = cv.est[k][ci][j]; if (!q) continue; const c = sc(ci, j), col = ctx.col.has ? ctx.col.fill(j) : (ctx.col.base === SERIES.ink ? 'var(--text)' : ctx.col.base.fill), nm = (L > 1 ? ctx.col.names[j] + ' · ' : '') + cat.label;
       if (cfg.pts) sample(cv.A[k][ci][j], 200).forEach((v, i) => { body += fr.circ(c + jit(i) * Math.min(sw * 0.7, 60), v, 2, `fill="${col}" opacity=".25" pointer-events="none"`); });
       if (Number.isFinite(q.lo) && Number.isFinite(q.hi)){ const cap = Math.min(7, sw * 0.18); body += fr.line(c, q.lo, c, q.hi, `stroke="${col}" stroke-width="2.4"`) + fr.line(c - cap, q.lo, c + cap, q.lo, `stroke="${col}" stroke-width="2.4"`) + fr.line(c - cap, q.hi, c + cap, q.hi, `stroke="${col}" stroke-width="2.4"`); }
+      if (cfg.other){ const [ox, oy] = fr.pt(c, q.o); body += `<path d="M${ox} ${oy - 6.5}l6.5 6.5l-6.5 6.5l-6.5 -6.5z" fill="var(--bg)" stroke="var(--text)" stroke-width="2" class="bar" tabindex="0" data-tip="${esc(nm + ': ' + (cfg.stat === 'median' ? 'media ' : 'mediana ') + fv(q.o))}"/>`; }
       body += fr.circ(c, q.e, 6, `fill="${col}" stroke="var(--bg)" stroke-width="2" class="bar" tabindex="0" data-tip="${esc(nm + ': ' + fv(q.e) + (Number.isFinite(q.lo) ? ' [' + fv(q.lo) + '; ' + fv(q.hi) + ']' : '') + ' · n = ' + q.n)}"`);
       if (cfg.labels){ const [x, y] = fr.pt(c, q.e); body += horiz ? `<text class="txt" x="${x}" y="${y - 11}" text-anchor="middle">${fv(q.e)}</text>` : `<text class="txt" x="${x + 11}" y="${y + 4}">${fv(q.e)}</text>`; }
     } });
@@ -1572,7 +1631,7 @@ CH.means = {
 
 CH.ridge = {
   id: 'ridge', group: 'comp', label: 'Crestas', roles: {y: {k: 'num', l: 'Variable numérica', req: 1, log: 'logv', lim: ['vmin', 'vmax']}, x: {k: 'cat', l: 'Categorías (una cresta por grupo)', req: 1}},
-  opts: ['logv', 'order', 'topN', 'bw', 'overlap', 'showMedian', 'ref'], dflt: {order: 'val', overlap: 2, showMedian: true}, noTop: false,
+  opts: ['logv', 'order', 'topN', 'bw', 'overlap', 'showMedian', 'showMean', 'ref'], dflt: {order: 'val', overlap: 2, showMedian: true, showMean: true}, noTop: false,
   how: {q: 'Apila las curvas de densidad de varios grupos, una por fila, sobre un mismo eje. Cada cresta tiene la misma área.', w: 'Cuando hay muchos grupos (5 a 15) y interesa comparar su forma y su posición.', r: 'Lea cada cresta como una densidad: pico alto, valores frecuentes. La marca roja es la mediana. Si las crestas se desplazan, los grupos difieren.', c: 'Con pocos datos por grupo, las crestas son poco fiables. Se ordenan por mediana si elige «por valor».'},
   prep(ctx){ prepCV(ctx, 'median'); const cv = ctx.cv; cv.rows = cv.cats.map((c, i) => { const a = [].concat(...cv.A.map(p => [].concat(...p[i]))); if (a.length < 5) return {a, c}; const t = a.map(cv.T); return {a, c, q: kdeCurve(t, Math.min(...t), Math.max(...t), 80, ctx.cfg.bw)}; }); let mx = 0; cv.rows.forEach(r => { if (r.q) mx = Math.max(mx, ...r.q.Y); }); cv.maxD = mx; ctx.autoTitle = `Forma de ${pretty(ctx.Y.name)} según ${pretty(ctx.X.name)}`; cvTable(ctx); ctx.rd = cvRead(ctx); if (cv.rows.some(r => !r.q)) ctx.notes.push('Los grupos con menos de 5 datos no se dibujan.'); },
   height(ctx){ return clamp(90 + ctx.cv.cats.length * 40, 240, 700); },
@@ -1586,6 +1645,7 @@ CH.ridge = {
       if (!r.q){ return; }
       const pts = r.q.X.map((t, j) => [sx(cv.U(t)), base2 - r.q.Y[j] / cv.maxD * step * ov * 0.97]), d = pts.map((p, j) => (j ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('');
       body += `<path d="${d}L${pts[pts.length - 1][0].toFixed(1)} ${base2}L${pts[0][0].toFixed(1)} ${base2}Z" fill="${ctx.col.base === SERIES.ink ? 'var(--surface-2)' : ctx.col.base.fill}" fill-opacity="${ctx.col.base === SERIES.ink ? .95 : .55}" stroke="none"/><path class="ln" stroke="${ctx.col.base.line}" stroke-width="1.8" d="${d}"/><line x1="${m.l}" x2="${m.l + P.pw}" y1="${base2}" y2="${base2}" stroke="var(--text)" stroke-opacity=".25"/>`;
+      const mn = aggStat(r.a, 'mean'); if (cfg.showMean) body += `<path d="M${sx(mn)} ${base2 - step * 0.62}l5 6l-5 6l-5 -6z" fill="var(--text)" stroke="var(--bg)" stroke-width="1" class="bar" data-tip="${esc(r.c.label + ': media ' + fv(mn))}"/>`;
       const med = aggStat(r.a, 'median'); if (cfg.showMedian) body += `<line x1="${sx(med)}" x2="${sx(med)}" y1="${base2 - step * 0.55}" y2="${base2}" stroke="var(--accent)" stroke-width="3" class="bar" data-tip="${esc(r.c.label + ': mediana ' + fv(med) + ' · n = ' + r.a.length)}"/>`;
     });
     const rv = lim(cfg, 'ref'); if (rv != null) body += `<line x1="${sx(rv)}" x2="${sx(rv)}" y1="${m.t}" y2="${m.t + P.ph}" stroke="var(--t2)" stroke-dasharray="6 4" stroke-width="1.6"/>`;
@@ -1612,24 +1672,25 @@ function prepBars(ctx){
   const additive = freq || agg === 'sum' || agg === 'n'; let stack = ctx.col.has && L > 1 ? (cfg.stack || 'group') : 'group';
   if (stack !== 'group' && !additive){ stack = 'group'; ctx.notes.push('Las barras apiladas solo tienen sentido con sumas o recuentos. Se muestran agrupadas.'); }
   const pctMode = freq && cfg.pctMode === 'pct', errSel = cfg.err || 'none', stat = agg;
-  const val = [], lo = [], hi = [];
+  const val = [], lo = [], hi = [], oth = []; const withOther = !!cfg.alsoMed && !freq && (agg === 'mean' || agg === 'median') && stack === 'group';
   ctx.panels.forEach((p, k) => {
-    const nP = p.rows.length, catTot = cats.map((c, i) => A[k][i].reduce((s, a) => s + (freq ? a.length : (agg === 'sum' ? aggStat(a, 'sum') || 0 : a.length)), 0)), v = [], l = [], h = [];
-    cats.forEach((c, i) => { v.push([]); l.push([]); h.push([]); for (let j = 0; j < L; j++){ const a = A[k][i][j]; let x = freq ? a.length : aggStat(a, agg), e = [NaN, NaN];
+    const nP = p.rows.length, catTot = cats.map((c, i) => A[k][i].reduce((s, a) => s + (freq ? a.length : (agg === 'sum' ? aggStat(a, 'sum') || 0 : a.length)), 0)), v = [], l = [], h = [], ot = [];
+    cats.forEach((c, i) => { v.push([]); l.push([]); h.push([]); ot.push([]); for (let j = 0; j < L; j++){ const a = A[k][i][j]; let x = freq ? a.length : aggStat(a, agg), e = [NaN, NaN];
       if (a.length){
         if (freq){ if (pctMode){ if (stack === 'pct') x = catTot[i] ? a.length / catTot[i] * 100 : 0; else x = a.length / nP * 100; if (errSel === 'ci' && stack === 'group'){ const nn = nP, w = wilsonCI(a.length, nn); e = [w[0] * 100, w[1] * 100]; } } else if (stack === 'pct') x = catTot[i] ? a.length / catTot[i] * 100 : 0; }
         else { if (stack === 'pct') x = catTot[i] ? (agg === 'sum' ? aggStat(a, 'sum') : a.length) / catTot[i] * 100 : 0; else if (errSel !== 'none' && (agg === 'mean' || agg === 'median') && a.length > 1) e = ciOf(a, x, {stat: agg, err: errSel === 'ci' ? 'ci' : (agg === 'mean' ? 'sd' : 'iqr')}); }
       } else x = 0;
-      v[i].push(x); l[i].push(e[0]); h[i].push(e[1]); } });
-    val.push(v); lo.push(l); hi.push(h);
+      v[i].push(x); l[i].push(e[0]); h[i].push(e[1]); ot[i].push(withOther && a.length ? aggStat(a, agg === 'mean' ? 'median' : 'mean') : NaN); } });
+    val.push(v); lo.push(l); hi.push(h); oth.push(ot);
   });
   let mn = 0, mx = -Infinity;
-  val.forEach((v, k) => v.forEach((r, i) => { if (stack !== 'group'){ const s = r.reduce((a, b) => a + (b > 0 ? b : 0), 0); mx = Math.max(mx, s); const sn = r.reduce((a, b) => a + (b < 0 ? b : 0), 0); mn = Math.min(mn, sn); } else r.forEach((x, j) => { mx = Math.max(mx, Number.isFinite(hi[k][i][j]) ? Math.max(x, hi[k][i][j]) : x); mn = Math.min(mn, Number.isFinite(lo[k][i][j]) ? Math.min(x, lo[k][i][j]) : x); }); }));
+  val.forEach((v, k) => v.forEach((r, i) => { if (stack !== 'group'){ const s = r.reduce((a, b) => a + (b > 0 ? b : 0), 0); mx = Math.max(mx, s); const sn = r.reduce((a, b) => a + (b < 0 ? b : 0), 0); mn = Math.min(mn, sn); } else r.forEach((x, j) => { mx = Math.max(mx, Number.isFinite(hi[k][i][j]) ? Math.max(x, hi[k][i][j]) : x); mn = Math.min(mn, Number.isFinite(lo[k][i][j]) ? Math.min(x, lo[k][i][j]) : x); if (Number.isFinite(oth[k][i][j])){ mx = Math.max(mx, oth[k][i][j]); mn = Math.min(mn, oth[k][i][j]); } }); }));
   if (stack === 'pct'){ mx = 100; mn = 0; }
-  ctx.cv = {cats, A, val, lo, hi, lo0: mn, hi0: mx, log: false, T: v => v, U: v => v, L, stack, pctMode, agg, freq, otros};
+  ctx.cv = {cats, A, val, lo, hi, oth, withOther, lo0: mn, hi0: mx, log: false, T: v => v, U: v => v, L, stack, pctMode, agg, freq, otros};
   const aggName = freq ? (pctMode ? 'Porcentaje de las filas' : 'Número de filas') : (agg === 'n' ? 'Número de filas' : `${AGGS[agg]} de ${pretty(Y.name)}`);
   ctx.vlabel = aggName + (stack === 'pct' ? ' (dentro de cada categoría, %)' : '');
   ctx.autoTitle = freq ? `Frecuencia de ${pretty(ctx.X.name)}` + (ctx.col.has ? ` por ${pretty(ctx.Cv.v.name)}` : '') : `${aggName} según ${pretty(ctx.X.name)}` + (ctx.col.has ? ` y ${pretty(ctx.Cv.v.name)}` : '');
+  if (withOther){ const on = agg === 'mean' ? 'Mediana' : 'Media'; ctx.legend = [...(ctx.col.has ? ctx.col.names.map((nm, j) => ({label: nm, sw: swSq(ctx.col.fill(j))})) : [{label: AGGS[agg], sw: swSq(ctx.col.base.fill)}]), {label: on + ' (rombo)', sw: (x, y) => `<path d="M${x + 7} ${y - 6}l6 6l-6 6l-6 -6z" fill="var(--bg)" stroke="var(--text)" stroke-width="1.8"/>`}]; }
   if (errSel !== 'none' && ctx.col.has && stack !== 'group') ctx.notes.push('Las barras de error se ocultan en barras apiladas.');
   if (!freq && (agg === 'mean') && !ctx.col.has){ const d = describe(pooled.flat()); if (Math.abs(d.skew) > 2 && d.n > 15) ctx.notes.push('La variable es muy asimétrica. La media de cada grupo puede estar dominada por unos pocos valores extremos. Compare con la mediana.'); }
   if (!freq && (agg === 'mean' || agg === 'sum') && Y && ctx.rows.length) { const mnY = Math.min(...Array.from(arrOf(ctx.rows, Y))); if (mnY < 0) ctx.notes.push('Hay valores negativos. Las barras parten de cero y pueden ir hacia abajo.'); }
@@ -1656,6 +1717,7 @@ function drawBars(ctx, k, W, H, o){
         if (lol){ body += fr.line(c, 0, c, x, `stroke="${base}" stroke-width="2.4"`) + fr.circ(c, x, r, `fill="${base}" ${st} class="bar" tabindex="0" data-tip="${esc(tip)}"`); }
         else body += fr.rect(c, w, 0, x, `fill="${base}" ${st} class="bar" tabindex="0" data-tip="${esc(tip)}"`);
         const lo = cv.lo[k][ci][j], hi = cv.hi[k][ci][j]; if (Number.isFinite(lo) && Number.isFinite(hi)){ const cap = Math.min(6, w * 0.25); body += fr.line(c, lo, c, hi, 'stroke="var(--text)" stroke-width="1.8"') + fr.line(c - cap, lo, c + cap, lo, 'stroke="var(--text)" stroke-width="1.8"') + fr.line(c - cap, hi, c + cap, hi, 'stroke="var(--text)" stroke-width="1.8"'); }
+        const om = cv.withOther ? cv.oth[k][ci][j] : NaN; if (Number.isFinite(om)){ const [ox, oy] = fr.pt(c, om); body += `<path d="M${ox} ${oy - 7}l7 7l-7 7l-7 -7z" fill="var(--bg)" stroke="var(--text)" stroke-width="2" class="bar" tabindex="0" data-tip="${esc(nm + ': ' + (cv.agg === 'mean' ? 'mediana ' : 'media ') + fv(om))}"/>`; }
         if (cfg.labels && n){ const [px, py] = fr.pt(c, Number.isFinite(hi) ? Math.max(hi, x) : (x >= 0 ? x : x)); body += horiz ? `<text class="txt" x="${px + 6}" y="${py + 4}">${fmtv(x)}</text>` : `<text class="txt" x="${px}" y="${py - 7}" text-anchor="middle">${fmtv(x)}</text>`; }
       } else {
         const v0 = x >= 0 ? cum : cumNeg, v1 = v0 + x; if (x >= 0) cum = v1; else cumNeg = v1; const c = fr.cx(ci);
@@ -1684,7 +1746,7 @@ CH.freq = {
 };
 CH.bars = {
   id: 'bars', group: 'comp', label: 'Barras de resumen', roles: barRoles(true),
-  opts: ['agg', 'err', 'orient', 'order', 'topN', 'stack', 'style', 'labels', 'hl', 'shared'], dflt: {orient: 'h', order: 'val', agg: 'mean', stack: 'group', style: 'bar', labels: true, err: 'ci'},
+  opts: ['agg', 'alsoMed', 'err', 'orient', 'order', 'topN', 'stack', 'style', 'labels', 'hl', 'shared'], dflt: {orient: 'h', order: 'val', agg: 'mean', stack: 'group', style: 'bar', labels: true, err: 'ci', alsoMed: true},
   how: {q: 'Resume una variable numérica en cada categoría con una sola cifra (media, mediana, suma, máximo…) y la dibuja como barra.', w: 'Cuando interesa un total (suma) o un valor típico (media o mediana) por categoría y se quiere una lectura inmediata.', r: 'La barra es el resumen elegido. El bigote negro es el intervalo de confianza del 95 % de la media, o el de remuestreo de la mediana, o la dispersión.', c: 'Una barra oculta la distribución completa. Si hay valores extremos, la media engaña. Compruebe con la caja o con la mediana.'},
   prep(ctx){ prepBars(ctx); }, height: CH.freq.height, draw: drawBars, swatch: (ctx, j) => swSq(ctx.col.fill(j))
 };
@@ -1865,7 +1927,7 @@ CH.bin2d = {
 /* ───────── Evolución ───────── */
 CH.time = {
   id: 'time', group: 'time', label: 'Evolución temporal', roles: {x: {k: 'date', l: 'Fecha', req: 1}, y: {k: 'num', l: 'Variable numérica (vacío: contar filas)'}, c: {k: 'cat', l: 'Color (una línea por grupo)'}, f: {k: 'cat', l: 'Paneles (un gráfico por grupo)'}},
-  opts: ['unit', 'agg', 'ma', 'cum', 'area', 'dots', 'zero', 'labels', 'shared'], dflt: {unit: 'month', agg: 'mean', ma: 1, cum: false, area: false, dots: false, zero: true, labels: true},
+  opts: ['unit', 'agg', 'alsoMed', 'ma', 'cum', 'area', 'dots', 'zero', 'labels', 'shared'], dflt: {unit: 'month', agg: 'mean', ma: 1, cum: false, area: false, dots: false, zero: true, labels: true, alsoMed: true},
   how: {q: 'Agrupa las filas por periodo (día, semana, mes, trimestre o año) y dibuja una medida —el recuento o un resumen de una variable numérica— a lo largo del tiempo.', w: 'Para ver tendencias, estacionalidad y cambios bruscos.', r: 'Cada punto es el valor de un periodo. La media móvil suaviza las oscilaciones. Con «acumulado» se ve el total que se va sumando.', c: 'Periodos con pocas filas dan valores inestables. Si el eje no parte de cero, las variaciones parecen mayores de lo que son.'},
   prep(ctx){
     const cfg = ctx.cfg, X = ctx.X, Y = ctx.Y, L = ctx.col.L; let unit = cfg.unit || 'month', agg = Y ? (cfg.agg || 'mean') : 'n';
@@ -1876,16 +1938,18 @@ CH.time = {
     if (periods.length < 2) return void (ctx.timeErr = true, ctx.notes.push('Las fechas caen en un único periodo. Elija una unidad más fina.'));
     const idx = new Map(periods.map((s, i) => [s, i])), P = periods.length;
     const cum = !!cfg.cum && (agg === 'n' || agg === 'sum'); if (cfg.cum && !cum) ctx.notes.push('El acumulado solo tiene sentido con recuentos o sumas.');
+    const other = !!cfg.alsoMed && Y && (agg === 'mean' || agg === 'median') && !cum;
     const series = ctx.panels.map(p => { const buckets = Array.from({length: L}, () => Array.from({length: P}, () => [])); for (const i of p.rows){ const j = ctx.col.idx(i); if (j < 0) continue; const b = idx.get(periodStart(X.num[i], unit)); if (b == null) continue; buckets[j][b].push(Y ? Y.num[i] : 1); }
-      return buckets.map(bs => { let v = bs.map(a => a.length ? aggStat(a, agg) : (agg === 'n' || agg === 'sum' ? 0 : NaN)); const w = Math.max(1, Math.round(+cfg.ma || 1));
+      return buckets.map(bs => { const mkv = ag => { let v = bs.map(a => a.length ? aggStat(a, ag) : (ag === 'n' || ag === 'sum' ? 0 : NaN)); const w = Math.max(1, Math.round(+cfg.ma || 1)); if (w > 1){ v = v.map((x, i) => { let s = 0, c = 0; for (let q = Math.max(0, i - w + 1); q <= i; q++) if (Number.isFinite(v[q])){ s += v[q]; c++; } return c ? s / c : NaN; }); } return v; }; let v = mkv(agg); const v2 = other ? mkv(agg === 'mean' ? 'median' : 'mean') : null; const w = Math.max(1, Math.round(+cfg.ma || 1));
         if (w > 1){ v = v.map((x, i) => { let s = 0, c = 0; for (let q = Math.max(0, i - w + 1); q <= i; q++) if (Number.isFinite(v[q])){ s += v[q]; c++; } return c ? s / c : NaN; }); }
-        if (cum){ let s = 0; v = v.map(x => { s += Number.isFinite(x) ? x : 0; return s; }); } return {v, n: bs.map(a => a.length)}; }); });
-    let lo = Infinity, hi = -Infinity; series.forEach(S => S.forEach(q => q.v.forEach(x => { if (Number.isFinite(x)){ if (x < lo) lo = x; if (x > hi) hi = x; } })));
-    ctx.h = {periods, series, unit, agg, cum, lo, hi, P};
+        if (cum){ let s = 0; v = v.map(x => { s += Number.isFinite(x) ? x : 0; return s; }); } return {v, v2, n: bs.map(a => a.length)}; }); });
+    let lo = Infinity, hi = -Infinity; series.forEach(S => S.forEach(q => q.v.concat(q.v2 || []).forEach(x => { if (Number.isFinite(x)){ if (x < lo) lo = x; if (x > hi) hi = x; } })));
+    ctx.h = {periods, series, unit, agg, cum, lo, hi, P, other};
+    if (other){ const on = agg === 'mean' ? 'Mediana' : 'Media'; ctx.legend = [...(ctx.col.has ? ctx.col.names.map((nm, j) => ({label: nm, sw: swLine(ctx.col.line(j))})) : [{label: AGGS[agg], sw: swLine(ctx.col.base.line)}]), {label: on + ' (línea discontinua)', sw: swLine('var(--text)', true)}]; }
     const an = agg === 'n' ? 'Número de filas' : `${AGGS[agg]} de ${pretty(Y.name)}`; ctx.vlabel = an + (cum ? ' (acumulado)' : '') + (cfg.ma > 1 ? ` · media móvil de ${cfg.ma}` : '');
     ctx.autoTitle = `${an}${cum ? ' acumulado' : ''} por ${UNITS[unit].toLowerCase()}`; ctx.autoSub += ` · ${P} periodos`;
-    ctx.tbl = {head: ['Periodo', ...(ctx.panels.length > 1 ? ['Panel'] : []), ...(L > 1 ? ctx.col.names : [an])], rows: []};
-    ctx.panels.forEach((p, k) => periods.forEach((s, b) => ctx.tbl.rows.push([periodLabel(s, unit), ...(ctx.panels.length > 1 ? [p.label] : []), ...series[k].map(q => Number.isFinite(q.v[b]) ? (agg === 'n' ? nf(q.v[b], 0) : fv(q.v[b])) : '—')])));
+    ctx.tbl = {head: ['Periodo', ...(ctx.panels.length > 1 ? ['Panel'] : []), ...(L > 1 ? ctx.col.names : [an])].concat(other && L === 1 ? [(agg === 'mean' ? 'Mediana' : 'Media')] : []), rows: []};
+    ctx.panels.forEach((p, k) => periods.forEach((s, b) => ctx.tbl.rows.push([periodLabel(s, unit), ...(ctx.panels.length > 1 ? [p.label] : []), ...series[k].map(q => Number.isFinite(q.v[b]) ? (agg === 'n' ? nf(q.v[b], 0) : fv(q.v[b])) : '—'), ...(other && L === 1 ? [Number.isFinite(series[k][0].v2[b]) ? fv(series[k][0].v2[b]) : '—'] : [])])));
     const v0 = series[0][0].v; let mxi = 0; v0.forEach((x, i) => { if (Number.isFinite(x) && (!Number.isFinite(v0[mxi]) || x > v0[mxi])) mxi = i; });
     const last = [...v0].reverse().find(Number.isFinite);
     ctx.rd = [`El valor más alto (${agg === 'n' ? nf(v0[mxi], 0) : fv(v0[mxi])}) se da en <b>${periodLabel(periods[mxi], unit)}</b>.`, `El último periodo vale ${agg === 'n' ? nf(last, 0) : fv(last)}.`, 'Compare siempre periodos con un número similar de filas: unos pocos datos producen oscilaciones.'];
@@ -1898,6 +1962,7 @@ CH.time = {
     h.series[k].forEach((q, j) => { const col = ctx.col.line(j); let d = '', seg = [], segs = [];
       q.v.forEach((x, i) => { if (Number.isFinite(x)) seg.push([sx(h.periods[i]), sy(x), x, i]); else { if (seg.length) segs.push(seg); seg = []; } }); if (seg.length) segs.push(seg);
       segs.forEach(s => { const dd = s.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(''); if (cfg.area) g += `<path d="${dd}L${s[s.length - 1][0].toFixed(1)} ${sy(Math.max(yd[0], Math.min(0, yd[1])))}L${s[0][0].toFixed(1)} ${sy(Math.max(yd[0], Math.min(0, yd[1])))}Z" fill="${col}" fill-opacity=".16"/>`; g += `<path class="ln" stroke="${col}" stroke-width="2.4" d="${dd}"/>`; });
+      if (h.other && q.v2){ let d2 = '', gap = true; q.v2.forEach((x, i) => { if (Number.isFinite(x)){ d2 += (gap ? 'M' : 'L') + sx(h.periods[i]).toFixed(1) + ' ' + sy(x).toFixed(1); gap = false; } else gap = true; }); g += `<path class="ln" stroke="${col}" stroke-width="2" stroke-dasharray="6 4" opacity=".85" d="${d2}"/>`; }
       const showDots = cfg.dots || h.P <= 40; segs.forEach(s => s.forEach(p => { if (showDots || true){ g += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${showDots ? 3.4 : 7}" fill="${showDots ? col : 'transparent'}" ${showDots ? 'stroke="var(--bg)" stroke-width="1.2"' : ''} class="bar" data-tip="${esc((L2(ctx) ? ctx.col.names[j] + ' · ' : '') + periodLabel(h.periods[p[3]], h.unit) + ': ' + (h.agg === 'n' ? nf(p[2], 0) : fv(p[2])) + ' · ' + nf(q.n[p[3]], 0) + ' filas')}"/>`; } }));
       if (cfg.labels && !P.c && segs.length){ const lp = segs[segs.length - 1].slice(-1)[0]; g += `<text class="txt" x="${lp[0] + 8}" y="${lp[1] + 4}" style="fill:var(--text)">${h.agg === 'n' ? nf(lp[2], 0) : fv(lp[2])}</text>`; }
     });
@@ -1972,7 +2037,7 @@ CH.splom = {
 /* ═════════ Interfaz del laboratorio ═════════ */
 const SAMPLE_NAME = 'Datos de prueba: clientes de una cadena de cafeterías (simulados)';
 const GASTO = /gasto|ventas|import|precio/i;
-const DEFAULTS = {type: 'hist', x: -1, y: -1, z: -1, c: -1, f: -1, m: [], logv: false, logx: false, logy: false, bins: 'fd', binsN: 20, hnorm: 'count', kde: true, normal: false, bw: 1, fill: true, rug: false, showMean: true, showMedian: true, ref: '', shared: true, pctmarks: true,
+const DEFAULTS = {type: 'hist', x: -1, y: -1, z: -1, c: -1, f: -1, m: [], logv: false, logx: false, logy: false, bins: 'fd', binsN: 20, hnorm: 'count', kde: true, normal: false, bw: 1, fill: true, rug: false, showMean: true, showMedian: true, shape: false, other: true, alsoMed: true, ref: '', shared: true, pctmarks: true,
   orient: 'h', order: 'nat', topN: 12, pts: false, swarm: 'swarm', alpha: 0.5, psize: 3, vscale: 'width', stat: 'mean', ci: 'ci', zero: false, labels: true, overlap: 2, agg: 'mean', err: 'none', stack: 'group', style: 'bar', pareto: false, hl: '', pctMode: 'count', heatm: 'n',
   reg: 'none', span: 0.75, ellipse: false, annot: true, nbins2: 22, unit: 'month', ma: 1, cum: false, area: false, dots: false, norm: 'rank', aspect: 'auto', col: 'ink', title: '', subtitle: '', note: '', vmin: '', vmax: '', xmin: '', xmax: '', ymin: '', ymax: ''};
 const UI = {cfg: null, purpose: 'dist', galN: 12, open: {rd: false, how: false, tbl: false}};
@@ -1987,6 +2052,9 @@ const FIELDS = {
   bw: fRng('Suavizado', 0.3, 3, 0.1, v => '× ' + nf(v, 1), 'Un valor bajo marca más detalles; uno alto, la forma general.'),
   fill: fChk('Rellenar bajo la curva'), rug: fChk('Marcar cada dato bajo la curva'),
   showMean: fChk('Marcar la media'), showMedian: fChk('Marcar la mediana'),
+  shape: fChk('Anotar asimetría y curtosis', 'Escribe en el gráfico las dos medidas de forma y su significado.'),
+  other: fChk('Mostrar también la otra medida (rombo)', 'Si el resumen es la media, añade la mediana; si es la mediana, añade la media.'),
+  alsoMed: fChk('Mostrar también la mediana (o la media)', 'Si el resumen es la media, añade la mediana; si es la mediana, añade la media.'),
   ref: fTxt('Línea de referencia (valor)', 'por ejemplo, 50', 'Dibuja una línea en ese valor, por ejemplo un objetivo.'),
   shared: Object.assign(fChk('Misma escala en todos los paneles'), {show: c => c.f >= 0}),
   pctmarks: fChk('Marcar los percentiles 25, 50 y 75'),
@@ -2017,13 +2085,14 @@ const FIELDS = {
   norm: fSel('Escala de los ejes', [['rank', 'Por percentil (recomendada con datos asimétricos)'], ['z', 'Estandarizada (desviaciones típicas)'], ['minmax', 'De mínimo a máximo']])
 };
 const LIMS = {vmin: 'Mínimo del eje de valores', vmax: 'Máximo del eje de valores', xmin: 'Mínimo del eje X', xmax: 'Máximo del eje X', ymin: 'Mínimo del eje Y', ymax: 'Máximo del eje Y'};
-const limKeysOf = def => { const s = new Set(); Object.values(def.roles).forEach(r => { if (r.lim) r.lim.forEach(k => s.add(k)); }); if (!s.size && ['bars', 'freq', 'time'].includes(def.id)) { s.add('vmin'); s.add('vmax'); } return [...s]; };
+const limKeysOf = def => { if (def.limKeys) return def.limKeys; const s = new Set(); Object.values(def.roles).forEach(r => { if (r.lim) r.lim.forEach(k => s.add(k)); }); if (!s.size && ['bars', 'freq', 'time'].includes(def.id)) { s.add('vmin'); s.add('vmax'); } return [...s]; };
 
 /* ───────── Iconos de los tipos de gráfico ───────── */
 const ICONS = {
   hist: '<path d="M3 21V14h5v7zM9 21V8h5v13zM15 21V3h5v18zM21 21V9h5v12zM27 21v-5h5v5z" fill="currentColor" stroke="none" opacity=".8"/>',
   dens: '<path d="M2 21C8 21 10 4 18 4s10 17 16 17" /><path d="M2 21h32"/>',
   ecdf: '<path d="M2 21h7v-4h4v-5h4v-4h5v-5h4v-2h8"/>',
+  shape: '<path d="M3 21h30M18 3v18"/><path d="M6 17C10 10 14 8 18 12s8 3 12-6" stroke-width="1.4"/><circle cx="22" cy="8" r="2" fill="currentColor"/><circle cx="12" cy="15" r="2" fill="currentColor"/>',
   qq: '<path d="M4 20L32 4"/><circle cx="8" cy="19" r="1.6" fill="currentColor"/><circle cx="14" cy="14" r="1.6" fill="currentColor"/><circle cx="20" cy="12" r="1.6" fill="currentColor"/><circle cx="26" cy="7" r="1.6" fill="currentColor"/><circle cx="31" cy="4" r="1.6" fill="currentColor"/>',
   box: '<path d="M5 6v12M5 12h3M31 6v12M31 12h-3M8 12h20"/><rect x="11" y="7" width="14" height="10" fill="none"/><path d="M18 7v10" stroke-width="3"/>',
   violin: '<path d="M18 2C24 6 24 9 21 12c3 3 3 6 0 10h-6c-3-4-3-7 0-10-3-3-3-6 3-10z"/>',
