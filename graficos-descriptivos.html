@@ -360,6 +360,51 @@ fieldset{border:0;margin:24px 0 0;padding:0;min-width:0}
 .tile .btn{width:100%;font-size:13px}
 @media print{.ctl,.toc,.skip,.tools,.types,.purpose,.ctlgrid{display:none!important}.sec{padding:24px 0}:root{--bg:#fff}body{background:#fff}}
 
+
+/* Bloques plegables reconocibles: lecturas, límites y preguntas frecuentes */
+details.fold{border:1px solid var(--text);background:var(--surface);margin-top:32px}
+details.fold.acc{border-left:6px solid var(--accent)}
+details.fold>summary{min-height:56px;display:flex;align-items:center;gap:16px;padding:12px 16px;cursor:pointer;list-style:none}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary .ttl{display:grid;gap:2px}
+details.fold>summary .ttl b{font-weight:500;font-size:16px;color:var(--text)}
+details.fold>summary .ttl span{font-size:13px;color:var(--t2);line-height:1.4}
+details.fold>summary::after{content:'+';margin-left:auto;flex:none;width:40px;height:40px;border:1px solid var(--text);display:grid;place-items:center;font-size:1.5rem;font-weight:300;line-height:1;color:var(--text)}
+details.fold[open]>summary::after{content:'−';background:var(--text);color:var(--bg)}
+details.fold>summary:hover{background:var(--surface-2)}
+details.fold>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+details.fold[open]>summary{border-bottom:1px solid var(--border)}
+.fold-b{padding:16px 16px 20px}
+.fold-b>:first-child{margin-top:0}
+.fold-b p{max-width:62ch;color:var(--t2)}
+.fold-b p+p{margin-top:8px}
+.fold-b b{font-weight:500;color:var(--text)}
+.fold-b .note{font-size:14px;color:var(--t3)}
+.fold-b ul.lim li:first-child{border-top:0}
+.faq{margin-top:8px;border-top:1px solid var(--text)}
+.faq details{border-bottom:1px solid var(--border)}
+.faq summary{min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 4px;cursor:pointer;list-style:none;font-weight:500}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:'+';flex:none;width:32px;height:32px;border:1px solid var(--border);display:grid;place-items:center;font-size:1.25rem;font-weight:300;color:var(--text)}
+.faq details[open]>summary::after{content:'−';background:var(--text);color:var(--bg);border-color:var(--text)}
+.faq summary:hover{background:var(--surface)}
+.faq summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.faq details>p{padding:0 48px 16px 4px;max-width:66ch;color:var(--t2)}
+@media print{details.fold>.fold-b,.faq details>p{display:block!important}}
+
+.fold-b.reading{border-top:0;margin-top:0;padding-top:16px}
+/* Diccionario en ventana modal con cabecera fija */
+.dictbar{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:16px}
+dialog.dlg{width:min(1100px,96vw);max-width:96vw;padding:0;border:1px solid var(--text);background:var(--bg);color:var(--text)}
+dialog.dlg::backdrop{background:rgba(12,10,9,.6)}
+.dlg-in{display:flex;flex-direction:column;height:min(88vh,920px);padding:16px 24px 20px}
+.dlg-h{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-bottom:12px;border-bottom:1px solid var(--text)}
+.dlg-h h3{margin:0}
+.dlg-in .dictwrap{flex:1;min-height:0;overflow:auto;margin-top:12px;border:1px solid var(--border)}
+.dictwrap table.cgrid{margin:0;border-collapse:separate;border-spacing:0}
+.dictwrap table.cgrid thead th{position:sticky;top:0;z-index:2;background:var(--bg);box-shadow:0 1px 0 var(--text)}
+.dictwrap table.cgrid thead th.stk{left:0;z-index:4}
+.dictwrap table.cgrid tbody th.stk{z-index:1}
 /* Diccionario en rejilla */
 table.cgrid{min-width:680px}
 table.cgrid th.c,table.cgrid td.c{text-align:center;padding:0 1px;width:52px}
@@ -418,9 +463,13 @@ table.cgrid th.stk{position:sticky;left:0;background:var(--bg);z-index:1;min-wid
     <span class="lbl">Clases de variable detectadas</span>
     <div id="classCards" style="margin-top:8px"></div>
     <span class="lbl" style="display:block;margin-top:32px">Diccionario de variables</span>
-    <p class="body" style="margin-top:8px">Cada fila es una variable. Cada columna es una clase posible. Cámbiela marcando otra columna si no coincide con lo que usted sabe de los datos. Los gráficos se actualizan al instante.</p>
-    <div id="dictT"></div>
-    <details class="rd"><summary><span class="lbl">Qué significa cada tipo</span></summary><div class="rd-b">
+    <p class="body" style="margin-top:8px">Cada variable tiene una clase: número, categoría, fecha… El programa la detecta sola, pero usted sabe más de sus datos. Abra el diccionario para revisarla y, si no coincide, cámbiela. Los gráficos se actualizan al instante.</p>
+    <div class="dictbar"><button type="button" class="btn main" id="dictOpen" aria-haspopup="dialog">Abrir el diccionario de variables</button><span class="hint" id="dictSum" style="margin:0"></span></div>
+    <dialog id="dictDlg" class="dlg" aria-labelledby="dictTtl"><div class="dlg-in">
+      <div class="dlg-h"><h3 id="dictTtl">Diccionario de variables</h3><button type="button" class="btn" id="dictX">Cerrar</button></div>
+      <p class="hint" style="margin:12px 0 0">Cada fila es una variable y cada columna una clase posible. Marque la clase correcta. Los títulos de las columnas permanecen visibles al desplazarse.</p>
+      <p class="hint" id="dictMsg" role="status" aria-live="polite" style="margin:8px 0 0"></p>
+      <details class="rd" style="margin-top:8px"><summary><span class="lbl">Qué significa cada tipo</span></summary><div class="rd-b">
       <p><b class="b-ink">Decimal (double).</b> Número con decimales: gasto, ingresos, minutos.</p>
       <p><b class="b-ink">Entero (integer).</b> Número sin decimales: edad, visitas, notas de 1 a 5. Si tiene pocos valores distintos, también puede usarse como categoría.</p>
       <p><b class="b-ink">Lógica (boolean).</b> Solo dos valores: sí o no, verdadero o falso.</p>
@@ -429,6 +478,8 @@ table.cgrid th.stk{position:sticky;left:0;background:var(--bg);z-index:1;min-wid
       <p><b class="b-ink">Texto (carácter).</b> Texto libre: comentarios, nombres. No se grafica.</p>
       <p><b class="b-ink">Fecha.</b> Día, mes y año: ISO (2025-03-18) o día/mes/año. Permite gráficos de evolución.</p>
       <p><b class="b-ink">Identificador.</b> Código único por fila. El laboratorio lo excluye.</p></div></details>
+      <div id="dictT" style="display:flex;flex-direction:column;flex:1;min-height:0"></div>
+    </div></dialog>
   </div>
 </div></div></section>
 
@@ -475,22 +526,8 @@ table.cgrid th.stk{position:sticky;left:0;background:var(--bg);z-index:1;min-wid
     <tr><th scope="row" class="rh">¿Qué perfil tiene cada grupo?</th><td>Tres o más numéricas</td><td>Coordenadas paralelas</td><td>Matriz de dispersión</td></tr>
   </tbody></table></div>
   <span class="lbl" style="display:block;margin-top:48px">Reglas incorporadas</span>
-  <dl class="gloss">
-    <div><dt>Barras desde cero</dt><dd>La longitud de una barra representa un valor. Por eso su eje parte siempre de cero. Para valores típicos con escala libre se usan medias con intervalo o cajas.</dd></div>
-    <div><dt>Sin gráficos de sectores</dt><dd>El ojo compara mal los ángulos. Las barras ordenadas muestran lo mismo con más precisión.</dd></div>
-    <div><dt>Como máximo cuatro colores</dt><dd>Más de cuatro colores se confunden entre sí, sobre todo con daltonismo. Con más grupos, el laboratorio agrupa los menores en «Otros» o propone paneles. Cada grupo se distingue además por su forma o por una etiqueta.</dd></div>
-    <div><dt>Orden con escala de menos a más</dt><dd>Una variable ordenada (por ejemplo, satisfacción) se colorea con un solo tono de claro a oscuro. El orden se lee sin leyenda.</dd></div>
-    <div><dt>Mostrar los datos, no solo el resumen</dt><dd>Una media o una caja ocultan la forma de los datos. Por eso se ofrece superponer los puntos y se avisa si la variable es muy asimétrica.</dd></div>
-    <div><dt>Incertidumbre visible</dt><dd>Las medias admiten intervalo de confianza del 95 %. Los porcentajes admiten intervalo de Wilson. Las medianas, intervalo por remuestreo.</dd></div>
-    <div><dt>Misma escala entre paneles</dt><dd>Para comparar paneles, todos comparten ejes. Puede desactivarlo para ver mejor cada panel por separado.</dd></div>
-    <div><dt>Intervalo de confianza</dt><dd>Margen donde probablemente está el valor real de la población. Un intervalo estrecho indica una estimación precisa.</dd></div>
-    <div><dt>Asimetría</dt><dd>Mide si la distribución se inclina hacia un lado. Vale 0 si es simétrica. Un valor positivo indica una cola larga de valores altos y uno negativo, de valores bajos. Por encima de 1 en valor absoluto, la asimetría es fuerte y la media se aleja de la mediana.</dd></div>
-    <div><dt>Curtosis en exceso</dt><dd>Mide el peso de las colas respecto a una campana normal, que vale 0. Un valor positivo indica más valores extremos de lo normal (colas pesadas) y uno negativo, menos (colas ligeras). No mide si la distribución es «puntiaguda».</dd></div>
-    <div><dt>LOESS</dt><dd>Curva suave que sigue la tendencia local de los datos sin suponer una recta. El parámetro de suavizado indica qué fracción de los datos usa cada punto de la curva.</dd></div>
-    <div><dt>Residuo ajustado</dt><dd>Distancia de una casilla a lo esperado si no hubiera relación entre dos categorías. Un valor mayor que 2 en valor absoluto destaca.</dd></div>
-  </dl>
-  <span class="lbl" style="display:block;margin-top:48px">Límites del laboratorio</span>
-  <ul class="lim">
+  <div class="faq"><details><summary>Barras desde cero</summary><p>La longitud de una barra representa un valor. Por eso su eje parte siempre de cero. Para valores típicos con escala libre se usan medias con intervalo o cajas.</p></details><details><summary>Sin gráficos de sectores</summary><p>El ojo compara mal los ángulos. Las barras ordenadas muestran lo mismo con más precisión.</p></details><details><summary>Como máximo cuatro colores</summary><p>Más de cuatro colores se confunden entre sí, sobre todo con daltonismo. Con más grupos, el laboratorio agrupa los menores en «Otros» o propone paneles. Cada grupo se distingue además por su forma o por una etiqueta.</p></details><details><summary>Orden con escala de menos a más</summary><p>Una variable ordenada (por ejemplo, satisfacción) se colorea con un solo tono de claro a oscuro. El orden se lee sin leyenda.</p></details><details><summary>Mostrar los datos, no solo el resumen</summary><p>Una media o una caja ocultan la forma de los datos. Por eso se ofrece superponer los puntos y se avisa si la variable es muy asimétrica.</p></details><details><summary>Incertidumbre visible</summary><p>Las medias admiten intervalo de confianza del 95 %. Los porcentajes admiten intervalo de Wilson. Las medianas, intervalo por remuestreo.</p></details><details><summary>Misma escala entre paneles</summary><p>Para comparar paneles, todos comparten ejes. Puede desactivarlo para ver mejor cada panel por separado.</p></details><details><summary>Intervalo de confianza</summary><p>Margen donde probablemente está el valor real de la población. Un intervalo estrecho indica una estimación precisa.</p></details><details><summary>Asimetría</summary><p>Mide si la distribución se inclina hacia un lado. Vale 0 si es simétrica. Un valor positivo indica una cola larga de valores altos y uno negativo, de valores bajos. Por encima de 1 en valor absoluto, la asimetría es fuerte y la media se aleja de la mediana.</p></details><details><summary>Curtosis en exceso</summary><p>Mide el peso de las colas respecto a una campana normal, que vale 0. Un valor positivo indica más valores extremos de lo normal (colas pesadas) y uno negativo, menos (colas ligeras). No mide si la distribución es «puntiaguda».</p></details><details><summary>LOESS</summary><p>Curva suave que sigue la tendencia local de los datos sin suponer una recta. El parámetro de suavizado indica qué fracción de los datos usa cada punto de la curva.</p></details><details><summary>Residuo ajustado</summary><p>Distancia de una casilla a lo esperado si no hubiera relación entre dos categorías. Un valor mayor que 2 en valor absoluto destaca.</p></details></div>
+  <details class="fold"><summary><span class="ttl"><b>Límites del laboratorio</b><span>Qué no puede decirle esta herramienta</span></span></summary><div class="fold-b"><ul class="lim">
     <li>El laboratorio dibuja y resume. No contrasta hipótesis. Para saber si una diferencia o una relación supera al azar, use el <a href="dashboard-descriptivo.html">Panel de análisis descriptivo</a>.</li>
     <li>Los intervalos de confianza de la media suponen datos poco asimétricos. Con valores extremos, use la mediana o la escala logarítmica.</li>
     <li>Los gráficos de dispersión dibujan como máximo 2 500 puntos por panel y los de caja y puntos, 600 por grupo. Los resúmenes usan todas las filas.</li>
@@ -498,7 +535,7 @@ table.cgrid th.stk{position:sticky;left:0;background:var(--bg);z-index:1;min-wid
     <li>Las exportaciones PNG y SVG usan la fuente del sistema si IBM Plex no está instalada.</li>
     <li>El laboratorio trabaja con los datos que cargó. Todo el cálculo ocurre en su navegador. Ningún dato sale de su equipo.</li>
     <li>Los datos de prueba son simulados. No representan a ninguna empresa real.</li>
-  </ul>
+  </ul></div></details>
 </div></section>
 </main>
 <footer><div class="wrap"><span>Laboratorio de gráficos descriptivos · Comportamiento del consumidor</span><span>Todo el cálculo ocurre en su navegador.</span></div></footer>
@@ -2237,11 +2274,14 @@ function defaultCfg(){ UI.cfg = Object.assign({}, DEFAULTS, {m: []}); const nums
 /* ───────── Diccionario, filtro y carga ───────── */
 function renderDict(){
   const D = DATA, cols = [['double', 'Decimal'], ['integer', 'Entero'], ['logical', 'Lógica'], ['factor', 'Factor'], ['ordered', 'Ordenado'], ['character', 'Texto'], ['date', 'Fecha'], ['id', 'Código']];
-  $('#dictT').innerHTML = `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Diccionario de variables: marque la clase de cada variable"><table class="compact dict cgrid" style="min-width:680px"><thead><tr><th scope="col" class="stk">Variable</th>${cols.map(([k, l]) => `<th scope="col" class="c" title="${esc(TYPE_NAME[k])}">${l}</th>`).join('')}</tr></thead><tbody>` + D.vars.map((v, i) => {
+  const oldW = $('#dictT .dictwrap'), keepPos = oldW ? [oldW.scrollTop, oldW.scrollLeft] : null;
+  const nChg = D.vars.filter(v => v.type !== v.auto).length; $('#dictSum').textContent = `${nf(D.vars.length, 0)} variables · ${nChg ? nf(nChg, 0) + (nChg === 1 ? ' clase corregida a mano' : ' clases corregidas a mano') : 'todas con la clase detectada'}.`;
+  $('#dictT').innerHTML = `<div class="tbl-wrap dictwrap" tabindex="0" role="region" aria-label="Diccionario de variables: marque la clase de cada variable"><table class="compact dict cgrid" style="min-width:680px"><thead><tr><th scope="col" class="stk">Variable</th>${cols.map(([k, l]) => `<th scope="col" class="c" title="${esc(TYPE_NAME[k])}">${l}</th>`).join('')}</tr></thead><tbody>` + D.vars.map((v, i) => {
     const ex = [...new Set(v.strs.filter(s => !MISSING.has(s.trim().toLowerCase())))].slice(0, 3).map(s => esc(trunc(s, 18))).join(' · '), changed = v.type !== v.auto, miss = v.strs.filter(s => MISSING.has(s.trim().toLowerCase())).length;
     return `<tr><th scope="row" class="rh stk">${esc(v.name)}${changed ? `<span class="chip">Modificado</span>` : ''}<span class="def">${nf(v.k, 0)} distintos · ${nf(miss, 0)} sin dato · ${ex}</span>${v.note && !changed ? `<span class="def">${esc(v.note)}</span>` : ''}${v.type === 'ordered' && v.levels ? `<span class="def">${v.ordNote ? esc(v.ordNote) : 'Orden actual, de menor a mayor. Puede cambiarlo:'}</span><input class="sel ordin" type="text" data-ord="${i}" value="${esc(v.levels.join('; '))}" autocomplete="off" aria-label="Orden de las categorías de ${esc(v.name)}, de menor a mayor, separadas por punto y coma" style="width:100%;max-width:34ch;margin-top:4px">` : ''}${v.bad ? `<span class="def">${nf(v.bad, 0)} valores no encajan con este tipo y se tratan como faltantes.</span>` : ''}</th>${cols.map(([k, l]) => `<td class="c"><label class="rc${k === v.auto ? ' auto' : ''}" title="${esc(TYPE_NAME[k])}${k === v.auto ? ' (detectado automáticamente)' : ''}"><input type="radio" name="vt${i}" value="${k}" data-i="${i}"${v.type === k ? ' checked' : ''} aria-label="Variable ${esc(v.name)}: ${esc(TYPE_NAME[k])}${k === v.auto ? ', detectado automáticamente' : ''}"></label></td>`).join('')}</tr>`; }).join('') + `</tbody></table></div><p class="hint" style="margin-top:8px">Marque la clase de cada variable. El recuadro de trazos indica lo que el programa detectó. Pase el cursor sobre un título de columna para ver su nombre completo.</p>`;
-  $$('#dictT input[type=radio]').forEach(s => s.addEventListener('change', () => { const i = +s.dataset.i, v = DATA.vars[i], msg = retype(v, () => { v.type = s.value; }); renderAll(); setLoadMsg(msg); const b = $(`#dictT input[name="vt${i}"]:checked`); if (b) b.focus(); }));
-  $$('#dictT input.ordin').forEach(s => s.addEventListener('change', () => { const i = +s.dataset.ord, v = DATA.vars[i], o = [...new Set(s.value.split(';').map(x => x.trim()).filter(Boolean))], msg = retype(v, () => { v.order = o; }); renderAll(); setLoadMsg(msg); const b = $(`#dictT input[data-ord="${i}"]`); if (b) b.focus(); }));
+  const nw = $('#dictT .dictwrap'); if (nw && keepPos){ nw.scrollTop = keepPos[0]; nw.scrollLeft = keepPos[1]; }
+  $$('#dictT input[type=radio]').forEach(s => s.addEventListener('change', () => { const i = +s.dataset.i, v = DATA.vars[i], msg = retype(v, () => { v.type = s.value; }); renderAll(); setLoadMsg(msg); $('#dictMsg').textContent = msg; const b = $(`#dictT input[name="vt${i}"]:checked`); if (b) b.focus(); }));
+  $$('#dictT input.ordin').forEach(s => s.addEventListener('change', () => { const i = +s.dataset.ord, v = DATA.vars[i], o = [...new Set(s.value.split(';').map(x => x.trim()).filter(Boolean))], msg = retype(v, () => { v.order = o; }); renderAll(); setLoadMsg(msg); $('#dictMsg').textContent = msg; const b = $(`#dictT input[data-ord="${i}"]`); if (b) b.focus(); }));
 }
 function renderClasses(){
   const vs = DATA.vars, g = fn => vs.filter(fn), nm = a => a.slice(0, 3).map(v => pretty(v.name)).join(', ') + (a.length > 3 ? '…' : '') || '—';
@@ -2318,9 +2358,9 @@ function drawChart(){
   CURRENT = ctx;
   notes.innerHTML = ctx.notes.length ? `<ul class="notes">${[...new Set(ctx.notes)].map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '';
   const def = ctx.def, rows = ctx.tbl ? ctx.tbl.rows : [], cap = 200;
-  info.innerHTML = `<details class="rd" data-rd="rd"${UI.open.rd ? ' open' : ''}><summary><span class="lbl">Lectura en lenguaje sencillo</span></summary><div class="rd-b reading" style="border-top:0">${ctx.rd.map(p => `<p>${safeRd(p)}</p>`).join('')}</div></details>
-  <details class="rd" data-rd="how"${UI.open.how ? ' open' : ''}><summary><span class="lbl">Cómo leer este gráfico</span></summary><div class="rd-b"><p><b class="b-ink">Qué muestra.</b> ${esc(def.how.q)}</p><p><b class="b-ink">Cuándo usarlo.</b> ${esc(def.how.w)}</p><p><b class="b-ink">Cómo leerlo.</b> ${esc(def.how.r)}</p><p><b class="b-ink">Precauciones.</b> ${esc(def.how.c)}</p></div></details>
-  <details class="rd" data-rd="tbl"${UI.open.tbl ? ' open' : ''}><summary><span class="lbl">Datos del gráfico (tabla)</span></summary><div class="rd-b" style="max-width:none">${ctx.tbl ? tbl(ctx.tbl.head.map(esc), rows.slice(0, cap).map(r => r.map(c => esc(String(c)))), {label: 'Datos del gráfico', min: 420, right: ctx.tbl.head.map((_, i) => i).filter(i => i > 0 && rows.length && /^[-−+]?[\d.,]+( %)?$|^—$/.test(String(rows[0][i])))}) + (rows.length > cap ? `<p class="note" style="margin-top:8px">Se muestran las primeras ${cap} de ${nf(rows.length, 0)} filas. El archivo CSV contiene todas.</p>` : '') : ''}</div></details>`;
+  info.innerHTML = `<details class="fold acc" data-rd="rd"${UI.open.rd ? ' open' : ''}><summary><span class="ttl"><b>Lectura en lenguaje sencillo</b><span>Qué dice este gráfico, explicado sin tecnicismos</span></span></summary><div class="fold-b reading">${ctx.rd.map(p => `<p>${safeRd(p)}</p>`).join('')}</div></details>
+  <details class="fold" data-rd="how"${UI.open.how ? ' open' : ''}><summary><span class="ttl"><b>Cómo leer este gráfico</b><span>Qué muestra, cuándo usarlo y qué precauciones tomar</span></span></summary><div class="fold-b"><p><b class="b-ink">Qué muestra.</b> ${esc(def.how.q)}</p><p><b class="b-ink">Cuándo usarlo.</b> ${esc(def.how.w)}</p><p><b class="b-ink">Cómo leerlo.</b> ${esc(def.how.r)}</p><p><b class="b-ink">Precauciones.</b> ${esc(def.how.c)}</p></div></details>
+  <details class="fold" data-rd="tbl"${UI.open.tbl ? ' open' : ''}><summary><span class="ttl"><b>Datos del gráfico (tabla)</b><span>Los números exactos que se dibujan</span></span></summary><div class="fold-b" style="max-width:none">${ctx.tbl ? tbl(ctx.tbl.head.map(esc), rows.slice(0, cap).map(r => r.map(c => esc(String(c)))), {label: 'Datos del gráfico', min: 420, right: ctx.tbl.head.map((_, i) => i).filter(i => i > 0 && rows.length && /^[-−+]?[\d.,]+( %)?$|^—$/.test(String(rows[0][i])))}) + (rows.length > cap ? `<p class="note" style="margin-top:8px">Se muestran las primeras ${cap} de ${nf(rows.length, 0)} filas. El archivo CSV contiene todas.</p>` : '') : ''}</div></details>`;
 }
 
 /* ───────── Galería ───────── */
@@ -2378,6 +2418,11 @@ function cfgFromJSON(text){
 }
 
 /* ───────── Eventos ───────── */
+{ const dlg = $('#dictDlg'), op = $('#dictOpen');
+  op.addEventListener('click', () => { $('#dictMsg').textContent = ''; dlg.showModal(); });
+  $('#dictX').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener('close', () => op.focus()); }
 $('#bSample').addEventListener('click', () => loadData(sampleCSV(), SAMPLE_NAME, true));
 $('#bDl').addEventListener('click', () => downloadText('datos-de-prueba-cafeterias.csv', sampleCSV(), 'text/csv'));
 $('#fileIn').addEventListener('change', async e => { const f = e.target.files[0]; if (!f) return; try { loadData(await readFileText(f), f.name, false); } catch (er){ $('#loadMsg').textContent = 'No se pudo leer el archivo.'; } e.target.value = ''; });

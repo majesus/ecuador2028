@@ -180,6 +180,39 @@ figcaption{margin-top:16px;font-size:13px;line-height:1.5;color:var(--t3);max-wi
 .txt.red{fill:var(--accent-t)}
 .txt.muted{fill:var(--t2)}
 .read{min-height:3em;font-size:13px;line-height:1.5;color:var(--text);margin-top:8px;font-variant-numeric:tabular-nums}
+
+/* Bloques plegables reconocibles: lecturas, límites y preguntas frecuentes */
+details.fold{border:1px solid var(--text);background:var(--surface);margin-top:32px}
+details.fold.acc{border-left:6px solid var(--accent)}
+details.fold>summary{min-height:56px;display:flex;align-items:center;gap:16px;padding:12px 16px;cursor:pointer;list-style:none}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary .ttl{display:grid;gap:2px}
+details.fold>summary .ttl b{font-weight:500;font-size:16px;color:var(--text)}
+details.fold>summary .ttl span{font-size:13px;color:var(--t2);line-height:1.4}
+details.fold>summary::after{content:'+';margin-left:auto;flex:none;width:40px;height:40px;border:1px solid var(--text);display:grid;place-items:center;font-size:1.5rem;font-weight:300;line-height:1;color:var(--text)}
+details.fold[open]>summary::after{content:'−';background:var(--text);color:var(--bg)}
+details.fold>summary:hover{background:var(--surface-2)}
+details.fold>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+details.fold[open]>summary{border-bottom:1px solid var(--border)}
+.fold-b{padding:16px 16px 20px}
+.fold-b>:first-child{margin-top:0}
+.fold-b p{max-width:62ch;color:var(--t2)}
+.fold-b p+p{margin-top:8px}
+.fold-b b{font-weight:500;color:var(--text)}
+.fold-b .note{font-size:14px;color:var(--t3)}
+.fold-b ul.lim li:first-child{border-top:0}
+.faq{margin-top:8px;border-top:1px solid var(--text)}
+.faq details{border-bottom:1px solid var(--border)}
+.faq summary{min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 4px;cursor:pointer;list-style:none;font-weight:500}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:'+';flex:none;width:32px;height:32px;border:1px solid var(--border);display:grid;place-items:center;font-size:1.25rem;font-weight:300;color:var(--text)}
+.faq details[open]>summary::after{content:'−';background:var(--text);color:var(--bg);border-color:var(--text)}
+.faq summary:hover{background:var(--surface)}
+.faq summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.faq details>p{padding:0 48px 16px 4px;max-width:66ch;color:var(--t2)}
+@media print{details.fold>.fold-b,.faq details>p{display:block!important}}
+
+.fold-b.reading{border-top:0;margin-top:0;padding-top:16px}
 .pair{display:grid;gap:32px;grid-template-columns:minmax(0,1fr)}
 @media(min-width:768px){.pair{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
@@ -613,7 +646,7 @@ select{min-height:44px;max-width:100%;border:1px solid var(--text);background:va
           <figcaption>Figura 1. La altura de un punto no tiene significado. Solo importa su posición horizontal.</figcaption>
         </figure>
 
-        <div class="reading" aria-live="polite" id="reading"></div>
+        <details class="fold acc" id="readingBox"><summary><span class="ttl"><b>Lectura en lenguaje sencillo</b><span>Qué dicen estos números, explicado sin tecnicismos</span></span></summary><div class="fold-b reading" aria-live="polite" id="reading"></div></details>
         <div class="cta"><button type="button" class="btn main" data-csv>Analice su propio CSV</button><p class="hint">Use la misma forma de leer estos números con sus datos reales.</p></div>
       </div>
     </div>
@@ -948,27 +981,10 @@ select{min-height:44px;max-width:100%;border:1px solid var(--text);background:va
     <div class="grid">
       <div class="c12 m6">
         <div class="cap" style="margin-bottom:16px">Términos</div>
-        <dl class="gloss">
-          <div><dt>Media</dt><dd>La suma de los datos dividida por <i>n</i>.</dd></div>
-          <div><dt>Mediana</dt><dd>El dato central de la muestra ordenada.</dd></div>
-          <div><dt>SD</dt><dd>Desviación típica. Una medida de dispersión basada en las distancias a la media, elevadas al cuadrado.</dd></div>
-          <div><dt>MAD</dt><dd>Desviación absoluta mediana. La mediana de las distancias a la mediana. Las siglas vienen del inglés.</dd></div>
-          <div><dt>MAD escalada</dt><dd>La MAD multiplicada por 1,4826.</dd></div>
-          <div><dt>IQR</dt><dd>Rango intercuartílico. La distancia entre Q3 y Q1.</dd></div>
-          <div><dt>Cuartil</dt><dd>Un valor que deja 25 %, 50 % o 75 % de los datos por debajo.</dd></div>
-          <div><dt>Asimetría</dt><dd>Un número que indica hacia qué lado se alarga la cola.</dd></div>
-          <div><dt>Curtosis</dt><dd>Un número que indica si hay más o menos datos lejanos que en una campana normal.</dd></div>
-          <div><dt>Platicúrtica</dt><dd>Forma con curtosis menor que 0. Colas ligeras: hay menos datos lejanos que en una campana normal. Del griego «platys», plano.</dd></div>
-          <div><dt>Mesocúrtica</dt><dd>Forma con curtosis cercana a 0. Colas como las de la campana normal. Del griego «mesos», medio.</dd></div>
-          <div><dt>Leptocúrtica</dt><dd>Forma con curtosis mayor que 0. Colas pesadas: hay más datos lejanos que en una campana normal. Del griego «leptos», fino.</dd></div>
-          <div><dt>Cola</dt><dd>La zona de datos alejados del centro, a un lado o al otro.</dd></div>
-          <div><dt>Medida robusta</dt><dd>Una medida que los valores extremos casi no alteran.</dd></div>
-          <div><dt>Punto de ruptura</dt><dd>La proporción de datos malos que un número soporta antes de fallar.</dd></div>
-        </dl>
+        <div class="faq"><details><summary>Media</summary><p>La suma de los datos dividida por <i>n</i>.</p></details><details><summary>Mediana</summary><p>El dato central de la muestra ordenada.</p></details><details><summary>SD</summary><p>Desviación típica. Una medida de dispersión basada en las distancias a la media, elevadas al cuadrado.</p></details><details><summary>MAD</summary><p>Desviación absoluta mediana. La mediana de las distancias a la mediana. Las siglas vienen del inglés.</p></details><details><summary>MAD escalada</summary><p>La MAD multiplicada por 1,4826.</p></details><details><summary>IQR</summary><p>Rango intercuartílico. La distancia entre Q3 y Q1.</p></details><details><summary>Cuartil</summary><p>Un valor que deja 25 %, 50 % o 75 % de los datos por debajo.</p></details><details><summary>Asimetría</summary><p>Un número que indica hacia qué lado se alarga la cola.</p></details><details><summary>Curtosis</summary><p>Un número que indica si hay más o menos datos lejanos que en una campana normal.</p></details><details><summary>Platicúrtica</summary><p>Forma con curtosis menor que 0. Colas ligeras: hay menos datos lejanos que en una campana normal. Del griego «platys», plano.</p></details><details><summary>Mesocúrtica</summary><p>Forma con curtosis cercana a 0. Colas como las de la campana normal. Del griego «mesos», medio.</p></details><details><summary>Leptocúrtica</summary><p>Forma con curtosis mayor que 0. Colas pesadas: hay más datos lejanos que en una campana normal. Del griego «leptos», fino.</p></details><details><summary>Cola</summary><p>La zona de datos alejados del centro, a un lado o al otro.</p></details><details><summary>Medida robusta</summary><p>Una medida que los valores extremos casi no alteran.</p></details><details><summary>Punto de ruptura</summary><p>La proporción de datos malos que un número soporta antes de fallar.</p></details></div>
       </div>
       <div class="c12 m6">
-        <div class="cap" style="margin-bottom:16px">Límites de esta consola</div>
-        <ul class="lim">
+        <details class="fold"><summary><span class="ttl"><b>Límites de esta consola</b><span>Qué no puede decirle esta herramienta</span></span></summary><div class="fold-b"><ul class="lim">
           <li>La consola usa una sola muestra por vez. Otra muestra da otros números. La tendencia general se mantiene, pero los valores exactos cambian.</li>
           <li>La asimetría y la curtosis fluctúan mucho con pocos datos. Con menos de 100 datos, no las interprete sin el histograma.</li>
           <li>Los programas calculan estos números con reglas distintas. Los cuartiles, la asimetría y la curtosis pueden diferir de los de esta página.</li>
@@ -976,7 +992,7 @@ select{min-height:44px;max-width:100%;border:1px solid var(--text);background:va
           <li>Un valor extremo no es siempre un error. Puede ser un dato real e importante. Examine la causa antes de borrarlo.</li>
           <li>La MAD y el IQR pueden valer 0 si muchos datos son iguales. En ese caso no sirven como medida de dispersión.</li>
           <li>Con dos grupos separados, ningún número del centro describe bien los datos. Mire siempre el histograma.</li>
-        </ul>
+        </ul></div></details>
       </div>
     </div>
   </div>
@@ -1968,7 +1984,7 @@ function csvCards(st, dg){
 }
 const pl = (n, a, b) => `${nf(n, 0)} ${n === 1 ? a : b}`;
 const csvSec = (t, h) => `<section class="mdl-s"><span class="lbl">${t}</span>${h}</section>`;
-const csvReadSec = (t, h) => `<section class="mdl-s"><details class="rd" ${CSV.readOpen === false ? '' : 'open'}><summary><span class="lbl">${t}</span></summary><div class="rd-b">${h}</div></details></section>`;
+const csvReadSec = (t, h) => `<section class="mdl-s"><details class="fold acc" ${CSV.readOpen ? 'open' : ''}><summary><span class="ttl"><b>${t}</b><span>Qué dicen estos números, explicado sin tecnicismos</span></span></summary><div class="fold-b">${h}</div></details></section>`;
 function csvNarrative(an, name, total){
   const st = an.st, n = an.n, nm = `«${esc(name)}»`, d = an.dg, miss = total - n, outs = an.lows.length + an.highs.length, out = [];
   out.push(`<p><b>Los datos.</b> La variable ${nm} tiene ${nf(n, 0)} valores válidos de ${nf(total, 0)} filas.${miss > 0 ? ` ${miss === 1 ? 'Falta o no es numérico 1 valor.' : `Faltan o no son numéricos ${nf(miss, 0)} valores.`} El análisis los ignora.` : ''}${n < 30 ? ' Con tan pocos datos, todas las medidas son poco fiables.' : n < 100 ? ' Con menos de 100 datos, la asimetría y la curtosis cambian mucho de una muestra a otra.' : ''}</p>`);
@@ -2129,7 +2145,7 @@ function renderCsv(focusTab){
   const badNote = col.nBad ? `<div class="mdl-warn" style="margin:16px 0 0"><p><b>Datos no numéricos.</b> ${nf(col.nBad, 0)} de ${nf(col.nonMissing, 0)} valores no se pudieron leer como número y el análisis los ignora${col.badEx.length ? `. Ejemplos: ${col.badEx.map(x => `«${esc(trunc0(x))}»`).join(', ')}` : ''}. ${col.loose ? 'Menos del 90 % de la columna son números: compruebe que es la columna correcta.' : ''}</p></div>` : '';
   out.innerHTML = tabs + `<div role="tabpanel" id="csvPanel" ${hasGrp ? `aria-labelledby="tab-${CSV.view}"` : ''}>${badNote}${body}</div><div class="btns" style="max-width:420px"><button type="button" class="btn" id="csvSave">Descargar este análisis (.txt)</button></div>`;
   const z = $('#csvZoom'); if (z) z.addEventListener('change', () => { CSV.zoom = z.checked; CSV.zoomSet = true; csvDrawCharts(); });
-  out.querySelectorAll('details.rd').forEach(el => el.addEventListener('toggle', () => { CSV.readOpen = el.open; }));
+  out.querySelectorAll('details.fold').forEach(el => el.addEventListener('toggle', () => { CSV.readOpen = el.open; }));
   out.querySelectorAll('[data-view]').forEach(b => {
     b.addEventListener('click', () => { CSV.view = b.dataset.view; renderCsv(true); });
     b.addEventListener('keydown', e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft'){ e.preventDefault(); CSV.view = CSV.view === 'all' ? 'grp' : 'all'; renderCsv(true); } });

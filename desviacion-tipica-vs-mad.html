@@ -179,6 +179,39 @@ figcaption{margin-top:16px;font-size:13px;line-height:1.5;color:var(--t3);max-wi
 .txt.red{fill:var(--accent-t)}
 .txt.muted{fill:var(--t2)}
 .read{min-height:3em;font-size:13px;line-height:1.5;color:var(--text);margin-top:8px;font-variant-numeric:tabular-nums}
+
+/* Bloques plegables reconocibles: lecturas, límites y preguntas frecuentes */
+details.fold{border:1px solid var(--text);background:var(--surface);margin-top:32px}
+details.fold.acc{border-left:6px solid var(--accent)}
+details.fold>summary{min-height:56px;display:flex;align-items:center;gap:16px;padding:12px 16px;cursor:pointer;list-style:none}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary .ttl{display:grid;gap:2px}
+details.fold>summary .ttl b{font-weight:500;font-size:16px;color:var(--text)}
+details.fold>summary .ttl span{font-size:13px;color:var(--t2);line-height:1.4}
+details.fold>summary::after{content:'+';margin-left:auto;flex:none;width:40px;height:40px;border:1px solid var(--text);display:grid;place-items:center;font-size:1.5rem;font-weight:300;line-height:1;color:var(--text)}
+details.fold[open]>summary::after{content:'−';background:var(--text);color:var(--bg)}
+details.fold>summary:hover{background:var(--surface-2)}
+details.fold>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+details.fold[open]>summary{border-bottom:1px solid var(--border)}
+.fold-b{padding:16px 16px 20px}
+.fold-b>:first-child{margin-top:0}
+.fold-b p{max-width:62ch;color:var(--t2)}
+.fold-b p+p{margin-top:8px}
+.fold-b b{font-weight:500;color:var(--text)}
+.fold-b .note{font-size:14px;color:var(--t3)}
+.fold-b ul.lim li:first-child{border-top:0}
+.faq{margin-top:8px;border-top:1px solid var(--text)}
+.faq details{border-bottom:1px solid var(--border)}
+.faq summary{min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 4px;cursor:pointer;list-style:none;font-weight:500}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:'+';flex:none;width:32px;height:32px;border:1px solid var(--border);display:grid;place-items:center;font-size:1.25rem;font-weight:300;color:var(--text)}
+.faq details[open]>summary::after{content:'−';background:var(--text);color:var(--bg);border-color:var(--text)}
+.faq summary:hover{background:var(--surface)}
+.faq summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.faq details>p{padding:0 48px 16px 4px;max-width:66ch;color:var(--t2)}
+@media print{details.fold>.fold-b,.faq details>p{display:block!important}}
+
+.fold-b.reading{border-top:0;margin-top:0;padding-top:16px}
 .pair{display:grid;gap:32px;grid-template-columns:minmax(0,1fr)}
 @media(min-width:768px){.pair{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .pair>*{min-width:0}
@@ -491,7 +524,7 @@ details.opt .formulas{margin-top:32px}
           <figcaption>Figura 1. La altura de un punto no tiene significado. Solo importa su posición horizontal. Cada barra cubre una unidad de dispersión alrededor de su centro.</figcaption>
         </figure>
 
-        <div class="reading" aria-live="polite" id="reading"></div>
+        <details class="fold acc" id="readingBox"><summary><span class="ttl"><b>Lectura en lenguaje sencillo</b><span>Qué dicen estos números, explicado sin tecnicismos</span></span></summary><div class="fold-b reading" aria-live="polite" id="reading"></div></details>
       </div>
     </div>
 
@@ -713,32 +746,17 @@ details.opt .formulas{margin-top:32px}
     <div class="grid">
       <div class="c12 m6">
         <div class="cap" style="margin-bottom:16px">Términos</div>
-        <dl class="gloss">
-          <div><dt>Dato</dt><dd>Un número de la muestra.</dd></div>
-          <div><dt>Muestra</dt><dd>El conjunto de todos los datos.</dd></div>
-          <div><dt>Valor extremo</dt><dd>Un dato muy lejos del resto de la muestra.</dd></div>
-          <div><dt>Media</dt><dd>La suma de los datos dividida por <i>n</i>.</dd></div>
-          <div><dt>Mediana</dt><dd>El dato central de la muestra ordenada.</dd></div>
-          <div><dt>Desviación típica</dt><dd>Una medida de dispersión basada en las distancias a la media, elevadas al cuadrado. Por eso los datos lejanos pesan mucho.</dd></div>
-          <div><dt>MAD</dt><dd>La mediana de las distancias entre cada dato y la mediana. Las siglas vienen del inglés «median absolute deviation».</dd></div>
-          <div><dt>MAD escalada</dt><dd>La MAD multiplicada por 1,4826. Esa constante la calibra como estimación de σ para datos normales; con otras formas o con pocos datos puede diferir de la desviación típica.</dd></div>
-          <div><dt>Dispersión</dt><dd>Cuánto se separan los datos entre sí.</dd></div>
-          <div><dt>Medida robusta</dt><dd>Una medida que los valores extremos casi no alteran.</dd></div>
-          <div><dt>μ y σ</dt><dd>El centro real y la dispersión real con que el simulador crea los datos. En la vida real no se conocen.</dd></div>
-          <div><dt>Punto de ruptura</dt><dd>La proporción de datos malos que una medida soporta antes de fallar.</dd></div>
-          <div><dt>Eficiencia</dt><dd>La precisión que una medida logra con cada dato disponible.</dd></div>
-        </dl>
+        <div class="faq"><details><summary>Dato</summary><p>Un número de la muestra.</p></details><details><summary>Muestra</summary><p>El conjunto de todos los datos.</p></details><details><summary>Valor extremo</summary><p>Un dato muy lejos del resto de la muestra.</p></details><details><summary>Media</summary><p>La suma de los datos dividida por <i>n</i>.</p></details><details><summary>Mediana</summary><p>El dato central de la muestra ordenada.</p></details><details><summary>Desviación típica</summary><p>Una medida de dispersión basada en las distancias a la media, elevadas al cuadrado. Por eso los datos lejanos pesan mucho.</p></details><details><summary>MAD</summary><p>La mediana de las distancias entre cada dato y la mediana. Las siglas vienen del inglés «median absolute deviation».</p></details><details><summary>MAD escalada</summary><p>La MAD multiplicada por 1,4826. Esa constante la calibra como estimación de σ para datos normales; con otras formas o con pocos datos puede diferir de la desviación típica.</p></details><details><summary>Dispersión</summary><p>Cuánto se separan los datos entre sí.</p></details><details><summary>Medida robusta</summary><p>Una medida que los valores extremos casi no alteran.</p></details><details><summary>μ y σ</summary><p>El centro real y la dispersión real con que el simulador crea los datos. En la vida real no se conocen.</p></details><details><summary>Punto de ruptura</summary><p>La proporción de datos malos que una medida soporta antes de fallar.</p></details><details><summary>Eficiencia</summary><p>La precisión que una medida logra con cada dato disponible.</p></details></div>
       </div>
       <div class="c12 m6">
-        <div class="cap" style="margin-bottom:16px">Límites de esta consola</div>
-        <ul class="lim">
+        <details class="fold"><summary><span class="ttl"><b>Límites de esta consola</b><span>Qué no puede decirle esta herramienta</span></span></summary><div class="fold-b"><ul class="lim">
           <li>La consola usa una sola muestra por vez. Otra muestra da otros números. La tendencia general se mantiene, pero los valores exactos cambian.</li>
           <li>Los datos reales rara vez son exactamente normales. El factor 1,4826 y la eficiencia 0,37 valen solo para datos normales.</li>
           <li>Un valor extremo no es siempre un error. Puede ser un dato real e importante. Examine la causa antes de borrarlo.</li>
           <li>La MAD es 0 si más de la mitad de los datos son iguales. En ese caso la MAD escalada no sirve.</li>
           <li>Un cociente <i>s</i> / MAD escalada alto sugiere valores extremos o colas pesadas. No lo prueba.</li>
           <li>Ninguna medida es mejor en todos los casos. Con datos limpios y normales, <i>s</i> da más precisión.</li>
-        </ul>
+        </ul></div></details>
       </div>
     </div>
   </div>
