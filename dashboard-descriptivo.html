@@ -375,16 +375,19 @@ dialog.dlg::-webkit-scrollbar,.dictwrap::-webkit-scrollbar{display:none}
 .panel+.panel{margin-top:40px}
 
 /* Epígrafe de cada gráfico y bloque 3 plegable por su encabezado */
-.gh{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;margin:36px 0 10px}
-.gh:first-of-type{margin-top:8px}
-.gh h4{margin:0;font-size:1rem;font-weight:500}
-.gh .chip{margin:0;font-size:11px}
-.gh p{flex-basis:100%;margin:2px 0 0;font-size:13px;color:var(--t3)}
+.chh{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;margin:36px 0 10px}
+.chh:first-of-type{margin-top:8px}
+.chh h4{margin:0;font-size:1rem;font-weight:500}
+.chh .chip{margin:0;font-size:11px}
+.chh p{flex-basis:100%;margin:2px 0 0;font-size:13px;color:var(--t3)}
 .g-intro{margin:0;font-size:14px;color:var(--t2)}
 details.blkd{margin:0}
 details.blkd>summary.blk-h{position:relative;cursor:pointer;list-style:none;margin-bottom:0;padding-right:84px}
 details.blkd>summary::-webkit-details-marker{display:none}
-details.blkd>summary.blk-h::before{content:'';flex:none;width:7px;height:7px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(-45deg);transition:transform .15s;margin:0 2px 0 1px}
+details.blkd>summary.blk-h .blk-n{order:0}
+details.blkd>summary.blk-h h3{order:2}
+details.blkd>summary.blk-h p{order:3}
+details.blkd>summary.blk-h::before{order:1;content:'';flex:none;width:7px;height:7px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(-45deg);transition:transform .15s;margin:0 2px 0 1px}
 details.blkd[open]>summary.blk-h::before{transform:rotate(45deg)}
 details.blkd>summary.blk-h::after{content:'Mostrar';position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:12px;color:var(--t3)}
 details.blkd[open]>summary.blk-h::after{content:'Ocultar'}
@@ -404,8 +407,6 @@ table.cgrid td,table.cgrid th.rh{vertical-align:middle}
 .blk-h h3{margin:0;font-size:1.125rem;font-weight:500}
 .blk-h p{margin:0;font-size:13px;color:var(--t3)}
 .blk.empty .blk-h{border-bottom-color:var(--border)}
-.blk.empty .blk-n{background:var(--surface-2);color:var(--t2)}
-.blk.empty .blk-h h3{color:var(--t2)}
 .blk>.cards{border-top:0}
 .blk .na{margin:0;color:var(--t3);font-size:14px}
 .blk h3:not(.blk-h h3){font-size:1rem}
@@ -1383,7 +1384,7 @@ const CH_META = {
   chSegH: ['Perfil de cada grupo', 'Qué define a cada grupo', 'Se muestra cuando la segmentación se puede calcular.'],
   chSegS: ['Mapa de los grupos', 'Posición de las filas', 'Se muestra cuando la segmentación se puede calcular: resume las variables en dos ejes para ver cuánto se separan los grupos.']
 };
-const chartHead = id => { const m = CH_META[id]; return m ? `<div class="gh" data-gname="${m[0]}"><h4>${m[0]}</h4><span class="chip">${m[1]}</span><p>${m[2]}</p></div>` : ''; };
+const chartHead = id => { const m = CH_META[id]; return m ? `<div class="chh" data-gname="${m[0]}"><h4>${m[0]}</h4><span class="chip">${m[1]}</span><p>${m[2]}</p></div>` : ''; };
 const fig = (id, cap, inner = '') => `${chartHead(id)}<figure><div class="chart" id="${id}"></div>${cap ? `<figcaption>${cap}</figcaption>` : ''}${inner}</figure>`;
 const takeBox = (title, html) => `<div class="take"><span class="lbl">${title}</span>${html}</div>`;
 const msgBox = h => `<div class="how"><p>${h}</p></div>`;
@@ -1930,7 +1931,7 @@ if (window.renderMathInElement) renderMathInElement(document.querySelector('.faq
       const fig = out.querySelector('figure'); if (fig && !out.querySelector('.blk') && !fig.closest('[data-sub]') && s.id !== 'panorama') fig.setAttribute('data-sub', 'Gráfico');
       const hasBlk = !!root.querySelector('.blk');
       root.querySelectorAll(hasBlk ? '[data-sub]' : '[data-sub], h3, details.fold.acc[id^="reading"], span.lbl[style*="display:block"]').forEach(e => {
-        if (!vis(e) || e.closest('.faq,.fold-b,.rd-b,dl.stiles')) return;
+        if (!vis(e) || e.closest('.faq,.fold-b,.rd-b,dl.stiles,.gh')) return;
         const lab = e.getAttribute('data-sub') || (e.matches('details') ? 'Lectura en lenguaje sencillo' : e.textContent.trim().replace(/\s+/g, ' '));
         if (!lab || seenL.has(lab) || lab.length > 60) return; seenL.add(lab); list.push({e, lab});
       });

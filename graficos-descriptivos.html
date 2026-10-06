@@ -427,6 +427,90 @@ table.cgrid th.stk{position:sticky;left:0;background:var(--bg);z-index:1;min-wid
 .rc:focus-within{outline:2px solid var(--accent);outline-offset:-3px}
 
 </style>
+<style id="nav-css">
+/* Epígrafe de cada gráfico y bloque 3 plegable por su encabezado */
+.chh{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;margin:36px 0 10px}
+.chh:first-of-type{margin-top:8px}
+.chh h4{margin:0;font-size:1rem;font-weight:500}
+.chh .chip{margin:0;font-size:11px}
+.chh p{flex-basis:100%;margin:2px 0 0;font-size:13px;color:var(--t3)}
+.g-intro{margin:0;font-size:14px;color:var(--t2)}
+details.blkd{margin:0}
+details.blkd>summary.blk-h{position:relative;cursor:pointer;list-style:none;margin-bottom:0;padding-right:84px}
+details.blkd>summary::-webkit-details-marker{display:none}
+details.blkd>summary.blk-h .blk-n{order:0}
+details.blkd>summary.blk-h h3{order:2}
+details.blkd>summary.blk-h p{order:3}
+details.blkd>summary.blk-h::before{order:1;content:'';flex:none;width:7px;height:7px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(-45deg);transition:transform .15s;margin:0 2px 0 1px}
+details.blkd[open]>summary.blk-h::before{transform:rotate(45deg)}
+details.blkd>summary.blk-h::after{content:'Mostrar';position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:12px;color:var(--t3)}
+details.blkd[open]>summary.blk-h::after{content:'Ocultar'}
+details.blkd>summary.blk-h:hover{background:var(--surface)}
+details.blkd>summary.blk-h:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+details.blkd>.fold-b{margin-top:14px;padding:6px 0 6px 16px;border-left:4px solid var(--accent);background:none}
+.tbl-wrap td,.tbl-wrap th.rh{vertical-align:top}
+table.cgrid td,table.cgrid th.rh{vertical-align:middle}
+/* Estructura común de un análisis: cinco bloques numerados */
+.blk{margin-top:48px;scroll-margin-top:110px}
+.blk-map{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:24px 0 0;padding:0}
+.blk-map a{display:flex;align-items:center;gap:8px;min-height:34px;padding:0 12px;border:1px solid var(--border);font-size:13px;color:var(--t2);text-decoration:none}
+.blk-map a i{font-style:normal;font-weight:500;color:var(--accent-t)}
+.blk-map a:hover{background:var(--surface);color:var(--text)}
+.blk-h{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding-bottom:8px;margin-bottom:16px;border-bottom:1px solid var(--text)}
+.blk-n{flex:none;width:26px;height:26px;display:grid;place-items:center;background:var(--text);color:var(--bg);font-size:13px;font-weight:500}
+.blk-h h3{margin:0;font-size:1.125rem;font-weight:500}
+.blk-h p{margin:0;font-size:13px;color:var(--t3)}
+.blk.empty .blk-h{border-bottom-color:var(--border)}
+.blk>.cards{border-top:0}
+.blk .stage{margin-top:0;border-top:0;padding-top:0}
+.blk .na{margin:0;color:var(--t3);font-size:14px}
+.blk h3:not(.blk-h h3){font-size:1rem}
+h4.sub{font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:500;color:var(--t2);margin:24px 0 8px}
+.conc-read{margin-top:16px;border-left:3px solid var(--accent);padding:2px 0 2px 14px}
+.conc-read p{font-size:14px;color:var(--t2);max-width:100ch}
+.conc-read b{color:var(--text);font-weight:500}
+/* Navegación: barra de pasos, ruta e índice */
+html{scroll-behavior:smooth}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.nav{position:sticky;top:0;z-index:40;background:var(--bg);border-top:1px solid var(--text);border-bottom:1px solid var(--text)}
+.nav-in{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;padding-top:8px;padding-bottom:8px}
+.nav-steps{min-width:0;display:flex;gap:4px;list-style:none;margin:0;padding:0;overflow-x:auto;scrollbar-width:none}
+.nav-steps::-webkit-scrollbar{display:none}
+.nav-steps li{flex:1 1 0;min-width:0}
+.nav-steps li.ph{flex:none;width:8px}
+.nav-steps a{display:flex;align-items:center;gap:8px;min-height:34px;padding:0 10px;border:1px solid var(--border);color:var(--t2);text-decoration:none;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav-steps a i{font-style:normal;font-weight:500;font-variant-numeric:tabular-nums;color:var(--text)}
+.nav-steps a:hover{background:var(--surface);color:var(--text)}
+.nav-steps a.seen:not([aria-current])::after{content:'✓';margin-left:auto;color:var(--accent-t);font-size:12px}
+.nav-steps a[aria-current=step]{background:var(--text);border-color:var(--text);color:var(--bg)}
+.nav-steps a[aria-current=step] i{color:var(--bg)}
+.nav-steps a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.nav-row{display:flex;align-items:center;gap:8px;min-height:32px}
+.crumb{margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;color:var(--t2)}
+.crumb .c1{font-weight:500;color:var(--text)}
+.crumb .sep{color:var(--accent-t);padding:0 6px}
+.nav-row .btn{min-height:32px;min-width:0;padding:2px 12px;font-size:13px}
+.nav-row .btn[disabled]{opacity:.4;cursor:default}
+@media(max-width:760px){.nav-steps a span{display:none}.nav-steps a[aria-current=step] span{display:inline}.nav-steps a{padding:0 8px}.nav-steps li{flex:0 0 auto}.nav-steps li:has(a[aria-current=step]){flex:1 1 auto}#navPrev,#navNext{display:none}}
+.kicker{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-t);margin:0 0 8px;font-weight:500}
+.nextstep{margin-top:56px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+section.sec{scroll-margin-top:96px}
+[data-sub],h3,details.fold[id^=reading]{scroll-margin-top:110px}
+dialog.drawer{margin:0 auto 0 0;height:100vh;max-height:100vh;width:min(440px,94vw);padding:0;border:0;border-right:1px solid var(--text);background:var(--bg);color:var(--text)}
+dialog.drawer::backdrop{background:rgba(12,10,9,.55)}
+.drawer-in{padding:16px 24px 32px}
+#navTree h4{font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:500;color:var(--t2);margin:24px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--text)}
+#navTree ol{list-style:none;margin:0;padding:0}
+#navTree li.s>a{display:flex;gap:10px;align-items:baseline;padding:8px 0 2px;color:var(--text);text-decoration:none;font-weight:500}
+#navTree li.s>a i{font-style:normal;color:var(--accent-t);font-variant-numeric:tabular-nums;min-width:1.4em}
+#navTree li.s.on>a{color:var(--accent-t)}
+#navTree li.s>p{margin:0 0 4px 2.1em;font-size:12.5px;color:var(--t3);line-height:1.45}
+#navTree ul{list-style:none;margin:2px 0 8px 2.1em;padding:0;border-left:2px solid var(--border)}
+#navTree ul a{display:block;padding:4px 0 4px 12px;font-size:14px;color:var(--t2);text-decoration:none}
+#navTree ul a:hover,#navTree li.s>a:hover{text-decoration:underline}
+#navTree ul a.on{color:var(--text);font-weight:500;box-shadow:inset 3px 0 0 var(--accent)}
+@media print{.nav,.nextstep,dialog.drawer{display:none!important}}
+</style>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -447,6 +531,19 @@ table.cgrid th.stk{position:sticky;left:0;background:var(--bg);z-index:1;min-wid
     <div><dt>Escala logarítmica</dt><dd>Cada paso del eje multiplica el valor por diez. Muestra mejor las variables con unos pocos valores muy altos.</dd></div>
   </dl>
 </div></header>
+<div class="nav" id="nav"><div class="wrap nav-in">
+  <nav aria-label="Pasos del análisis"><ol class="nav-steps" id="navSteps"></ol></nav>
+  <div class="nav-row"><p class="crumb" id="navCrumb"><span class="c1"></span></p>
+    <button type="button" class="btn" id="navPrev" aria-label="Ir al paso anterior">← Anterior</button>
+    <button type="button" class="btn" id="navNext" aria-label="Ir al paso siguiente">Siguiente →</button>
+    <button type="button" class="btn main" id="navIdx" aria-haspopup="dialog">Índice</button></div>
+</div></div>
+<dialog id="navDlg" class="drawer" aria-labelledby="navTtl"><div class="drawer-in">
+  <div class="dlg-h"><h3 id="navTtl">Índice del panel</h3><button type="button" class="btn" id="navX">Cerrar</button></div>
+  <p class="hint" style="margin:12px 0 0">Siete pasos en tres fases. Pulse un epígrafe para ir a él. Los subepígrafes son los bloques de la sección que está viendo ahora.</p>
+  <div id="navTree"></div>
+</div></dialog>
+
 <main id="contenido">
 
 <section class="sec" id="datos"><div class="wrap"><div class="grid">
@@ -494,14 +591,18 @@ table.cgrid th.stk{position:sticky;left:0;background:var(--bg);z-index:1;min-wid
 
 <section class="sec" id="grafico"><div class="wrap">
   <div class="sec-head grid"><div class="c12 m3"><div class="num">02</div></div><div class="c12 m9"><h2>Gráfico</h2><p class="body">Siga los pasos. Primero, qué quiere mostrar. Después, el tipo de gráfico. Después, las variables y los ajustes. Todo se actualiza al cambiar una opción.</p></div></div>
-  <span class="lbl" id="lblPurpose">1. ¿Qué quiere mostrar?</span>
+  <section class="blk" id="blk-gr-elegir" data-sub="Elegir el gráfico"><header class="blk-h"><span class="blk-n">1</span><h3>Elegir</h3><p>Qué mostrar, el tipo de gráfico y sus ajustes</p></header>
+  <span class="lbl" id="lblPurpose">¿Qué quiere mostrar?</span>
   <div class="purpose" id="purpose" role="radiogroup" aria-labelledby="lblPurpose"></div>
   <p class="help" id="purposeHelp" style="margin-top:8px"></p>
-  <span class="lbl" id="lblType" style="display:block;margin-top:24px">2. Tipo de gráfico</span>
+  <span class="lbl" id="lblType" style="display:block;margin-top:24px">Tipo de gráfico</span>
   <div class="types" id="types" role="radiogroup" aria-labelledby="lblType"></div>
   <div class="ctlgrid" id="ctl" style="margin-top:32px"></div>
+  </section>
 
+  <section class="blk" id="blk-gr-grafico" data-sub="Gráfico"><header class="blk-h"><span class="blk-n">2</span><h3>Gráfico</h3><p>El gráfico elegido, con sus avisos y exportaciones</p></header>
   <div class="stage">
+    <div id="chartHead"></div>
     <div class="tools" role="group" aria-label="Exportar y guardar">
       <button type="button" class="btn" id="bSvg">Descargar SVG</button>
       <button type="button" class="btn" id="bPng">Descargar PNG</button>
@@ -511,8 +612,9 @@ table.cgrid th.stk{position:sticky;left:0;background:var(--bg);z-index:1;min-wid
     </div>
     <div id="chartNotes" role="status" aria-live="polite"></div>
     <figure style="margin-top:16px"><div class="chart" id="chartHost"></div></figure>
-    <div id="chartInfo"></div>
   </div>
+  </section>
+  <div id="chartInfo"></div>
 </div></section>
 
 <section class="sec" id="galeria"><div class="wrap">
@@ -2362,14 +2464,15 @@ function drawChart(){
   if (!DATA) return; ensureCfg();
   const cfg = UI.cfg, host = $('#chartHost'), notes = $('#chartNotes'), info = $('#chartInfo');
   let ctx; try { ctx = makeCtx(cfg); } catch (e){ ctx = {err: 'No se pudo dibujar este gráfico con los datos y ajustes actuales. ' + e.message}; console.error(e); }
-  if (ctx.err){ host.innerHTML = ''; notes.innerHTML = `<p class="msg err">${esc(ctx.err)}</p>`; info.innerHTML = ''; CURRENT = null; return; }
+  if (ctx.err){ host.innerHTML = ''; notes.innerHTML = `<p class="msg err">${esc(ctx.err)}</p>`; info.innerHTML = ''; $('#chartHead').innerHTML = ''; CURRENT = null; return; }
   try { composeChart(ctx, host, wOf(host)); } catch (e){ host.innerHTML = ''; notes.innerHTML = `<p class="msg err">No se pudo dibujar este gráfico con los datos y ajustes actuales. ${esc(e.message)}</p>`; info.innerHTML = ''; CURRENT = null; console.error(e); return; }
   CURRENT = ctx;
   notes.innerHTML = ctx.notes.length ? `<ul class="notes">${[...new Set(ctx.notes)].map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '';
   const def = ctx.def, rows = ctx.tbl ? ctx.tbl.rows : [], cap = 200;
-  info.innerHTML = `<details class="fold acc" data-rd="rd"${UI.open.rd ? ' open' : ''}><summary><span class="ttl"><b>Lectura en lenguaje sencillo</b><span>Qué dice este gráfico, explicado sin tecnicismos</span></span></summary><div class="fold-b reading">${ctx.rd.map(p => `<p>${safeRd(p)}</p>`).join('')}</div></details>
-  <details class="fold" data-rd="how"${UI.open.how ? ' open' : ''}><summary><span class="ttl"><b>Cómo leer este gráfico</b><span>Qué muestra, cuándo usarlo y qué precauciones tomar</span></span></summary><div class="fold-b"><p><b class="b-ink">Qué muestra.</b> ${esc(def.how.q)}</p><p><b class="b-ink">Cuándo usarlo.</b> ${esc(def.how.w)}</p><p><b class="b-ink">Cómo leerlo.</b> ${esc(def.how.r)}</p><p><b class="b-ink">Precauciones.</b> ${esc(def.how.c)}</p></div></details>
-  <details class="fold" data-rd="tbl"${UI.open.tbl ? ' open' : ''}><summary><span class="ttl"><b>Datos del gráfico (tabla)</b><span>Los números exactos que se dibujan</span></span></summary><div class="fold-b" style="max-width:none">${ctx.tbl ? tbl(ctx.tbl.head.map(esc), rows.slice(0, cap).map(r => r.map(c => esc(String(c)))), {label: 'Datos del gráfico', min: 420, right: ctx.tbl.head.map((_, i) => i).filter(i => i > 0 && rows.length && /^[-−+]?[\d.,]+( %)?$|^—$/.test(String(rows[0][i])))}) + (rows.length > cap ? `<p class="note" style="margin-top:8px">Se muestran las primeras ${cap} de ${nf(rows.length, 0)} filas. El archivo CSV contiene todas.</p>` : '') : ''}</div></details>`;
+  const GL = (GROUPS.find(g => g[0] === def.group) || [])[1] || '';
+  $('#chartHead').innerHTML = `<div class="chh"><h4>${esc(def.label)}</h4><span class="chip">${esc(GL)}</span><p>${esc(def.how.w)}</p></div>`;
+  const BK = (n, key, title, desc, inner, extra = '') => `<section class="blk${key === 'rd' ? ' blk-read' : ''}" data-sub="${title}"><details class="blkd" data-rd="${key}"${UI.open[key] ? ' open' : ''}><summary class="blk-h"><span class="blk-n">${n}</span><h3>${title}</h3><p>${desc}</p></summary><div class="fold-b"${extra}>${inner}</div></details></section>`;
+  info.innerHTML = BK(3, 'rd', 'Lectura en lenguaje sencillo', 'Qué dice este gráfico, sin tecnicismos', `${ctx.rd.map(p => `<p>${safeRd(p)}</p>`).join('')}`) + BK(4, 'how', 'Cómo leer este gráfico', 'Qué muestra, cuándo usarlo y qué precauciones tomar', `<p><b class="b-ink">Qué muestra.</b> ${esc(def.how.q)}</p><p><b class="b-ink">Cuándo usarlo.</b> ${esc(def.how.w)}</p><p><b class="b-ink">Cómo leerlo.</b> ${esc(def.how.r)}</p><p><b class="b-ink">Precauciones.</b> ${esc(def.how.c)}</p>`) + BK(5, 'tbl', 'Datos del gráfico', 'Los números exactos que se dibujan', `${ctx.tbl ? tbl(ctx.tbl.head.map(esc), rows.slice(0, cap).map(r => r.map(c => esc(String(c)))), {label: 'Datos del gráfico', min: 420, right: ctx.tbl.head.map((_, i) => i).filter(i => i > 0 && rows.length && /^[-−+]?[\d.,]+( %)?$|^—$/.test(String(rows[0][i])))}) + (rows.length > cap ? `<p class="note" style="margin-top:8px">Se muestran las primeras ${cap} de ${nf(rows.length, 0)} filas. El archivo CSV contiene todas.</p>` : '') : ''}`, ' style="max-width:none"');
 }
 
 /* ───────── Galería ───────── */
@@ -2463,6 +2566,56 @@ let rz, lastW = innerWidth; addEventListener('resize', () => { clearTimeout(rz);
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (DATA){ drawChart(); renderGallery(); } }); } catch (e){ /* sin soporte */ }
 loadData(sampleCSV(), SAMPLE_NAME, true);
 
+</script>
+<script id="nav-js">
+(() => {
+  const $ = s => document.querySelector(s), esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c])), clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const SEC = [{"id": "datos", "t": "Datos", "l": "Datos", "ph": 0, "d": "Cargue su archivo, revise la clase de cada variable y, si quiere, filtre filas."}, {"id": "grafico", "t": "Gráfico", "l": "Gráfico", "ph": 1, "d": "Elija qué mostrar, el tipo de gráfico y sus ajustes."}, {"id": "galeria", "t": "Galería", "l": "Galería", "ph": 1, "d": "Un gráfico por variable, elegido según su tipo."}, {"id": "guia", "t": "Cómo elegir", "l": "Cómo elegir un gráfico", "ph": 2, "d": "Qué gráfico usar según la pregunta, reglas incorporadas y límites."}], PH = ["Preparar los datos", "Dibujar", "Consultar"], STATIC = [["#datos .ctl", "Origen de los datos"], ["#datos .c12.m8 > .lbl", "Diccionario de variables"], ["#datos .panel:has(#fvar)", "Filtrar filas"], ["#datos .panel:not(:has(#fvar))", "Formato del archivo"], ["#guia .faq", "Reglas incorporadas"], ["#guia details.fold:not(.acc)", "Límites del laboratorio"]], LBL = /^$/;
+  const nav = $('#nav'), steps = $('#navSteps'), crumb = $('#navCrumb'), seen = new Set(); let OUT = null, cur = 0, curSub = -1, ticking = false;
+  steps.innerHTML = SEC.map((s, i) => (i && s.ph !== SEC[i - 1].ph ? '<li class="ph" aria-hidden="true"></li>' : '') + `<li><a href="#${s.id}" data-i="${i}" title="${esc(s.l)}"><i>${i + 1}</i><span>${esc(s.t)}</span></a></li>`).join('');
+  SEC.forEach((s, i) => { const root = $('#' + s.id), h2 = root.querySelector('h2'); if (h2) h2.insertAdjacentHTML('beforebegin', `<p class="kicker">${PH[s.ph]} · paso ${i + 1} de ${SEC.length}</p>`);
+    const nx = SEC[i + 1], w = root.querySelector('.wrap'); if (w) w.insertAdjacentHTML('beforeend', `<nav class="nextstep" aria-label="Siguiente paso">${nx ? `<a class="btn" href="#${nx.id}">Siguiente: ${i + 2} · ${esc(nx.t)} →</a>` : '<a class="btn" href="#' + SEC[0].id + '">Volver al inicio ↑</a>'}</nav>`); });
+  const vis = e => e && e.getClientRects().length > 0 && !e.closest('dialog');
+  function outline(){
+    if (OUT) return OUT; OUT = [];
+    STATIC.forEach(([sel, lab]) => document.querySelectorAll(sel).forEach(e => e.setAttribute('data-sub', lab)));
+    SEC.forEach(s => { const root = $('#' + s.id), list = [], seenL = new Set(), hasBlk = !!root.querySelector('.blk');
+      root.querySelectorAll(hasBlk ? '[data-sub]' : '[data-sub], h3, .lbl').forEach(e => {
+        if (!vis(e) || e.closest('.faq,.fold-b,.rd-b,dl.stiles,.cards,.card,.groups,.gcard,.gh')) return;
+        const lab = e.getAttribute('data-sub') || e.textContent.trim().replace(/\s+/g, ' ');
+        if (!e.hasAttribute('data-sub') && e.matches('.lbl') && !LBL.test(lab)) return;
+        if (!lab || seenL.has(lab) || lab.length > 60) return; seenL.add(lab); list.push({e, lab}); });
+      list.sort((a, b) => (a.e.compareDocumentPosition(b.e) & 4 ? -1 : 1)); list.forEach((x, k) => { if (!x.e.id) x.e.id = `nv-${s.id}-${k}`; }); OUT.push(list.slice(0, 14)); });
+    return OUT;
+  }
+  function spy(){
+    ticking = false; const y = nav.offsetHeight + 28; let c = 0;
+    SEC.forEach((s, i) => { if ($('#' + s.id).getBoundingClientRect().top <= y) c = i; });
+    if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) c = SEC.length - 1;
+    const o = outline()[c]; let sub = -1; o.forEach((x, k) => { if (x.e.getBoundingClientRect().top <= y + 40) sub = k; });
+    for (let i = 0; i <= c; i++) seen.add(i);
+    steps.querySelectorAll('a').forEach(a => { const i = +a.dataset.i; if (i === c) a.setAttribute('aria-current', 'step'); else a.removeAttribute('aria-current'); a.classList.toggle('seen', seen.has(i) && i !== c); });
+    const s = SEC[c], lab = sub >= 0 ? o[sub].lab : '';
+    crumb.innerHTML = `<span class="c1">${c + 1} · ${esc(s.t)}</span>${lab ? `<span class="sep">›</span><span class="c2">${esc(lab)}</span>` : ''}`;
+    $('#navPrev').disabled = c === 0; $('#navNext').disabled = c === SEC.length - 1; cur = c; curSub = sub;
+  }
+  const req = () => { if (!ticking){ ticking = true; requestAnimationFrame(spy); } };
+  addEventListener('scroll', req, {passive: true}); addEventListener('resize', req);
+  new MutationObserver(() => { OUT = null; req(); }).observe($('main') || document.body, {childList: true, subtree: true});
+  const go = i => { const e = $('#' + SEC[clamp(i, 0, SEC.length - 1)].id); e.scrollIntoView(); history.replaceState(null, '', '#' + e.id); };
+  $('#navPrev').addEventListener('click', () => go(cur - 1)); $('#navNext').addEventListener('click', () => go(cur + 1));
+  steps.addEventListener('click', e => { const a = e.target.closest('a[data-i]'); if (a){ e.preventDefault(); go(+a.dataset.i); } });
+  const dlg = $('#navDlg');
+  function tree(){ const o = outline(); let h = '', last = -1;
+    SEC.forEach((s, i) => { if (s.ph !== last){ if (last >= 0) h += '</ol>'; h += `<h4>${PH[s.ph]}</h4><ol>`; last = s.ph; }
+      h += `<li class="s${i === cur ? ' on' : ''}"><a href="#${s.id}"><i>${i + 1}</i>${esc(s.l)}</a><p>${esc(s.d)}</p>${o[i].length ? `<ul>${o[i].map((x, k) => `<li><a href="#${x.e.id}"${i === cur && k === curSub ? ' class="on"' : ''}>${esc(x.lab)}</a></li>`).join('')}</ul>` : ''}</li>`; });
+    $('#navTree').innerHTML = h + '</ol>'; }
+  $('#navIdx').addEventListener('click', () => { tree(); dlg.showModal(); });
+  $('#navX').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); const a = e.target.closest('a[href^="#"]'); if (a){ e.preventDefault(); dlg.close(); const t = document.getElementById(a.getAttribute('href').slice(1)); if (t){ t.scrollIntoView(); history.replaceState(null, '', '#' + t.id); } } });
+  dlg.addEventListener('close', () => $('#navIdx').focus());
+  spy();
+})();
 </script>
 </body>
 </html>
