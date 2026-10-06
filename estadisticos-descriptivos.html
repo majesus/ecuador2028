@@ -181,36 +181,45 @@ figcaption{margin-top:16px;font-size:13px;line-height:1.5;color:var(--t3);max-wi
 .txt.muted{fill:var(--t2)}
 .read{min-height:3em;font-size:13px;line-height:1.5;color:var(--text);margin-top:8px;font-variant-numeric:tabular-nums}
 
-/* Bloques plegables reconocibles: lecturas, límites y preguntas frecuentes */
-details.fold{border:1px solid var(--text);background:var(--surface);margin-top:32px}
-details.fold.acc{border-left:6px solid var(--accent)}
-details.fold>summary{min-height:56px;display:flex;align-items:center;gap:16px;padding:12px 16px;cursor:pointer;list-style:none}
-details.fold>summary::-webkit-details-marker{display:none}
-details.fold>summary .ttl{display:grid;gap:2px}
-details.fold>summary .ttl b{font-weight:500;font-size:16px;color:var(--text)}
-details.fold>summary .ttl span{font-size:13px;color:var(--t2);line-height:1.4}
-details.fold>summary::after{content:'+';margin-left:auto;flex:none;width:40px;height:40px;border:1px solid var(--text);display:grid;place-items:center;font-size:1.5rem;font-weight:300;line-height:1;color:var(--text)}
-details.fold[open]>summary::after{content:'−';background:var(--text);color:var(--bg)}
-details.fold>summary:hover{background:var(--surface-2)}
-details.fold>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-details.fold[open]>summary{border-bottom:1px solid var(--border)}
-.fold-b{padding:16px 16px 20px}
+/* Desplegables: chevrón y etiqueta «Mostrar/Ocultar» discretos */
+details.fold,details.rd{border:1px solid var(--border);background:var(--surface);margin-top:16px}
+details.fold.acc{border-left:4px solid var(--accent)}
+details.fold>summary,details.rd>summary{display:flex;align-items:center;gap:10px;min-height:40px;padding:6px 12px;cursor:pointer;list-style:none;border-bottom:0}
+details.fold>summary::-webkit-details-marker,details.rd>summary::-webkit-details-marker{display:none}
+details.fold>summary::before,details.rd>summary::before,.faq summary::before{content:'';flex:none;width:7px;height:7px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(-45deg);transition:transform .15s;margin:0 3px 0 1px}
+details.fold[open]>summary::before,details.rd[open]>summary::before,.faq details[open]>summary::before{transform:rotate(45deg)}
+details.fold>summary::after,details.rd>summary::after{content:'Mostrar';margin-left:auto;flex:none;width:auto;height:auto;border:0;background:none;display:block;font-size:12px;font-weight:400;letter-spacing:.02em;line-height:1;color:var(--t3)}
+details.fold[open]>summary::after,details.rd[open]>summary::after{content:'Ocultar';background:none;color:var(--t3)}
+details.fold>summary:hover,details.rd>summary:hover{background:var(--surface-2)}
+details.fold>summary:focus-visible,details.rd>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+details.fold[open]>summary,details.rd[open]>summary{border-bottom:1px solid var(--border)}
+details.fold>summary .ttl{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 10px}
+details.fold>summary .ttl b,details.rd>summary .lbl{font-weight:500;font-size:14px;color:var(--text);margin:0}
+details.fold>summary .ttl span{font-size:12.5px;color:var(--t2);line-height:1.4}
+.fold-b,.rd-b{padding:10px 14px 14px;max-width:none;font-size:14px;line-height:1.6}
 .fold-b>:first-child{margin-top:0}
-.fold-b p{max-width:62ch;color:var(--t2)}
-.fold-b p+p{margin-top:8px}
-.fold-b b{font-weight:500;color:var(--text)}
-.fold-b .note{font-size:14px;color:var(--t3)}
+.fold-b p,.rd-b p{max-width:130ch;color:var(--t2);font-size:14px}
+.fold-b p+p,.rd-b p+p{margin-top:8px}
+.fold-b b,.rd-b b{font-weight:500;color:var(--text)}
+.fold-b .note{font-size:13px;color:var(--t3)}
 .fold-b ul.lim li:first-child{border-top:0}
+.fold-b.reading{border-top:0;margin-top:0}
 .faq{margin-top:8px;border-top:1px solid var(--text)}
 .faq details{border-bottom:1px solid var(--border)}
-.faq summary{min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 4px;cursor:pointer;list-style:none;font-weight:500}
+.faq summary{min-height:48px;display:flex;align-items:center;gap:10px;padding:8px 4px;cursor:pointer;list-style:none;font-weight:500}
 .faq summary::-webkit-details-marker{display:none}
-.faq summary::after{content:'+';flex:none;width:32px;height:32px;border:1px solid var(--border);display:grid;place-items:center;font-size:1.25rem;font-weight:300;color:var(--text)}
-.faq details[open]>summary::after{content:'−';background:var(--text);color:var(--bg);border-color:var(--text)}
 .faq summary:hover{background:var(--surface)}
 .faq summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.faq details>p{padding:0 48px 16px 4px;max-width:66ch;color:var(--t2)}
-@media print{details.fold>.fold-b,.faq details>p{display:block!important}}
+.faq-b{padding:2px 8px 18px 22px;max-width:78ch}
+.faq-b p{color:var(--t2);font-size:15px;line-height:1.65}
+.faq-b p+p{margin-top:10px}
+.faq-b b{font-weight:500;color:var(--text)}
+.faq-b .katex{font-size:1.08em}
+@media print{details.fold>.fold-b,.faq details>.faq-b{display:block!important}}
+dialog.dlg,.dictwrap{scrollbar-width:none;-ms-overflow-style:none}
+dialog.dlg::-webkit-scrollbar,.dictwrap::-webkit-scrollbar{display:none}
+.panel{border-top:1px solid var(--text);padding-top:16px}
+.panel+.panel{margin-top:40px}
 
 .fold-b.reading{border-top:0;margin-top:0;padding-top:16px}
 .pair{display:grid;gap:32px;grid-template-columns:minmax(0,1fr)}
@@ -981,7 +990,7 @@ select{min-height:44px;max-width:100%;border:1px solid var(--text);background:va
     <div class="grid">
       <div class="c12 m6">
         <div class="cap" style="margin-bottom:16px">Términos</div>
-        <div class="faq"><details><summary>Media</summary><p>La suma de los datos dividida por <i>n</i>.</p></details><details><summary>Mediana</summary><p>El dato central de la muestra ordenada.</p></details><details><summary>SD</summary><p>Desviación típica. Una medida de dispersión basada en las distancias a la media, elevadas al cuadrado.</p></details><details><summary>MAD</summary><p>Desviación absoluta mediana. La mediana de las distancias a la mediana. Las siglas vienen del inglés.</p></details><details><summary>MAD escalada</summary><p>La MAD multiplicada por 1,4826.</p></details><details><summary>IQR</summary><p>Rango intercuartílico. La distancia entre Q3 y Q1.</p></details><details><summary>Cuartil</summary><p>Un valor que deja 25 %, 50 % o 75 % de los datos por debajo.</p></details><details><summary>Asimetría</summary><p>Un número que indica hacia qué lado se alarga la cola.</p></details><details><summary>Curtosis</summary><p>Un número que indica si hay más o menos datos lejanos que en una campana normal.</p></details><details><summary>Platicúrtica</summary><p>Forma con curtosis menor que 0. Colas ligeras: hay menos datos lejanos que en una campana normal. Del griego «platys», plano.</p></details><details><summary>Mesocúrtica</summary><p>Forma con curtosis cercana a 0. Colas como las de la campana normal. Del griego «mesos», medio.</p></details><details><summary>Leptocúrtica</summary><p>Forma con curtosis mayor que 0. Colas pesadas: hay más datos lejanos que en una campana normal. Del griego «leptos», fino.</p></details><details><summary>Cola</summary><p>La zona de datos alejados del centro, a un lado o al otro.</p></details><details><summary>Medida robusta</summary><p>Una medida que los valores extremos casi no alteran.</p></details><details><summary>Punto de ruptura</summary><p>La proporción de datos malos que un número soporta antes de fallar.</p></details></div>
+        <div class="faq"><details><summary>Media</summary><div class="faq-b"><p>La suma de los datos dividida por su número: \(\bar{x}=\frac{1}{n}\sum_{i=1}^{n}x_i\). Es el punto de equilibrio de los datos: la suma de las distancias de cada dato a la media vale cero. Usa todos los valores, por eso un solo dato muy alejado la desplaza. En un reparto simétrico coincide con la mediana; con una cola larga a la derecha queda por encima de ella.</p></div></details><details><summary>Mediana</summary><div class="faq-b"><p>El dato central de la muestra ordenada de menor a mayor. Deja la mitad de los datos por debajo y la mitad por encima. Si \(n\) es par, es el promedio de los dos datos centrales. Cambiar el valor del dato más grande, aunque sea por uno mil veces mayor, no la mueve: es una <b>medida robusta</b>.</p></div></details><details><summary>SD (desviación típica)</summary><div class="faq-b"><p>Mide cuánto se separan los datos de la media: \(s=\sqrt{\dfrac{\sum_{i=1}^{n}(x_i-\bar{x})^2}{n-1}}\). Cada distancia se eleva al cuadrado, así que un dato lejano pesa mucho más que uno cercano. Se divide por \(n-1\) para no subestimar la dispersión de la población cuando se calcula con una muestra. Está en las mismas unidades que los datos. Con datos normales, el intervalo \(\bar{x}\pm s\) recoge cerca del 68 % de ellos.</p></div></details><details><summary>MAD</summary><div class="faq-b"><p>Desviación absoluta mediana (del inglés <i>median absolute deviation</i>): la mediana de las distancias de cada dato a la mediana, \(\mathrm{MAD}=\mathrm{med}\,|x_i-\mathrm{med}(x)|\). Se ordenan esas distancias y se toma la del medio. Como solo usa medianas, un valor extremo casi no la altera. Si más de la mitad de los datos son iguales, vale 0 y no sirve como medida de dispersión.</p></div></details><details><summary>MAD escalada</summary><div class="faq-b"><p>La MAD multiplicada por 1,4826: \(\hat{\sigma}_{\mathrm{MAD}}=1{,}4826\times\mathrm{MAD}\). Esa constante es \(1/\Phi^{-1}(0{,}75)\) y calibra la MAD para que estime la desviación típica \(\sigma\) <b>si los datos son normales</b> (una MAD sin escalar vale cerca de \(0{,}6745\,\sigma\)). Con otras formas de distribución o con pocos datos puede diferir de la SD sin que haya ningún error de cálculo.</p></div></details><details><summary>IQR</summary><div class="faq-b"><p>Rango intercuartílico: la distancia entre el tercer y el primer cuartil, \(\mathrm{IQR}=Q_3-Q_1\). Es la anchura de la caja de un diagrama de caja y contiene la mitad central de los datos. Para datos normales, \(\mathrm{IQR}/1{,}349\) estima \(\sigma\). Falla cuando más del 25 % de los datos son extremos.</p></div></details><details><summary>Cuartil</summary><div class="faq-b"><p>Un valor que deja el 25 %, el 50 % o el 75 % de los datos por debajo: \(Q_1\), \(Q_2\) (la mediana) y \(Q_3\). Si la posición \((n-1)p+1\) en la lista ordenada no es un número entero, se interpola linealmente entre los dos datos vecinos. Los cuartiles son casos particulares de los <b>percentiles</b>: \(Q_1=P_{25}\), \(Q_3=P_{75}\).</p></div></details><details><summary>Asimetría</summary><div class="faq-b"><p>Indica hacia qué lado se alarga la cola. Se calcula como \(g_1=\dfrac{m_3}{m_2^{3/2}}\), con \(m_k=\frac{1}{n}\sum_{i=1}^{n}(x_i-\bar{x})^k\). Vale 0 si el reparto es simétrico; es positiva con cola larga a la derecha y negativa con cola larga a la izquierda. Es un resumen: un valor de 0 no demuestra simetría (los datos −3, −1, −1, −1, −1, −1, 2, 2, 2, 2 tienen \(g_1=0\) y no son simétricos). La <b>asimetría de Bowley</b>, \(\dfrac{Q_3+Q_1-2Q_2}{Q_3-Q_1}\), usa cuartiles, va de −1 a +1 y resiste los extremos.</p></div></details><details><summary>Curtosis</summary><div class="faq-b"><p>Indica si hay más o menos datos lejanos que en una campana normal. Se calcula como curtosis en exceso, \(g_2=\dfrac{m_4}{m_2^{2}}-3\), de modo que la campana normal vale 0. Es positiva con colas pesadas y negativa con colas ligeras; el mínimo posible es −2. No mide lo «puntiaguda» que es la curva. Un valor de 0 no garantiza que la forma sea normal (seis datos −√3, 0, 0, 0, 0, √3 tienen \(g_2=0\) y no lo son). Con menos de 100 datos fluctúa mucho entre muestras.</p></div></details><details><summary>Platicúrtica</summary><div class="faq-b"><p>Forma con curtosis menor que 0: colas ligeras, con menos datos lejanos que en una campana normal. Del griego <i>platys</i>, «plano». El caso extremo, \(g_2=-2\), son dos grupos de igual tamaño separados, sin nada entre ellos.</p></div></details><details><summary>Mesocúrtica</summary><div class="faq-b"><p>Forma con curtosis cercana a 0: colas parecidas a las de la campana normal. Del griego <i>mesos</i>, «medio». Es la referencia con la que se comparan las demás formas.</p></div></details><details><summary>Leptocúrtica</summary><div class="faq-b"><p>Forma con curtosis mayor que 0: colas pesadas, con más datos lejanos que en una campana normal. Del griego <i>leptos</i>, «fino». Un valor extremo no sorprende en estas distribuciones. Aparece, por ejemplo, cuando una pequeña parte de los datos está muy lejos del resto.</p></div></details><details><summary>Cola</summary><div class="faq-b"><p>La zona de datos alejados del centro, a un lado o al otro. Una cola derecha larga significa que hay pocos valores muy altos (frecuente en importes y tiempos); una cola izquierda larga, pocos valores muy bajos. El peso de las colas lo resume la curtosis; la diferencia entre ambas colas, la asimetría.</p></div></details><details><summary>Medida robusta</summary><div class="faq-b"><p>Una medida que los valores extremos casi no alteran. La mediana, la MAD y el IQR son robustas; la media, la SD, la asimetría y la curtosis clásicas no lo son. Que una medida sea robusta no la hace mejor siempre: con datos normales sin extremos, la media es más precisa que la mediana.</p></div></details><details><summary>Punto de ruptura</summary><div class="faq-b"><p>La proporción de datos mal medidos o extremos que una medida soporta antes de dar un resultado arbitrariamente alejado. Para la media y la SD es 0: un solo dato basta para llevarlas a cualquier valor. Para la mediana y la MAD es el 50 %; para el IQR, el 25 %. Es una propiedad de resistencia frente a la peor contaminación posible, no un salto idéntico en cada muestra.</p></div></details><details><summary>Valor extremo (regla de Tukey)</summary><div class="faq-b"><p>Un dato es extremo si queda fuera de las vallas \(Q_1-1{,}5\,\mathrm{IQR}\) y \(Q_3+1{,}5\,\mathrm{IQR}\). No significa que sea un error: puede ser un caso real e importante. Conviene investigar su causa antes de eliminarlo.</p></div></details><details><summary>Jarque–Bera</summary><div class="faq-b"><p>Contraste de normalidad basado en la asimetría y la curtosis: \(JB=\dfrac{n}{6}\left(g_1^2+\dfrac{g_2^2}{4}\right)\). Si los datos son normales, \(JB\) es pequeño. Con \(n\) hasta 2000, este laboratorio calcula el valor p por simulación con muestras normales del mismo tamaño; con más datos usa la ji-cuadrado de 2 grados de libertad. Un valor p mayor que 0,05 no demuestra normalidad. Con \(n&lt;8\) no se calcula.</p></div></details><details><summary>Bootstrap</summary><div class="faq-b"><p>Método que estima la incertidumbre de un número sin suponer una forma normal: se toman muchas muestras con reemplazo de los propios datos, se calcula el número en cada una y se toman los percentiles 2,5 y 97,5. Aquí se usan 400 remuestras con semilla fija. Solo se ofrece un intervalo si al menos el 90 % de las remuestras da un valor calculable.</p></div></details></div>
       </div>
       <div class="c12 m6">
         <details class="fold"><summary><span class="ttl"><b>Límites de esta consola</b><span>Qué no puede decirle esta herramienta</span></span></summary><div class="fold-b"><ul class="lim">
